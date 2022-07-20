@@ -3437,8 +3437,8 @@ def test_Scenario147():
 
     s.figures[18] = 'C'
 
-    s.walls[12][4] = 'T'
-    s.walls[12][5] = 'T'
+    s.walls[12][4] = True
+    s.walls[12][5] = True
 
     s.figures[12] = 'A'
 
@@ -3453,8 +3453,8 @@ def test_Scenario148():
 
     s.figures[75] = 'C'
 
-    s.walls[47][2] = 'T'
-    s.walls[47][5] = 'T'
+    s.walls[47][2] = True
+    s.walls[47][5] = True
 
     s.figures[33] = 'A'
 
@@ -3469,9 +3469,9 @@ def test_Scenario149():
 
     s.figures[11] = 'C'
 
-    s.walls[33][4] = 'T'
-    s.walls[33][5] = 'T'
-    s.walls[32][2] = 'T'
+    s.walls[33][4] = True
+    s.walls[33][5] = True
+    s.walls[32][2] = True
 
     s.figures[53] = 'A'
 

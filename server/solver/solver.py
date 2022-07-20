@@ -3,11 +3,11 @@ import collections
 import textwrap
 import itertools
 import pprint
+from typing import Callable
 from solver.scenarios import *
 from solver.utils import *
 from solver.settings import *
 from solver.print_map import *
-from past.utils import old_div
 
 
 class Scenario:
@@ -41,9 +41,9 @@ class Scenario:
     AOE_HEIGHT = 0
     AOE_SIZE = 0
     aoe = [False] * 0
-    AOE_CENTER = old_div((0 - 1), 2)
+    AOE_CENTER = (0 - 1) // 2
 
-    def __init__(self, width, height, aoe_width, aoe_height):
+    def __init__(self, width:int, height:int, aoe_width:int, aoe_height:int):
         self.correct_answer = None
         self.valid = True
         self.logging = False
@@ -67,7 +67,7 @@ class Scenario:
         self.AOE_WIDTH = aoe_width
         self.AOE_HEIGHT = aoe_height
         self.AOE_SIZE = self.AOE_WIDTH * self.AOE_HEIGHT
-        self.AOE_CENTER = old_div((self.AOE_SIZE - 1), 2)
+        self.AOE_CENTER = (self.AOE_SIZE - 1)// 2
         self.aoe = [False] * self.AOE_SIZE
 
         self.message = ''
@@ -222,7 +222,7 @@ class Scenario:
 
         # self.prepare_map()
 
-    def prepare_map(self):
+    def prepare_map(self)->None:
         self.setup_vertices_list()
         self.setup_neighbors_mapping()
 
@@ -252,13 +252,13 @@ class Scenario:
             self.extra_walls[location] = [self.walls[location][_]
                                           and not contents_walls[location][_] for _ in range(6)]
 
-    def set_rules(self, rules):
+    def set_rules(self, rules:int)->None:
         self.FROST_RULES = rules == 0
         self.GLOOM_RULES = rules == 1
         self.JOTL_RULES = rules == 2
         self.set_rules_flags()
 
-    def set_rules_flags(self):
+    def set_rules_flags(self)->None:
         # RULE_VERTEX_LOS:                LOS is only checked between vertices
         # RULE_JUMP_DIFFICULT_TERRAIN:    difficult terrain effects the last hex of a jump move
         # RULE_PROXIMITY_FOCUS:           proximity is ignored when determining moster focus
@@ -275,7 +275,7 @@ class Scenario:
             self.RULE_DIFFICULT_TERRAIN_JUMP = False
             self.RULE_PROXIMITY_FOCUS = True
 
-    def unpack_scenario(self, packed_scenario):
+    def unpack_scenario(self, packed_scenario:dict)->None:
         self.ACTION_MOVE = int(packed_scenario['move'])
         self.ACTION_RANGE = int(packed_scenario['range'])
         self.ACTION_TARGET = int(packed_scenario['target'])
@@ -338,7 +338,7 @@ class Scenario:
         self.prepare_map()
 
     # TODO: clean
-    def unpack_scenario_forviews(self, packed_scenario):
+    def unpack_scenario_forviews(self, packed_scenario:dict)->None:
         self.ACTION_RANGE = int(packed_scenario['range'])
         self.ACTION_TARGET = int(packed_scenario['target'])
 
@@ -361,43 +361,42 @@ class Scenario:
 
         self.prepare_map()
 
-    def can_end_move_on_standard(self, location):
+    def can_end_move_on_standard(self, location:int)->bool:
         return self.contents[location] in [' ', 'T', 'H', 'D'] and self.figures[location] in [' ', 'A']
 
-    def can_end_move_on_flying(self, location):
+    def can_end_move_on_flying(self,location:int)->bool:
         return self.contents[location] in [' ', 'T', 'O', 'H', 'D'] and self.figures[location] in [' ', 'A']
 
-    def can_travel_through_standard(self, location):
+    def can_travel_through_standard(self,location:int)->bool:
         return self.contents[location] in [' ', 'T', 'H', 'D'] and self.figures[location] != 'C'
 
-    def can_travel_through_flying(self, location):
+    def can_travel_through_flying(self, location:int)->bool:
         return self.contents[location] in [' ', 'T', 'H', 'D', 'O']
 
-    def is_trap_standard(self, location):
+    def is_trap_standard(self, location:int)->bool:
         return self.contents[location] in ['T', 'H']
-
     def is_trap_flying(self, location):
         return False
 
-    def measure_proximity_through(self, location):
+    def measure_proximity_through(self,  location:int)->bool:
         return self.contents[location] != 'X'
 
-    def blocks_los(self, location):
+    def blocks_los(self,  location:int)->bool:
         return self.contents[location] == 'X'
 
-    def additional_path_cost(self, location):
+    def additional_path_cost(self, location:int)->int:
         return int(self.contents[location] == 'D')
 
-    def setup_vertices_list(self):
+    def setup_vertices_list(self)->None:
         def calculate_vertex(location, vertex):
             hex_row = location % self.MAP_HEIGHT
-            hex_column = old_div(location, self.MAP_HEIGHT)
+            hex_column = location// self.MAP_HEIGHT
 
             vertex_column = hex_column + [1, 1, 0, 0, 0, 1][vertex]
             vertex_row = 2 * hex_row + \
                 [1, 2, 2, 1, 0, 0][vertex] + (hex_column % 2)
 
-            x = 3 * (old_div(vertex_column, 2))
+            x = 3 * (vertex_column// 2)
             if vertex_row % 2 == 0:
                 x += 0.5 + vertex_column % 2
             else:
@@ -413,13 +412,13 @@ class Scenario:
                 self.vertices[location * 6 +
                               vertex] = calculate_vertex(location, vertex)
 
-    def get_vertex(self, location, vertex):
+    def get_vertex(self, location:int, vertex:int)->tuple[float,float]:
         return self.vertices[location * 6 + vertex]
 
-    def setup_neighbors_mapping(self):
+    def setup_neighbors_mapping(self)->None:
         def get_neighbors(location):
             row = location % self.MAP_HEIGHT
-            column = old_div(location, self.MAP_HEIGHT)
+            column = location// self.MAP_HEIGHT
 
             bottom_edge = row == 0
             top_edge = row == self.MAP_HEIGHT - 1
@@ -455,22 +454,22 @@ class Scenario:
             for _ in range(self.MAP_SIZE)
         }
 
-    def is_adjacent(self, location_a, location_b):
+    def is_adjacent(self, location_a:int, location_b:int)->bool:
         if location_b not in self.neighbors[location_a]:
             return False
         distances = self.find_proximity_distances(location_a)
         return distances[location_b] == 1
 
-    def apply_rotated_aoe_offset(self, center, offset, rotation):
+    def apply_rotated_aoe_offset(self, center:int, offset:tuple[int,int,int], rotation:int)->int|None:
         offset = rotate_offset(offset, rotation)
         return apply_offset(center, offset, self.MAP_HEIGHT, self.MAP_SIZE)
 
-    def apply_aoe_offset(self, center, offset):
+    def apply_aoe_offset(self, center:int, offset:tuple[int,int,int]):
         return apply_offset(center, offset, self.MAP_HEIGHT, self.MAP_SIZE)
 
-    def calculate_bounds(self, location_a, location_b):
-        column_a = old_div(location_a, self.MAP_HEIGHT)
-        column_b = old_div(location_b, self.MAP_HEIGHT)
+    def calculate_bounds(self, location_a:int, location_b:int)-> tuple[int,int,int,int]:
+        column_a = location_a // self.MAP_HEIGHT
+        column_b = location_b // self.MAP_HEIGHT
         if column_a < column_b:
             column_lower = max(column_a - 1, 0)
             column_upper = min(column_b + 2, self.MAP_WIDTH)
@@ -489,7 +488,7 @@ class Scenario:
 
         return (row_lower, column_lower, row_upper, column_upper)
 
-    def occluders_in(self, bounds):
+    def occluders_in(self, bounds:tuple[int,int,int,int])->Iterable[tuple[tuple[float,float],tuple[float,float]]]:
         for column in range(bounds[1], bounds[3]):
             column_location = column * self.MAP_HEIGHT
             for row in range(bounds[0], bounds[2]):
@@ -509,7 +508,7 @@ class Scenario:
                             location, (edge + 1) % 6)
                         yield (wall_vertex_a, wall_vertex_b)
 
-    def walls_in(self, bounds):
+    def walls_in(self, bounds:tuple[int,int,int,int])->Iterable[tuple[int,int]]:
         for column in range(bounds[1], bounds[3]):
             column_location = column * self.MAP_HEIGHT
             for row in range(bounds[0], bounds[2]):
@@ -526,7 +525,7 @@ class Scenario:
                 if encoded_wall != 0:
                     yield location, encoded_wall
 
-    def test_line(self, bounds, vertex_position_a, vertex_position_b):
+    def test_line(self, bounds:tuple[int,int,int,int], vertex_position_a:tuple[float,float], vertex_position_b:tuple[float,float])-> bool:
         if vertex_position_a == vertex_position_b:
             return True
         for occluder in self.occluders_in(bounds):
@@ -534,7 +533,7 @@ class Scenario:
                 return False
         return True
 
-    def determine_los_cross_section_edge(self, location_a, location_b):
+    def determine_los_cross_section_edge(self, location_a:int, location_b:int)->int:
         hex_to_hex_direction = direction(
             (self.get_vertex(location_a, 0), self.get_vertex(location_b, 0)))
         dot_with_up = hex_to_hex_direction[1]
@@ -555,7 +554,11 @@ class Scenario:
                 else:
                     return 4
 
-    def calculate_occluder_mapping_set(self, location_a, location_b):
+    def calculate_occluder_mapping_set(self, location_a:int, location_b:int)->tuple[
+        list[tuple[float,float,float]],
+        list[tuple[tuple[float,float,float],int]],
+        list[tuple[tuple[float,float,float],int]],
+        list[tuple[tuple[float,float,float],tuple[float,float,float],int ,int]]] | None:
         # determine the appropiate cross section to represent the hex volumes
         cross_section_edge = self.determine_los_cross_section_edge(
             location_a, location_b)
@@ -650,118 +653,118 @@ class Scenario:
 
         return occluder_mappings, occluder_mappings_below, occluder_mappings_above, occluder_mappings_internal
 
-    def plot_debug_visibility_graph(self, occluder_mapping_set):
-        (
-            occluder_mappings,
-            occluder_mappings_below,
-            occluder_mappings_above,
-            occluder_mappings_internal
-        ) = occluder_mapping_set
+    # def plot_debug_visibility_graph(self, occluder_mapping_set):
+    #     (
+    #         occluder_mappings,
+    #         occluder_mappings_below,
+    #         occluder_mappings_above,
+    #         occluder_mappings_internal
+    #     ) = occluder_mapping_set
 
-        # the visibility windows are:
-        # - below all blue lines
-        # - above all purple lines
-        # - below green and above red line pairs
+    #     # the visibility windows are:
+    #     # - below all blue lines
+    #     # - above all purple lines
+    #     # - below green and above red line pairs
 
-        # upper bounds - blue
-        self.debug_plot_line(3, ((0.0, 1.0), (1.0, 1.0)))
-        for mapping, _ in occluder_mappings_above:
-            self.debug_plot_line(3, ((0.0, mapping[0]), (1.0, mapping[1])))
+    #     # upper bounds - blue
+    #     self.debug_plot_line(3, ((0.0, 1.0), (1.0, 1.0)))
+    #     for mapping, _ in occluder_mappings_above:
+    #         self.debug_plot_line(3, ((0.0, mapping[0]), (1.0, mapping[1])))
 
-        # lower bounds - purple
-        self.debug_plot_line(0, ((0.0, 0.0), (1.0, 0.0)))
-        for mapping, _ in occluder_mappings_below:
-            self.debug_plot_line(0, ((0.0, mapping[0]), (1.0, mapping[1])))
+    #     # lower bounds - purple
+    #     self.debug_plot_line(0, ((0.0, 0.0), (1.0, 0.0)))
+    #     for mapping, _ in occluder_mappings_below:
+    #         self.debug_plot_line(0, ((0.0, mapping[0]), (1.0, mapping[1])))
 
-        # top of internal occluder - red
-        # bottom of internal occluder - green
-        for mapping in occluder_mappings_internal:
-            half_point = (lerp(mapping[0][0], mapping[0][1], 0.5), lerp(
-                mapping[1][0], mapping[1][1], 0.5))
+    #     # top of internal occluder - red
+    #     # bottom of internal occluder - green
+    #     for mapping in occluder_mappings_internal:
+    #         half_point = (lerp(mapping[0][0], mapping[0][1], 0.5), lerp(
+    #             mapping[1][0], mapping[1][1], 0.5))
 
-            value_0 = get_occluder_value_at(mapping[0], 0.0)
-            value_1 = get_occluder_value_at(mapping[1], 0.0)
-            color = (1, 2) if occluder_greater_than(
-                value_0, value_1) else (2, 1)
-            self.debug_plot_line(
-                color[0], ((0.0, mapping[0][0]), (0.5, half_point[0])))
-            self.debug_plot_line(
-                color[1], ((0.0, mapping[1][0]), (0.5, half_point[1])))
+    #         value_0 = get_occluder_value_at(mapping[0], 0.0)
+    #         value_1 = get_occluder_value_at(mapping[1], 0.0)
+    #         color = (1, 2) if occluder_greater_than(
+    #             value_0, value_1) else (2, 1)
+    #         self.debug_plot_line(
+    #             color[0], ((0.0, mapping[0][0]), (0.5, half_point[0])))
+    #         self.debug_plot_line(
+    #             color[1], ((0.0, mapping[1][0]), (0.5, half_point[1])))
 
-            value_0 = get_occluder_value_at(mapping[0], 1.0)
-            value_1 = get_occluder_value_at(mapping[1], 1.0)
-            color = (1, 2) if occluder_greater_than(
-                value_0, value_1) else (2, 1)
-            self.debug_plot_line(
-                color[0], ((0.5, half_point[0]), (1.0, mapping[0][1])))
-            self.debug_plot_line(
-                color[1], ((0.5, half_point[1]), (1.0, mapping[1][1])))
+    #         value_0 = get_occluder_value_at(mapping[0], 1.0)
+    #         value_1 = get_occluder_value_at(mapping[1], 1.0)
+    #         color = (1, 2) if occluder_greater_than(
+    #             value_0, value_1) else (2, 1)
+    #         self.debug_plot_line(
+    #             color[0], ((0.5, half_point[0]), (1.0, mapping[0][1])))
+    #         self.debug_plot_line(
+    #             color[1], ((0.5, half_point[1]), (1.0, mapping[1][1])))
 
-        # shade the graph to indicate visibility windows
-        POINT_DENSITY = 40
-        for nx in range(POINT_DENSITY):
-            x = old_div(nx, float(POINT_DENSITY - 1))
-            windows = get_visibility_windows_at(x, occluder_mapping_set, False)
-            for ny in range(POINT_DENSITY):
-                y = old_div(ny, float(POINT_DENSITY - 1))
-                for window in windows:
-                    if y >= window[1] and y <= window[2]:
-                        color = 7
-                        break
-                else:
-                    color = 6
-                self.debug_plot_point(color, (x, y))
+    #     # shade the graph to indicate visibility windows
+    #     POINT_DENSITY = 40
+    #     for nx in range(POINT_DENSITY):
+    #         x = old_div(nx, float(POINT_DENSITY - 1))
+    #         windows = get_visibility_windows_at(x, occluder_mapping_set, False)
+    #         for ny in range(POINT_DENSITY):
+    #             y = old_div(ny, float(POINT_DENSITY - 1))
+    #             for window in windows:
+    #                 if y >= window[1] and y <= window[2]:
+    #                     color = 7
+    #                     break
+    #             else:
+    #                 color = 6
+    #             self.debug_plot_point(color, (x, y))
 
-    def calculate_symmetric_coordinates(self, origin, location):
-        column_a = old_div(origin, self.MAP_HEIGHT)
-        row_a = origin % self.MAP_HEIGHT
-        column_b = old_div(location, self.MAP_HEIGHT)
-        row_b = location % self.MAP_HEIGHT
+    # def calculate_symmetric_coordinates(self, origin, location):
+    #     column_a = old_div(origin, self.MAP_HEIGHT)
+    #     row_a = origin % self.MAP_HEIGHT
+    #     column_b = old_div(location, self.MAP_HEIGHT)
+    #     row_b = location % self.MAP_HEIGHT
 
-        c = column_b - column_a
-        r = row_b - row_a
-        q = column_a % 2
+    #     c = column_b - column_a
+    #     r = row_b - row_a
+    #     q = column_a % 2
 
-        if c == 0:
-            if r > 0:
-                t = 0
-            else:
-                t = 3
-        elif c < 0:
-            if r < old_div((q + c), 2):
-                t = 3
-            elif r < old_div((q - c), 2):
-                t = 2
-            else:
-                t = 1
-        else:
-            if r <= old_div((q - c), 2):
-                t = 4
-            elif r <= old_div((q + c), 2):
-                t = 5
-            else:
-                t = 0
+    #     if c == 0:
+    #         if r > 0:
+    #             t = 0
+    #         else:
+    #             t = 3
+    #     elif c < 0:
+    #         if r < old_div((q + c), 2):
+    #             t = 3
+    #         elif r < old_div((q - c), 2):
+    #             t = 2
+    #         else:
+    #             t = 1
+    #     else:
+    #         if r <= old_div((q - c), 2):
+    #             t = 4
+    #         elif r <= old_div((q + c), 2):
+    #             t = 5
+    #         else:
+    #             t = 0
 
-        if t == 0:
-            u = r - old_div((q - c), 2)
-            v = c
-        elif t == 1:
-            u = r - old_div((q + c), 2)
-            v = r - old_div((q - c), 2)
-        elif t == 2:
-            u = -c
-            v = r - old_div((q + c), 2)
-        elif t == 3:
-            u = -r + old_div((q - c), 2)
-            v = -c
-        elif t == 4:
-            u = -r + old_div((q + c), 2)
-            v = -r + old_div((q - c), 2)
-        else:
-            u = c
-            v = -r + old_div((q + c), 2)
+    #     if t == 0:
+    #         u = r - old_div((q - c), 2)
+    #         v = c
+    #     elif t == 1:
+    #         u = r - old_div((q + c), 2)
+    #         v = r - old_div((q - c), 2)
+    #     elif t == 2:
+    #         u = -c
+    #         v = r - old_div((q + c), 2)
+    #     elif t == 3:
+    #         u = -r + old_div((q - c), 2)
+    #         v = -c
+    #     elif t == 4:
+    #         u = -r + old_div((q + c), 2)
+    #         v = -r + old_div((q - c), 2)
+    #     else:
+    #         u = c
+    #         v = -r + old_div((q + c), 2)
 
-        return t, u, v
+    #     return t, u, v
 
     # can be used to implement a long-term collision cache
     # that is, a server-wide cache not cleared between scenarios
@@ -772,26 +775,26 @@ class Scenario:
     # gives ~10% speed up on 131 (complex unit test)
     # gives no speed up on many unit tests (as they have very few occluders)
     # the savings was measured with an in-memory cache (dictionary), not a file system, which may be slower
-    def calculate_occluder_cache_key(self, location_a, location_b):
-        # does not take advantage of reflection symetry
-        t, u, v = self.calculate_symmetric_coordinates(location_a, location_b)
-        orientation = 6 - t
-        cache_key = [(u, v)]
+    # def calculate_occluder_cache_key(self, location_a, location_b):
+    #     # does not take advantage of reflection symetry
+    #     t, u, v = self.calculate_symmetric_coordinates(location_a, location_b)
+    #     orientation = 6 - t
+    #     cache_key = [(u, v)]
 
-        for location, encoded_wall in self.walls_in(self.calculate_bounds(location_a, location_b)):
-            t, u, v = self.calculate_symmetric_coordinates(
-                location_a, location)
-            t = (t + orientation) % 6
-            cache_key.append((t, u, v, encoded_wall))
+    #     for location, encoded_wall in self.walls_in(self.calculate_bounds(location_a, location_b)):
+    #         t, u, v = self.calculate_symmetric_coordinates(
+    #             location_a, location)
+    #         t = (t + orientation) % 6
+    #         cache_key.append((t, u, v, encoded_wall))
 
-        if len(cache_key) == 1:
-            # no occluders; use None to short circuit los test in calling function
-            return None
+    #     if len(cache_key) == 1:
+    #         # no occluders; use None to short circuit los test in calling function
+    #         return None
 
-        cache_key.sort()
-        return tuple(cache_key)
+    #     cache_key.sort()
+    #     return tuple(cache_key)
 
-    def test_full_hex_los_between_locations(self, location_a, location_b):
+    def test_full_hex_los_between_locations(self, location_a:int, location_b:int)->bool:
         # handle simple case of neighboring locations
         if location_b in self.neighbors[location_a]:
             edge = self.neighbors[location_a].index(location_b)
@@ -846,7 +849,7 @@ class Scenario:
 
         return False
 
-    def find_best_full_hex_los_sightline(self, location_a, location_b):
+    def find_best_full_hex_los_sightline(self, location_a:int, location_b:int)->tuple[float,float]:
         # Find the unblocked region in the visibility square with the largest area.
         # Place the sightline at its center of mass.
 
@@ -938,7 +941,7 @@ class Scenario:
             return True
         return False
 
-    def test_los_between_locations(self, location_a, location_b):
+    def test_los_between_locations(self, location_a:int, location_b:int)->bool:
         cache_key = visibility_cache_key(location_a, location_b)
         if cache_key in self.visibility_cache:
             return self.visibility_cache[cache_key]
@@ -953,7 +956,7 @@ class Scenario:
         self.visibility_cache[cache_key] = result
         return result
 
-    def test_vertex_los_between_locations(self, location_a, location_b):
+    def test_vertex_los_between_locations(self, location_a:int, location_b:int)->bool:
         bounds = self.calculate_bounds(location_a, location_b)
 
         for vertex_a in range(6):
@@ -971,7 +974,7 @@ class Scenario:
 
         return False
 
-    def find_shortest_sightline(self, location_a, location_b):
+    def find_shortest_sightline(self, location_a:int, location_b:int)->tuple[tuple[float,float],tuple[float,float]]:
         if not self.RULE_VERTEX_LOS:
             return self.find_best_full_hex_los_sightline(location_a, location_b)
 
@@ -1003,46 +1006,46 @@ class Scenario:
 
         return v.shortest_line
 
-    def pack_point(self, location, vertex):
-        if vertex == 2:
-            if self.neighbors[location][2] != -1:
-                location = self.neighbors[location][2]
-                vertex = 0
-        elif vertex == 3:
-            if self.neighbors[location][3] != -1:
-                location = self.neighbors[location][3]
-                vertex = 1
-            elif self.neighbors[location][2] != -1:
-                location = self.neighbors[location][2]
-                vertex = 5
-        elif vertex == 4:
-            if self.neighbors[location][3] != -1:
-                location = self.neighbors[location][3]
-                vertex = 0
-            elif self.neighbors[location][4] != -1:
-                location = self.neighbors[location][4]
-                vertex = 2
-        elif vertex == 5:
-            if self.neighbors[location][4] != -1:
-                location = self.neighbors[location][4]
-                vertex = 1
-        return self.dereduce_location(location) * 6 + vertex
+    # def pack_point(self, location:int, vertex:int):
+    #     if vertex == 2:
+    #         if self.neighbors[location][2] != -1:
+    #             location = self.neighbors[location][2]
+    #             vertex = 0
+    #     elif vertex == 3:
+    #         if self.neighbors[location][3] != -1:
+    #             location = self.neighbors[location][3]
+    #             vertex = 1
+    #         elif self.neighbors[location][2] != -1:
+    #             location = self.neighbors[location][2]
+    #             vertex = 5
+    #     elif vertex == 4:
+    #         if self.neighbors[location][3] != -1:
+    #             location = self.neighbors[location][3]
+    #             vertex = 0
+    #         elif self.neighbors[location][4] != -1:
+    #             location = self.neighbors[location][4]
+    #             vertex = 2
+    #     elif vertex == 5:
+    #         if self.neighbors[location][4] != -1:
+    #             location = self.neighbors[location][4]
+    #             vertex = 1
+    #     return self.dereduce_location(location) * 6 + vertex
 
-    def pack_line(self, location_a, vertex_a, location_b, vertex_b):
-        point_a = self.pack_point(location_a, vertex_a)
-        point_b = self.pack_point(location_b, vertex_b)
-        return point_a * self.MAP_VERTEX_COUNT + point_b
+    # def pack_line(self, location_a, vertex_a, location_b, vertex_b):
+    #     point_a = self.pack_point(location_a, vertex_a)
+    #     point_b = self.pack_point(location_b, vertex_b)
+    #     return point_a * self.MAP_VERTEX_COUNT + point_b
 
-    def dereduce_location(self, location):
+    def dereduce_location(self, location:int)->int:
         if not self.reduced:
             return location
-        column = old_div(location, self.MAP_HEIGHT)
+        column = location// self.MAP_HEIGHT
         row = location % self.MAP_HEIGHT
         column += self.REDUCE_COLUMN
         row += self.REDUCE_ROW
         return row + column * self.ORIGINAL_MAP_HEIGHT
 
-    def find_path_distances(self, start, traversal_test):
+    def find_path_distances(self, start:int, traversal_test:Callable[[int],bool])->tuple[int,int]:
         cache_key = (start, traversal_test)
         if cache_key in self.path_cache[0]:
             return self.path_cache[0][cache_key]
@@ -1085,7 +1088,7 @@ class Scenario:
         self.path_cache[0][cache_key] = (distances, traps)
         return distances, traps
 
-    def find_path_distances_reverse(self, destination, traversal_test):
+    def find_path_distances_reverse(self, destination:int, traversal_test:Callable[[int],bool])-> tuple[list[int],list[int]]:
         # reverse in that we find the path distance to the destination from every location
         # path distance is symetric except for difficult terrain and traps
         # we correct for the asymetry of starting vs ending on difficult terrain
@@ -1116,7 +1119,7 @@ class Scenario:
         self.path_cache[1][cache_key] = (distances, traps)
         return distances, traps
 
-    def find_proximity_distances(self, start):
+    def find_proximity_distances(self, start:int)-> list[int]:
         cache_key = (start)
         if cache_key in self.path_cache[2]:
             return self.path_cache[2][cache_key]
@@ -1145,7 +1148,7 @@ class Scenario:
         self.path_cache[2][cache_key] = distances
         return distances
 
-    def find_distances(self, start):
+    def find_distances(self, start:int)->list[int]:
         cache_key = (start)
         if cache_key in self.path_cache[3]:
             return self.path_cache[3][cache_key]
@@ -1170,7 +1173,7 @@ class Scenario:
         self.path_cache[3][cache_key] = distances
         return distances
 
-    def calculate_monster_move(self):
+    def calculate_monster_move(self)->tuple[set,dict,dict,dict,dict,dict]:
         if self.ACTION_RANGE == 0 or self.ACTION_TARGET == 0:
             ATTACK_RANGE = 1
             SUSCEPTIBLE_TO_DISADVANTAGE = False
@@ -1282,7 +1285,7 @@ class Scenario:
             PRECALC_GRID_HEIGHT = 21
             PRECALC_GRID_WIDTH = 21
             PRECALC_GRID_SIZE = PRECALC_GRID_HEIGHT * PRECALC_GRID_WIDTH
-            PRECALC_GRID_CENTER = old_div((PRECALC_GRID_SIZE - 1), 2)
+            PRECALC_GRID_CENTER = (PRECALC_GRID_SIZE - 1)// 2
 
             aoe_pattern_set = set()
             for aoe_pin in aoe:
@@ -1787,7 +1790,7 @@ class Scenario:
 
         return actions, aoes, destinations, focus_map, sightlines, debug_lines
 
-    def solve_reach(self, monster):
+    def solve_reach(self, monster:int)->list[tuple[int,int]]:
         if self.ACTION_TARGET == 0:
             return []
         if self.ACTION_RANGE == 0:
@@ -1816,7 +1819,7 @@ class Scenario:
             reach.append((run_begin, self.MAP_SIZE))
         return reach
 
-    def solve_sight(self, monster):
+    def solve_sight(self, monster:int)->list[tuple[int,int]]:
         sight = []
         run_begin = None
         for location in range(self.MAP_SIZE):
@@ -1835,7 +1838,7 @@ class Scenario:
             sight.append((run_begin, self.MAP_SIZE))
         return sight
 
-    def solve_move(self, test):
+    def solve_move(self, test:int)->list[dict]:
         start_location = self.figures.index('A')
 
         raw_actions, aoes, destinations, focuses, sightlines, debug_lines = self.calculate_monster_move()
@@ -1872,13 +1875,14 @@ class Scenario:
 
         return actions
 
-    def solve_reaches(self, viewpoints):
+    def solve_reaches(self, viewpoints:list[int])->list[list[tuple[int,int]]]:
         return [self.solve_reach(_) for _ in viewpoints]
 
-    def solve_sights(self, viewpoints):
+    def solve_sights(self, viewpoints:list[int])->list[list[tuple[int,int]]]:
+        p=[self.solve_sight(_) for _ in viewpoints]
         return [self.solve_sight(_) for _ in viewpoints]
 
-    def solve(self, solve_reach, solve_sight):
+    def solve(self, solve_reach:bool, solve_sight:bool)->tuple[list[dict],list[list[tuple[int,int]]]|None,list[list[tuple[int,int]]]|None]:
         actions = self.solve_move(False)
         reach = self.solve_reaches(_['move']
                                    for _ in actions) if solve_reach else None
@@ -1886,10 +1890,10 @@ class Scenario:
                                   for _ in actions) if solve_sight else None
         return actions, reach, sight
 
-    def debug_plot_line(self, color, line):
-        self.debug_lines.add((color, (scale_vector(
-            DEBUG_PLOT_SCALE, line[0]), scale_vector(DEBUG_PLOT_SCALE, line[1]))))
+    # def debug_plot_line(self, color, line):
+    #     self.debug_lines.add((color, (scale_vector(
+    #         DEBUG_PLOT_SCALE, line[0]), scale_vector(DEBUG_PLOT_SCALE, line[1]))))
 
-    def debug_plot_point(self, color, point):
-        self.debug_lines.add(
-            (color, (scale_vector(DEBUG_PLOT_SCALE, point), )))
+    # def debug_plot_point(self, color, point):
+    #     self.debug_lines.add(
+    #         (color, (scale_vector(DEBUG_PLOT_SCALE, point), )))
