@@ -20,7 +20,7 @@ class Scenario:
     path_cache = [{}, {}, {}, {}]
     debug_lines = set()
     test_switch = False
-    reduced = False    
+    reduced = False
     ACTION_MOVE = 0
     ACTION_RANGE = 0
     ACTION_TARGET = 1
@@ -43,7 +43,7 @@ class Scenario:
     aoe = [False] * 0
     AOE_CENTER = (0 - 1) // 2
 
-    def __init__(self, width:int, height:int, aoe_width:int, aoe_height:int):
+    def __init__(self, width: int, height: int, aoe_width: int, aoe_height: int):
         self.correct_answer = None
         self.valid = True
         self.logging = False
@@ -54,7 +54,7 @@ class Scenario:
         self.debug_lines = set()
         self.test_switch = False
         self.reduced = False
-        
+
         self.MAP_WIDTH = width
         self.MAP_HEIGHT = height
         self.MAP_SIZE = self.MAP_WIDTH * self.MAP_HEIGHT
@@ -63,11 +63,11 @@ class Scenario:
         self.contents = [' '] * self.MAP_SIZE
         self.figures = [' '] * self.MAP_SIZE
         self.initiatives = [0] * self.MAP_SIZE
-        
+
         self.AOE_WIDTH = aoe_width
         self.AOE_HEIGHT = aoe_height
         self.AOE_SIZE = self.AOE_WIDTH * self.AOE_HEIGHT
-        self.AOE_CENTER = (self.AOE_SIZE - 1)// 2
+        self.AOE_CENTER = (self.AOE_SIZE - 1) // 2
         self.aoe = [False] * self.AOE_SIZE
 
         self.message = ''
@@ -83,7 +83,6 @@ class Scenario:
             exit()
         if int(self.AOE_CENTER) - self.AOE_CENTER != 0:
             exit('aoe has no center')
-
 
     def reduce_map(self):
         self.reduced = True
@@ -222,7 +221,7 @@ class Scenario:
 
         # self.prepare_map()
 
-    def prepare_map(self)->None:
+    def prepare_map(self) -> None:
         self.setup_vertices_list()
         self.setup_neighbors_mapping()
 
@@ -252,13 +251,13 @@ class Scenario:
             self.extra_walls[location] = [self.walls[location][_]
                                           and not contents_walls[location][_] for _ in range(6)]
 
-    def set_rules(self, rules:int)->None:
+    def set_rules(self, rules: int) -> None:
         self.FROST_RULES = rules == 0
         self.GLOOM_RULES = rules == 1
         self.JOTL_RULES = rules == 2
         self.set_rules_flags()
 
-    def set_rules_flags(self)->None:
+    def set_rules_flags(self) -> None:
         # RULE_VERTEX_LOS:                LOS is only checked between vertices
         # RULE_JUMP_DIFFICULT_TERRAIN:    difficult terrain effects the last hex of a jump move
         # RULE_PROXIMITY_FOCUS:           proximity is ignored when determining moster focus
@@ -275,7 +274,7 @@ class Scenario:
             self.RULE_DIFFICULT_TERRAIN_JUMP = False
             self.RULE_PROXIMITY_FOCUS = True
 
-    def unpack_scenario(self, packed_scenario:dict)->None:
+    def unpack_scenario(self, packed_scenario: dict) -> None:
         self.ACTION_MOVE = int(packed_scenario['move'])
         self.ACTION_RANGE = int(packed_scenario['range'])
         self.ACTION_TARGET = int(packed_scenario['target'])
@@ -338,7 +337,7 @@ class Scenario:
         self.prepare_map()
 
     # TODO: clean
-    def unpack_scenario_forviews(self, packed_scenario:dict)->None:
+    def unpack_scenario_forviews(self, packed_scenario: dict) -> None:
         self.ACTION_RANGE = int(packed_scenario['range'])
         self.ACTION_TARGET = int(packed_scenario['target'])
 
@@ -361,42 +360,43 @@ class Scenario:
 
         self.prepare_map()
 
-    def can_end_move_on_standard(self, location:int)->bool:
+    def can_end_move_on_standard(self, location: int) -> bool:
         return self.contents[location] in [' ', 'T', 'H', 'D'] and self.figures[location] in [' ', 'A']
 
-    def can_end_move_on_flying(self,location:int)->bool:
+    def can_end_move_on_flying(self, location: int) -> bool:
         return self.contents[location] in [' ', 'T', 'O', 'H', 'D'] and self.figures[location] in [' ', 'A']
 
-    def can_travel_through_standard(self,location:int)->bool:
+    def can_travel_through_standard(self, location: int) -> bool:
         return self.contents[location] in [' ', 'T', 'H', 'D'] and self.figures[location] != 'C'
 
-    def can_travel_through_flying(self, location:int)->bool:
+    def can_travel_through_flying(self, location: int) -> bool:
         return self.contents[location] in [' ', 'T', 'H', 'D', 'O']
 
-    def is_trap_standard(self, location:int)->bool:
+    def is_trap_standard(self, location: int) -> bool:
         return self.contents[location] in ['T', 'H']
+
     def is_trap_flying(self, location):
         return False
 
-    def measure_proximity_through(self,  location:int)->bool:
+    def measure_proximity_through(self,  location: int) -> bool:
         return self.contents[location] != 'X'
 
-    def blocks_los(self,  location:int)->bool:
+    def blocks_los(self,  location: int) -> bool:
         return self.contents[location] == 'X'
 
-    def additional_path_cost(self, location:int)->int:
+    def additional_path_cost(self, location: int) -> int:
         return int(self.contents[location] == 'D')
 
-    def setup_vertices_list(self)->None:
+    def setup_vertices_list(self) -> None:
         def calculate_vertex(location, vertex):
             hex_row = location % self.MAP_HEIGHT
-            hex_column = location// self.MAP_HEIGHT
+            hex_column = location // self.MAP_HEIGHT
 
             vertex_column = hex_column + [1, 1, 0, 0, 0, 1][vertex]
             vertex_row = 2 * hex_row + \
                 [1, 2, 2, 1, 0, 0][vertex] + (hex_column % 2)
 
-            x = 3 * (vertex_column// 2)
+            x = 3 * (vertex_column // 2)
             if vertex_row % 2 == 0:
                 x += 0.5 + vertex_column % 2
             else:
@@ -412,13 +412,13 @@ class Scenario:
                 self.vertices[location * 6 +
                               vertex] = calculate_vertex(location, vertex)
 
-    def get_vertex(self, location:int, vertex:int)->tuple[float,float]:
+    def get_vertex(self, location: int, vertex: int) -> tuple[float, float]:
         return self.vertices[location * 6 + vertex]
 
-    def setup_neighbors_mapping(self)->None:
+    def setup_neighbors_mapping(self) -> None:
         def get_neighbors(location):
             row = location % self.MAP_HEIGHT
-            column = location// self.MAP_HEIGHT
+            column = location // self.MAP_HEIGHT
 
             bottom_edge = row == 0
             top_edge = row == self.MAP_HEIGHT - 1
@@ -454,20 +454,20 @@ class Scenario:
             for _ in range(self.MAP_SIZE)
         }
 
-    def is_adjacent(self, location_a:int, location_b:int)->bool:
+    def is_adjacent(self, location_a: int, location_b: int) -> bool:
         if location_b not in self.neighbors[location_a]:
             return False
         distances = self.find_proximity_distances(location_a)
         return distances[location_b] == 1
 
-    def apply_rotated_aoe_offset(self, center:int, offset:tuple[int,int,int], rotation:int)->int|None:
+    def apply_rotated_aoe_offset(self, center: int, offset: tuple[int, int, int], rotation: int) -> int | None:
         offset = rotate_offset(offset, rotation)
         return apply_offset(center, offset, self.MAP_HEIGHT, self.MAP_SIZE)
 
-    def apply_aoe_offset(self, center:int, offset:tuple[int,int,int]):
+    def apply_aoe_offset(self, center: int, offset: tuple[int, int, int]):
         return apply_offset(center, offset, self.MAP_HEIGHT, self.MAP_SIZE)
 
-    def calculate_bounds(self, location_a:int, location_b:int)-> tuple[int,int,int,int]:
+    def calculate_bounds(self, location_a: int, location_b: int) -> tuple[int, int, int, int]:
         column_a = location_a // self.MAP_HEIGHT
         column_b = location_b // self.MAP_HEIGHT
         if column_a < column_b:
@@ -488,7 +488,7 @@ class Scenario:
 
         return (row_lower, column_lower, row_upper, column_upper)
 
-    def occluders_in(self, bounds:tuple[int,int,int,int])->Iterable[tuple[tuple[float,float],tuple[float,float]]]:
+    def occluders_in(self, bounds: tuple[int, int, int, int]) -> Iterable[tuple[tuple[float, float], tuple[float, float]]]:
         for column in range(bounds[1], bounds[3]):
             column_location = column * self.MAP_HEIGHT
             for row in range(bounds[0], bounds[2]):
@@ -508,7 +508,7 @@ class Scenario:
                             location, (edge + 1) % 6)
                         yield (wall_vertex_a, wall_vertex_b)
 
-    def walls_in(self, bounds:tuple[int,int,int,int])->Iterable[tuple[int,int]]:
+    def walls_in(self, bounds: tuple[int, int, int, int]) -> Iterable[tuple[int, int]]:
         for column in range(bounds[1], bounds[3]):
             column_location = column * self.MAP_HEIGHT
             for row in range(bounds[0], bounds[2]):
@@ -525,7 +525,7 @@ class Scenario:
                 if encoded_wall != 0:
                     yield location, encoded_wall
 
-    def test_line(self, bounds:tuple[int,int,int,int], vertex_position_a:tuple[float,float], vertex_position_b:tuple[float,float])-> bool:
+    def test_line(self, bounds: tuple[int, int, int, int], vertex_position_a: tuple[float, float], vertex_position_b: tuple[float, float]) -> bool:
         if vertex_position_a == vertex_position_b:
             return True
         for occluder in self.occluders_in(bounds):
@@ -533,7 +533,7 @@ class Scenario:
                 return False
         return True
 
-    def determine_los_cross_section_edge(self, location_a:int, location_b:int)->int:
+    def determine_los_cross_section_edge(self, location_a: int, location_b: int) -> int:
         hex_to_hex_direction = direction(
             (self.get_vertex(location_a, 0), self.get_vertex(location_b, 0)))
         dot_with_up = hex_to_hex_direction[1]
@@ -554,11 +554,11 @@ class Scenario:
                 else:
                     return 4
 
-    def calculate_occluder_mapping_set(self, location_a:int, location_b:int)->tuple[
-        list[tuple[float,float,float]],
-        list[tuple[tuple[float,float,float],int]],
-        list[tuple[tuple[float,float,float],int]],
-        list[tuple[tuple[float,float,float],tuple[float,float,float],int ,int]]] | None:
+    def calculate_occluder_mapping_set(self, location_a: int, location_b: int) -> tuple[
+            list[tuple[float, float, float]],
+            list[tuple[tuple[float, float, float], int]],
+            list[tuple[tuple[float, float, float], int]],
+            list[tuple[tuple[float, float, float], tuple[float, float, float], int, int]]] | None:
         # determine the appropiate cross section to represent the hex volumes
         cross_section_edge = self.determine_los_cross_section_edge(
             location_a, location_b)
@@ -794,7 +794,7 @@ class Scenario:
     #     cache_key.sort()
     #     return tuple(cache_key)
 
-    def test_full_hex_los_between_locations(self, location_a:int, location_b:int)->bool:
+    def test_full_hex_los_between_locations(self, location_a: int, location_b: int) -> bool:
         # handle simple case of neighboring locations
         if location_b in self.neighbors[location_a]:
             edge = self.neighbors[location_a].index(location_b)
@@ -849,7 +849,7 @@ class Scenario:
 
         return False
 
-    def find_best_full_hex_los_sightline(self, location_a:int, location_b:int)->tuple[float,float]:
+    def find_best_full_hex_los_sightline(self, location_a: int, location_b: int) -> tuple[float, float]:
         # Find the unblocked region in the visibility square with the largest area.
         # Place the sightline at its center of mass.
 
@@ -941,7 +941,7 @@ class Scenario:
             return True
         return False
 
-    def test_los_between_locations(self, location_a:int, location_b:int)->bool:
+    def test_los_between_locations(self, location_a: int, location_b: int) -> bool:
         cache_key = visibility_cache_key(location_a, location_b)
         if cache_key in self.visibility_cache:
             return self.visibility_cache[cache_key]
@@ -956,7 +956,7 @@ class Scenario:
         self.visibility_cache[cache_key] = result
         return result
 
-    def test_vertex_los_between_locations(self, location_a:int, location_b:int)->bool:
+    def test_vertex_los_between_locations(self, location_a: int, location_b: int) -> bool:
         bounds = self.calculate_bounds(location_a, location_b)
 
         for vertex_a in range(6):
@@ -974,7 +974,7 @@ class Scenario:
 
         return False
 
-    def find_shortest_sightline(self, location_a:int, location_b:int)->tuple[tuple[float,float],tuple[float,float]]:
+    def find_shortest_sightline(self, location_a: int, location_b: int) -> tuple[tuple[float, float], tuple[float, float]]:
         if not self.RULE_VERTEX_LOS:
             return self.find_best_full_hex_los_sightline(location_a, location_b)
 
@@ -1036,16 +1036,16 @@ class Scenario:
     #     point_b = self.pack_point(location_b, vertex_b)
     #     return point_a * self.MAP_VERTEX_COUNT + point_b
 
-    def dereduce_location(self, location:int)->int:
+    def dereduce_location(self, location: int) -> int:
         if not self.reduced:
             return location
-        column = location// self.MAP_HEIGHT
+        column = location // self.MAP_HEIGHT
         row = location % self.MAP_HEIGHT
         column += self.REDUCE_COLUMN
         row += self.REDUCE_ROW
         return row + column * self.ORIGINAL_MAP_HEIGHT
 
-    def find_path_distances(self, start:int, traversal_test:Callable[[int],bool])->tuple[int,int]:
+    def find_path_distances(self, start: int, traversal_test: Callable[[int], bool]) -> tuple[int, int]:
         cache_key = (start, traversal_test)
         if cache_key in self.path_cache[0]:
             return self.path_cache[0][cache_key]
@@ -1088,7 +1088,7 @@ class Scenario:
         self.path_cache[0][cache_key] = (distances, traps)
         return distances, traps
 
-    def find_path_distances_reverse(self, destination:int, traversal_test:Callable[[int],bool])-> tuple[list[int],list[int]]:
+    def find_path_distances_reverse(self, destination: int, traversal_test: Callable[[int], bool]) -> tuple[list[int], list[int]]:
         # reverse in that we find the path distance to the destination from every location
         # path distance is symetric except for difficult terrain and traps
         # we correct for the asymetry of starting vs ending on difficult terrain
@@ -1119,7 +1119,7 @@ class Scenario:
         self.path_cache[1][cache_key] = (distances, traps)
         return distances, traps
 
-    def find_proximity_distances(self, start:int)-> list[int]:
+    def find_proximity_distances(self, start: int) -> list[int]:
         cache_key = (start)
         if cache_key in self.path_cache[2]:
             return self.path_cache[2][cache_key]
@@ -1148,7 +1148,7 @@ class Scenario:
         self.path_cache[2][cache_key] = distances
         return distances
 
-    def find_distances(self, start:int)->list[int]:
+    def find_distances(self, start: int) -> list[int]:
         cache_key = (start)
         if cache_key in self.path_cache[3]:
             return self.path_cache[3][cache_key]
@@ -1173,7 +1173,7 @@ class Scenario:
         self.path_cache[3][cache_key] = distances
         return distances
 
-    def calculate_monster_move(self)->tuple[set,dict,dict,dict,dict,dict]:
+    def calculate_monster_move(self) -> tuple[set, dict, dict, dict, dict, dict]:
         if self.ACTION_RANGE == 0 or self.ACTION_TARGET == 0:
             ATTACK_RANGE = 1
             SUSCEPTIBLE_TO_DISADVANTAGE = False
@@ -1285,7 +1285,7 @@ class Scenario:
             PRECALC_GRID_HEIGHT = 21
             PRECALC_GRID_WIDTH = 21
             PRECALC_GRID_SIZE = PRECALC_GRID_HEIGHT * PRECALC_GRID_WIDTH
-            PRECALC_GRID_CENTER = (PRECALC_GRID_SIZE - 1)// 2
+            PRECALC_GRID_CENTER = (PRECALC_GRID_SIZE - 1) // 2
 
             aoe_pattern_set = set()
             for aoe_pin in aoe:
@@ -1790,7 +1790,7 @@ class Scenario:
 
         return actions, aoes, destinations, focus_map, sightlines, debug_lines
 
-    def solve_reach(self, monster:int)->list[tuple[int,int]]:
+    def solve_reach(self, monster: int) -> list[tuple[int, int]]:
         if self.ACTION_TARGET == 0:
             return []
         if self.ACTION_RANGE == 0:
@@ -1819,7 +1819,7 @@ class Scenario:
             reach.append((run_begin, self.MAP_SIZE))
         return reach
 
-    def solve_sight(self, monster:int)->list[tuple[int,int]]:
+    def solve_sight(self, monster: int) -> list[tuple[int, int]]:
         sight = []
         run_begin = None
         for location in range(self.MAP_SIZE):
@@ -1838,7 +1838,7 @@ class Scenario:
             sight.append((run_begin, self.MAP_SIZE))
         return sight
 
-    def solve_move(self, test:int)->list[dict]:
+    def solve_move(self, test: int) -> list[dict]:
         start_location = self.figures.index('A')
 
         raw_actions, aoes, destinations, focuses, sightlines, debug_lines = self.calculate_monster_move()
@@ -1875,14 +1875,14 @@ class Scenario:
 
         return actions
 
-    def solve_reaches(self, viewpoints:list[int])->list[list[tuple[int,int]]]:
+    def solve_reaches(self, viewpoints: list[int]) -> list[list[tuple[int, int]]]:
         return [self.solve_reach(_) for _ in viewpoints]
 
-    def solve_sights(self, viewpoints:list[int])->list[list[tuple[int,int]]]:
-        p=[self.solve_sight(_) for _ in viewpoints]
+    def solve_sights(self, viewpoints: list[int]) -> list[list[tuple[int, int]]]:
+        p = [self.solve_sight(_) for _ in viewpoints]
         return [self.solve_sight(_) for _ in viewpoints]
 
-    def solve(self, solve_reach:bool, solve_sight:bool)->tuple[list[dict],list[list[tuple[int,int]]]|None,list[list[tuple[int,int]]]|None]:
+    def solve(self, solve_reach: bool, solve_sight: bool) -> tuple[list[dict], list[list[tuple[int, int]]] | None, list[list[tuple[int, int]]] | None]:
         actions = self.solve_move(False)
         reach = self.solve_reaches(_['move']
                                    for _ in actions) if solve_reach else None

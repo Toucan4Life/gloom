@@ -18,7 +18,7 @@ def debug(expression):
     print('%s = %s' % (expression, r))
 
 
-def get_offset(center:int, location:int, grid_height:int)->tuple[int,int,int]:
+def get_offset(center: int, location: int, grid_height: int) -> tuple[int, int, int]:
     location_row = location % grid_height
     location_column = location // grid_height
     center_row = center % grid_height
@@ -37,9 +37,9 @@ def get_offset(center:int, location:int, grid_height:int)->tuple[int,int,int]:
     return (x, y, z)
 
 
-def apply_offset(center:int, offset:tuple[int,int,int], grid_height:int, grid_size:int)-> int | None:
+def apply_offset(center: int, offset: tuple[int, int, int], grid_height: int, grid_size: int) -> int | None:
     location = center
-    column =center // grid_height
+    column = center // grid_height
 
     column_delta = offset[1] + offset[2]
 
@@ -61,7 +61,7 @@ def apply_offset(center:int, offset:tuple[int,int,int], grid_height:int, grid_si
     return location
 
 
-def rotate_offset(offset:tuple[int,int,int], rotation:int)-> tuple[int,int,int]:
+def rotate_offset(offset: tuple[int, int, int], rotation: int) -> tuple[int, int, int]:
     # rotations 6 through 11 are mirrored
     if rotation < 6:
         offsetRot = (offset[0], offset[1], offset[2], 0, 0, 0)
@@ -71,7 +71,6 @@ def rotate_offset(offset:tuple[int,int,int], rotation:int)-> tuple[int,int,int]:
 
     offsetRot = offsetRot[rotation:] + offsetRot[:rotation]
 
-
     return (
         offsetRot[0] - offsetRot[3],
         offsetRot[1] - offsetRot[4],
@@ -79,7 +78,7 @@ def rotate_offset(offset:tuple[int,int,int], rotation:int)-> tuple[int,int,int]:
     )
 
 
-def pin_offset(offset:list[int], pin:list[int]) -> tuple[int,int,int]:
+def pin_offset(offset: list[int], pin: list[int]) -> tuple[int, int, int]:
     return (
         offset[0] - pin[0],
         offset[1] - pin[1],
@@ -87,7 +86,7 @@ def pin_offset(offset:list[int], pin:list[int]) -> tuple[int,int,int]:
     )
 
 
-def lengthen_line(line : tuple[tuple[float, float],tuple[float, float]]) -> tuple[tuple[float, float],tuple[float, float]]:
+def lengthen_line(line: tuple[tuple[float, float], tuple[float, float]]) -> tuple[tuple[float, float], tuple[float, float]]:
     delta = (line[1][0] - line[0][0], line[1][1] - line[0][1])
     length = math.sqrt(delta[0] * delta[0] + delta[1] * delta[1])
     normal = (old_div(delta[0], length), old_div(delta[1], length))
@@ -98,35 +97,37 @@ def lengthen_line(line : tuple[tuple[float, float],tuple[float, float]]) -> tupl
     )
 
 
-def lerp(value_a : float, value_b:float, factor:float) -> float:
+def lerp(value_a: float, value_b: float, factor: float) -> float:
     return value_a + (value_b - value_a) * factor
 
 
-def lerp_along_line(line:tuple[tuple[float, float],tuple[float, float]], factor:float) -> tuple[float, float]:
+def lerp_along_line(line: tuple[tuple[float, float], tuple[float, float]], factor: float) -> tuple[float, float]:
     return (lerp(line[0][0], line[1][0], factor), lerp(line[0][1], line[1][1], factor))
 
 
-def dot_product(vector_a:tuple[float, float], vector_b:tuple[float, float]) -> float:
+def dot_product(vector_a: tuple[float, float], vector_b: tuple[float, float]) -> float:
     return vector_a[0] * vector_b[0] + vector_a[1] * vector_b[1]
 
 
-def cross_product(vector_a:tuple[float, float], vector_b:tuple[float, float])-> float:
+def cross_product(vector_a: tuple[float, float], vector_b: tuple[float, float]) -> float:
     return vector_a[0] * vector_b[1] - vector_a[1] * vector_b[0]
 
 
-def direction(line:tuple[tuple[float, float],tuple[float, float]]) -> tuple[float, float]:
+def direction(line: tuple[tuple[float, float], tuple[float, float]]) -> tuple[float, float]:
     delta = (line[1][0] - line[0][0], line[1][1] - line[0][1])
     length = math.sqrt(delta[0] * delta[0] + delta[1] * delta[1])
     return (delta[0] / length, delta[1] / length)
 
-def scale_vector(scalar :float, vector : tuple[float, float]) -> tuple[float, float]:
+
+def scale_vector(scalar: float, vector: tuple[float, float]) -> tuple[float, float]:
     return (scalar * vector[0], scalar * vector[1])
 
 
 def add_vector(vector_a: tuple[float, float], vector_b: tuple[float, float]) -> tuple[float, float]:
     return (vector_a[0] + vector_b[0], vector_a[1] + vector_b[1])
 
-def line_line_intersection(line_a : tuple[tuple[float, float],tuple[float, float]], line_b: tuple[tuple[float, float],tuple[float, float]]) -> bool:
+
+def line_line_intersection(line_a: tuple[tuple[float, float], tuple[float, float]], line_b: tuple[tuple[float, float], tuple[float, float]]) -> bool:
     line_a = lengthen_line(line_a)
     line_b = lengthen_line(line_b)
 
@@ -169,7 +170,7 @@ def line_line_intersection(line_a : tuple[tuple[float, float],tuple[float, float
     return 0 <= r <= 1.0 and 0 <= s <= 1
 
 
-def line_hex_edge_intersection(line_a : tuple[tuple[float, float],tuple[float, float]], line_b : tuple[tuple[float, float],tuple[float, float]]) -> float | None:
+def line_hex_edge_intersection(line_a: tuple[tuple[float, float], tuple[float, float]], line_b: tuple[tuple[float, float], tuple[float, float]]) -> float | None:
     line_a = lengthen_line(line_a)
     line_b = lengthen_line(line_b)
 
@@ -192,7 +193,7 @@ def line_hex_edge_intersection(line_a : tuple[tuple[float, float],tuple[float, f
     return s if 0 <= s <= 1.0 else None
 
 
-def occluder_target_intersection(line_a:tuple[tuple[float, float],tuple[float, float]], line_b:tuple[tuple[float, float],tuple[float, float]]):
+def occluder_target_intersection(line_a: tuple[tuple[float, float], tuple[float, float]], line_b: tuple[tuple[float, float], tuple[float, float]]):
     a = line_a[0]
     b = line_a[1]
     c = line_b[0]
@@ -205,29 +206,29 @@ def occluder_target_intersection(line_a:tuple[tuple[float, float],tuple[float, f
     return numerator2 / denominator
 
 
-def visibility_cache_key(location_a:int, location_b:int) -> tuple[int,int]:
+def visibility_cache_key(location_a: int, location_b: int) -> tuple[int, int]:
     if location_a < location_b:
         return (location_a, location_b)
     else:
         return (location_b, location_a)
 
 
-def calculate_distance(vertex_position_a:tuple[float,float], vertex_position_b:tuple[float,float])-> float:
+def calculate_distance(vertex_position_a: tuple[float, float], vertex_position_b: tuple[float, float]) -> float:
     delta_0 = vertex_position_b[0] - vertex_position_a[0]
     delta_1 = vertex_position_b[1] - vertex_position_a[1]
     distance = math.sqrt(delta_0 * delta_0 + delta_1 * delta_1)
     return distance
 
 
-def within_bound(location:tuple[float,float], line:tuple[tuple[float, float],tuple[float, float]], line_direction:tuple[float,float])-> bool:
-    if location in ( line[0] , line[1]):
+def within_bound(location: tuple[float, float], line: tuple[tuple[float, float], tuple[float, float]], line_direction: tuple[float, float]) -> bool:
+    if location in (line[0], line[1]):
         return False
     bound_dir = line_direction
     location_dir = direction((line[0], location))
     return cross_product(bound_dir, location_dir) < -EPSILON
 
 
-def occluder_less_than(xxx_todo_changeme:tuple[float,float], xxx_todo_changeme1:tuple[float,float])-> bool:
+def occluder_less_than(xxx_todo_changeme: tuple[float, float], xxx_todo_changeme1: tuple[float, float]) -> bool:
     (value_a, slope_a) = xxx_todo_changeme
     (value_b, slope_b) = xxx_todo_changeme1
     if abs(value_a - value_b) < EPSILON:
@@ -236,7 +237,7 @@ def occluder_less_than(xxx_todo_changeme:tuple[float,float], xxx_todo_changeme1:
         return value_a < value_b
 
 
-def occluder_greater_than(xxx_todo_changeme2:tuple[float,float], xxx_todo_changeme3:tuple[float,float]) -> bool:
+def occluder_greater_than(xxx_todo_changeme2: tuple[float, float], xxx_todo_changeme3: tuple[float, float]) -> bool:
     (value_a, slope_a) = xxx_todo_changeme2
     (value_b, slope_b) = xxx_todo_changeme3
     if abs(value_a - value_b) < EPSILON:
@@ -245,12 +246,12 @@ def occluder_greater_than(xxx_todo_changeme2:tuple[float,float], xxx_todo_change
         return value_a > value_b
 
 
-def get_occluder_value_at(xxx_todo_changeme4:tuple[float,float,float], at:float)->tuple[float,float]:
+def get_occluder_value_at(xxx_todo_changeme4: tuple[float, float, float], at: float) -> tuple[float, float]:
     (value_at_zero, value_at_one, slope) = xxx_todo_changeme4
     return lerp(value_at_zero, value_at_one, at), slope
 
 
-def occluder_intersections(occluder_mappings: tuple[tuple[float,float,float],tuple[float,float,float]]) -> Iterable[float]:
+def occluder_intersections(occluder_mappings: tuple[tuple[float, float, float], tuple[float, float, float]]) -> Iterable[float]:
     yield 0.0
     for index, occluder_a in enumerate(occluder_mappings):
         for occluder_b in occluder_mappings[:index]:
@@ -262,11 +263,11 @@ def occluder_intersections(occluder_mappings: tuple[tuple[float,float,float],tup
                 yield t
 
 
-def intersection_close(value_a : float, value_b : float) -> bool:
+def intersection_close(value_a: float, value_b: float) -> bool:
     return abs(value_a - value_b) < EPSILON
 
 
-def find_previous_intersection(t:float, intersections:list[tuple[float,int,float]])->int:
+def find_previous_intersection(t: float, intersections: list[tuple[float, int, float]]) -> int:
     for index, intersection in enumerate(intersections):
         if intersection_close(t, intersection[0]):
             return index
@@ -275,7 +276,7 @@ def find_previous_intersection(t:float, intersections:list[tuple[float,int,float
     return -1
 
 
-def find_intersection_at(t:float, intersections:list[tuple[float,int,float]])->int:
+def find_intersection_at(t: float, intersections: list[tuple[float, int, float]]) -> int:
     for index, intersection in enumerate(intersections):
         if intersection_close(t, intersection[0]):
             return index
@@ -283,13 +284,13 @@ def find_intersection_at(t:float, intersections:list[tuple[float,int,float]])->i
 
 
 def get_visibility_windows_at(
-    x:float,
-    occluder_mapping_set:tuple[
-        list[tuple[float,float,float]],
-        list[tuple[tuple[float,float,float],int]],
-        list[tuple[tuple[float,float,float],int]],
-        list[tuple[tuple[float,float,float],tuple[float,float,float],int ,int]]],
-     test_visibility:bool) -> bool | list[tuple[float, float, float, int]]:
+        x: float,
+        occluder_mapping_set: tuple[
+            list[tuple[float, float, float]],
+            list[tuple[tuple[float, float, float], int]],
+            list[tuple[tuple[float, float, float], int]],
+            list[tuple[tuple[float, float, float], tuple[float, float, float], int, int]]],
+        test_visibility: bool) -> bool | list[tuple[float, float, float, int]]:
     (
         occluder_mappings,
         occluder_mappings_below,
@@ -390,7 +391,7 @@ def get_visibility_windows_at(
     return windows
 
 
-def get_line_intersections(line_index:int, occluder_mappings:list[tuple[float,float,float]]) -> list[tuple[float,int,float]]:
+def get_line_intersections(line_index: int, occluder_mappings: list[tuple[float, float, float]]) -> list[tuple[float, int, float]]:
     left_wall_index = len(occluder_mappings)
     if line_index < left_wall_index:
         occluder_a = occluder_mappings[line_index]
@@ -424,10 +425,10 @@ def find_intersection_exit(
     potential_exits: list[tuple[float, int, float]],
     lines: list[tuple[
         tuple[tuple[float, float], tuple[float, float]],
-        tuple[float, float]]])->tuple[tuple[float,int,float] ,bool ]:
+        tuple[float, float]]]) -> tuple[tuple[float, int, float], bool]:
 
     best_cross = 0.0
-    best_exit = (0.0,0,0.0)
+    best_exit = (0.0, 0, 0.0)
     best_exit_is_backwards = False
 
     current_line_direction = lines[occluder_index][1]
@@ -453,7 +454,7 @@ def find_intersection_exit(
     return best_exit, best_exit_is_backwards
 
 
-def calculate_polygon_properties(polygon : list[tuple[float,float]]) -> tuple [float, tuple[float, float]]:
+def calculate_polygon_properties(polygon: list[tuple[float, float]]) -> tuple[float, tuple[float, float]]:
     center_of_mass = (0, 0)
     area = 0.0
 
@@ -550,10 +551,10 @@ def calculate_polygon_properties(polygon : list[tuple[float,float]]) -> tuple [f
 
 
 def map_window_polygon(
-    window: tuple [float,float,float,int],
-    previous_starts: list[tuple[float,float]],
-    occluder_mappings:list[tuple[float,float,float]],
-    lines:list[tuple[
+    window: tuple[float, float, float, int],
+    previous_starts: list[tuple[float, float]],
+    occluder_mappings: list[tuple[float, float, float]],
+    lines: list[tuple[
         tuple[tuple[float, float], tuple[float, float]],
         tuple[float, float]]]):
     # build a polygon around the window
