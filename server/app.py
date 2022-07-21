@@ -25,7 +25,9 @@ client_local_storage_version = str(client_local_storage_version_major) + '.' + s
     client_local_storage_version_minor) + '.' + str(client_local_storage_version_build)
 
 # Routes
-
+@app.route('/isAlive')
+def isAlive():
+    return jsonify("ok")
 
 @app.route('/')
 @app.route('/<scenario>')

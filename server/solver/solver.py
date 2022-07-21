@@ -1879,7 +1879,6 @@ class Scenario:
         return [self.solve_reach(_) for _ in viewpoints]
 
     def solve_sights(self, viewpoints: list[int]) -> list[list[tuple[int, int]]]:
-        p = [self.solve_sight(_) for _ in viewpoints]
         return [self.solve_sight(_) for _ in viewpoints]
 
     def solve(self, solve_reach: bool, solve_sight: bool) -> tuple[list[dict], list[list[tuple[int, int]]] | None, list[list[tuple[int, int]]] | None]:
