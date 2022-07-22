@@ -30,21 +30,19 @@ def isAlive():
     return jsonify("ok")
 
 @app.route('/')
-@app.route('/<scenario>')
-def root(scenario=''):
+def root():
     return templates('index.html')
 
 
 @app.route('/los')
-@app.route('/los/<scenario>')
-def los(scenario=''):
+def los()->str:
     return templates('index.html', params={
         'los_mode': True,
     })
 
 
 @app.route('/templates/<filename>')
-def templates(filename, params={}):
+def templates(filename:str, params:dict[str,bool]={})->str:
     template_version = version
     if IsDebugEnv:
         template_version += '.' + str(time.time())
@@ -71,24 +69,52 @@ def solve():
     # todo: validate packed scenario format
     map_width = packed_scenario['width']
     map_height = packed_scenario['height']
-    scenario_id = packed_scenario['scenario_id']
-    solve_view = packed_scenario['solve_view']
 
     s = Scenario(map_width, map_height, 7, 7)
-    if IsDebugEnv:
-        s.logging = True
-        s.debug_visuals = True
+
     s.unpack_scenario(packed_scenario)
-    actions, reach, sight = s.solve(solve_view > 0, solve_view > 1)
+
+    raw_actions, aoes, destinations, focuses, sightlines, debug_lines = s.calculate_monster_move()
+
+    if IsDebugEnv:
+        start_location = s.figures.index('A')
+        print(f'{len(raw_actions)} option(s):')
+        for raw_action in raw_actions:
+            if raw_action[0] == start_location:
+                out = '- no movement'
+            else:
+                out = f'- move to {raw_action[0]}'
+            if raw_action[1:]:                
+                for attack in raw_action[1:]:
+                    out += f', attack {attack}'
+            print(out)
+
+    actions = [
+        {
+            'move': raw_action[0],
+            'attacks': list(raw_action[1:]),
+            'aoe': list(aoes[raw_action]),
+            'destinations': list(destinations[raw_action]),
+            'focuses': list(focuses[raw_action]),
+            'sightlines': list(sightlines[raw_action]),
+        }
+        for raw_action in raw_actions
+    ]
+
+    if IsDebugEnv:
+        for _, raw_action in enumerate(raw_actions):
+            actions[_]['debug_lines'] = list(debug_lines[raw_action])  
 
     solution = {
-        'scenario_id': scenario_id,
+        'scenario_id': packed_scenario['scenario_id'],
         'actions': actions,
     }
-    if reach:
-        solution['reach'] = reach
-    if sight:
-        solution['sight'] = sight
+    moves = list((raw_action[0] for raw_action in raw_actions))
+    solve_view = packed_scenario['solve_view']
+    if solve_view > 0:
+        solution['reach'] = s.solve_reaches(moves)
+    if solve_view > 1:
+        solution['sight'] = s.solve_sights(moves)
 
     # if IsDebugEnv:
     #   print(solution)
@@ -104,9 +130,8 @@ def views():
     # todo: validate packed scenario format
     map_width = packed_scenario['width']
     map_height = packed_scenario['height']
-    scenario_id = packed_scenario['scenario_id']
     viewpoints = packed_scenario['viewpoints']
-    solve_view = packed_scenario['solve_view']
+    
 
     s = Scenario(map_width, map_height, 7, 7)
     if IsDebugEnv:
@@ -115,8 +140,9 @@ def views():
     s.unpack_scenario_forviews(packed_scenario)
 
     solution = {
-        'scenario_id': scenario_id,
+        'scenario_id': packed_scenario['scenario_id'],
     }
+    solve_view = packed_scenario['solve_view']
     if solve_view > 0:
         solution['reach'] = s.solve_reaches(viewpoints)
     if solve_view > 1:

@@ -271,7 +271,7 @@ class Scenario:
             self.RULE_DIFFICULT_TERRAIN_JUMP = False
             self.RULE_PROXIMITY_FOCUS = True
 
-    def unpack_scenario(self, packed_scenario: dict) -> None:
+    def unpack_scenario(self, packed_scenario: dict[str,int]) -> None:
         self.ACTION_MOVE = int(packed_scenario['move'])
         self.ACTION_RANGE = int(packed_scenario['range'])
         self.ACTION_TARGET = int(packed_scenario['target'])
@@ -334,7 +334,7 @@ class Scenario:
         self.prepare_map()
 
     # TODO: clean
-    def unpack_scenario_forviews(self, packed_scenario: dict) -> None:
+    def unpack_scenario_forviews(self, packed_scenario: dict[str,int]) -> None:
         self.ACTION_RANGE = int(packed_scenario['range'])
         self.ACTION_TARGET = int(packed_scenario['target'])
 
@@ -1167,7 +1167,13 @@ class Scenario:
         self.path_cache[3][cache_key] = distances
         return distances
 
-    def calculate_monster_move(self) -> tuple[set, dict, dict, dict, dict, dict]:
+    def calculate_monster_move(self) -> tuple[
+        set[tuple[int,int,int]],
+        dict[tuple[int,int,int],tuple[int,int,int]],
+        dict[tuple[int,int,int],set[int]],
+        dict[tuple[int,int,int],set[int]],
+        dict[tuple[int,int,int],set[tuple[tuple[float,float],tuple[tuple[float,float]]]]],
+        dict[tuple[int,int,int],set[int]]]:
         map_debug_tags = [' '] * self.MAP_SIZE
         if self.ACTION_RANGE == 0 or self.ACTION_TARGET == 0:
             ATTACK_RANGE = 1
@@ -1833,57 +1839,11 @@ class Scenario:
             sight.append((run_begin, self.MAP_SIZE))
         return sight
 
-    def solve_move(self, test: int) -> list[dict]:
-        start_location = self.figures.index('A')
-
-        raw_actions, aoes, destinations, focuses, sightlines, debug_lines = self.calculate_monster_move()
-
-        def dereduce_locations(locations):
-            return [self.dereduce_location(_) for _ in locations]
-
-        actions = [
-            {
-                'move': self.dereduce_location(_[0]),
-                'attacks': dereduce_locations(_[1:]),
-                'aoe': dereduce_locations(aoes[_]),
-                'destinations': dereduce_locations(destinations[_]),
-                'focuses': dereduce_locations(focuses[_]),
-                'sightlines': list(sightlines[_]),
-            }
-            for _ in raw_actions
-        ]
-        if self.debug_visuals:
-            for _, raw_action in enumerate(raw_actions):
-                actions[_]['debug_lines'] = list(debug_lines[raw_action])
-
-        if self.logging:
-            print('%i option(s):' % len(actions))
-            for action in actions:
-                if action['move'] == self.dereduce_location(start_location):
-                    out = '- no movement'
-                else:
-                    out = '- move to %i' % action['move']
-                if action['attacks']:
-                    for attack in action['attacks']:
-                        out += ', attack %i' % attack
-                print(out)
-
-        return actions
-
     def solve_reaches(self, viewpoints: list[int]) -> list[list[tuple[int, int]]]:
         return [self.solve_reach(_) for _ in viewpoints]
 
     def solve_sights(self, viewpoints: list[int]) -> list[list[tuple[int, int]]]:
         return [self.solve_sight(_) for _ in viewpoints]
-
-    def solve(self, solve_reach: bool, solve_sight: bool) -> tuple[list[dict], list[list[tuple[int, int]]] | None, list[list[tuple[int, int]]] | None]:
-        actions = self.solve_move(False)
-
-        moves = list((int(_['move']) for _ in actions))
-                
-        reach = self.solve_reaches(moves) if solve_reach else None
-        sight = self.solve_sights(moves) if solve_sight else None
-        return actions, reach, sight
 
     # def debug_plot_line(self, color, line):
     #     self.debug_lines.add((color, (scale_vector(

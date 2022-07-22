@@ -1,7 +1,3 @@
-import sys
-import itertools
-import traceback
-import pprint
 from typing import Iterable
 from solver.settings import *
 from functools import cmp_to_key
@@ -10,12 +6,12 @@ COS_30 = math.cos(30.0 / 180.0 * math.pi)
 EPSILON = 1e-12
 
 
-def debug(expression):
-    # traceback.print_stack()
-    frame = sys._getframe(1)
-    a = eval(expression, frame.f_globals, frame.f_locals)
-    r = pprint.pformat(a)
-    print('%s = %s' % (expression, r))
+# def debug(expression):
+#     # traceback.print_stack()
+#     frame = sys._getframe(1)
+#     a = eval(expression, frame.f_globals, frame.f_locals)
+#     r = pprint.pformat(a)
+#     print('%s = %s' % (expression, r))
 
 
 def get_offset(center: int, location: int, grid_height: int) -> tuple[int, int, int]:
@@ -290,13 +286,10 @@ def get_visibility_windows_at(
             list[tuple[tuple[float, float, float], int]],
             list[tuple[tuple[float, float, float], int]],
             list[tuple[tuple[float, float, float], tuple[float, float, float], int, int]]]) -> list[tuple[float, float, float, int]]:
-    (
-        occluder_mappings,
-        occluder_mappings_below,
-        occluder_mappings_above,
-        occluder_mappings_internal
-    ) = occluder_mapping_set
 
+    occluder_mappings_below = occluder_mapping_set[1]
+    occluder_mappings_above = occluder_mapping_set[2]
+    occluder_mappings_internal = occluder_mapping_set[3]
     # is there a visibility window at this point
     # use slope to determine whether a visibility window is opening or closing
 
@@ -328,7 +321,8 @@ def get_visibility_windows_at(
         return [(x, window_bottom, window_top, window_top_mapping_index)]
 
     # build a sorted list of internal occluders in the window
-    internal_values = []
+    internal_values : list[tuple[float, float, int,float,float,int]]
+    internal_values=[]
     for internal_occluder in occluder_mappings_internal:
         value_a, slope_a = get_occluder_value_at(internal_occluder[0], x)
         value_b, slope_b = get_occluder_value_at(internal_occluder[1], x)
@@ -341,15 +335,16 @@ def get_visibility_windows_at(
             continue
         if occluder_less_than((value_b, slope_b), (window_bottom, window_bottom_slope)):
             continue
-        internal_values.append(
-            (value_a, slope_a, mapping_idx_a, value_b, slope_b, mapping_idx_b))
+        internal_values.append((value_a, slope_a, mapping_idx_a, value_b, slope_b, mapping_idx_b))
+        
     internal_values.sort(key=cmp_to_key(lambda occluder_a, occluder_b:
                                         -1 if occluder_less_than(
                                             (occluder_a[0], occluder_a[1]), (occluder_b[0], occluder_b[1])) else 1
                                         ))
 
     # loop over the internal occluders from lowest starting point to highest
-    windows = []
+    windows : list[tuple[float, float,float, int]]
+    windows=[]
     for internal_value in internal_values:
         if occluder_greater_than((internal_value[0], internal_value[1] - EPSILON), (window_bottom, window_bottom_slope)):
             # there is a visibility gap below the lowest internal occluder; record then find further windows
@@ -357,24 +352,23 @@ def get_visibility_windows_at(
                 (x, window_bottom, internal_value[0], internal_value[2]))
             if occluder_greater_than((internal_value[3], internal_value[4] + EPSILON), (window_top, window_top_slope)):
                 break
-            else:
-                window_bottom = internal_value[3]
-                window_bottom_slope = internal_value[4]
-                continue
+            window_bottom = internal_value[3]
+            window_bottom_slope = internal_value[4]
+            continue
 
-        elif occluder_greater_than((internal_value[3], internal_value[4] + EPSILON), (window_top, window_top_slope)):
+        if occluder_greater_than((internal_value[3], internal_value[4] + EPSILON), (window_top, window_top_slope)):
             # the internal occluder fully covers the visibilty window; there is no visibility at this intersection
             break
 
-        elif occluder_greater_than((internal_value[3], internal_value[4]), (window_bottom, window_bottom_slope)):
+        if occluder_greater_than((internal_value[3], internal_value[4]), (window_bottom, window_bottom_slope)):
             # this internal occluder partially covers the visibilty window; reduce the window
             window_bottom = internal_value[3]
             window_bottom_slope = internal_value[4]
             continue
 
-        else:
-            # this internal occluder is fully below the visibility window and has no impact
-            continue
+        
+        # this internal occluder is fully below the visibility window and has no impact
+        continue
 
     else:
         # the internal occluders did not cover the visibility window
@@ -547,10 +541,11 @@ def map_window_polygon(
     occluder_mappings: list[tuple[float, float, float]],
     lines: list[tuple[
         tuple[tuple[float, float], tuple[float, float]],
-        tuple[float, float]]]):
+        tuple[float, float]]])-> None|list[tuple[float,float]]:
+        
     # build a polygon around the window
-    polygon = []
-
+    polygon:list[tuple[float,float]]
+    polygon = []    
     # start at the top of the window and traverse the line counterclockwise
     # to the first vertex
     line_index = window[3]

@@ -1,7 +1,7 @@
 import pytest
 import json
 from app import app
-
+from flask import testing
 
 @pytest.fixture()
 def client():
@@ -13,12 +13,12 @@ def runner():
     return app.test_cli_runner()
 
 
-def test_isAlive(client):
+def test_isAlive(client:'testing.FlaskClient'):
     response = client.get("/isAlive")
     assert b"ok" in response.data
 
 
-def test_views(client):
+def test_views(client:'testing.FlaskClient'):
     response = client.put(
         "/views", data=b'{"scenario_id":18,"solve_view":2,"range":5,"target":2,"game_rules":0,"width":29,"height":25,"map":{"walls":[115],"thin_walls":[[43,1],[44,2],[68,0],[69,0],[69,2],[70,2],[94,0],[95,2]]},"viewpoints":[42,46,68,95,71]}')
     p = json.loads(response.data)["sight"]
@@ -28,7 +28,7 @@ def test_views(client):
     assert json.dumps(q) == '[[[13, 23], [37, 42], [43, 48], [63, 69], [70, 73], [88, 95], [96, 97], [114, 115], [116, 122], [139, 146], [165, 171]], [[17, 25], [41, 46], [47, 50], [67, 69], [70, 75], [95, 100], [120, 125], [144, 150], [170, 175]], [[14, 23], [38, 48], [63, 68], [88, 95], [114, 115], [116, 123], [139, 147], [165, 172], [190, 196]], [[17, 25], [43, 50], [70, 75], [96, 100], [120, 125], [143, 150], [168, 175], [193, 199], [219, 224]], [[17, 25], [41, 50], [70, 71], [72, 75], [95, 100], [120, 125], [144, 150], [169, 175], [194, 199]]]'
     assert r == 18
 
-def test_solve_thin_los(client):
+def test_solve_thin_los(client:'testing.FlaskClient'):
     response = client.put(
         "/solve", data=b'{"scenario_id":3,"solve_view":2,"active_figure":42,"move":0,"range":5,"target":2,"flying":1,"muddled":0,"game_rules":0,"aoe":[23,24,32],"width":29,"height":25,"map":{"characters":[145,169],"monsters":[42],"walls":[115],"obstacles":[96],"traps":[117],"hazardous":[40,216],"difficult":[168],"initiatives":[4,3],"thin_walls":[[43,1],[44,2],[68,0],[69,0],[69,2],[70,2],[94,0],[95,2]]}}')
     p = json.loads(response.data)["actions"]
@@ -41,7 +41,7 @@ def test_solve_thin_los(client):
     assert json.dumps(s) == '[[[0, 42], [43, 69], [70, 95], [96, 115], [116, 122], [123, 148], [149, 187], [188, 260], [261, 332], [333, 405], [406, 477], [478, 550], [551, 725]]]'
 
 
-def test_solve_sight(client):
+def test_solve_sight(client:'testing.FlaskClient'):
     response = client.put(
         "/solve", data=b'{"scenario_id":18,"solve_view":2,"active_figure":44,"move":2,"range":5,"target":2,"flying":1,"muddled":1,"game_rules":0,"aoe":[23,24,32],"width":29,"height":25,"map":{"characters":[145,169],"monsters":[44],"walls":[115],"obstacles":[96],"traps":[117],"hazardous":[40,191],"difficult":[168],"initiatives":[4,3],"thin_walls":[[43,1],[44,2],[68,0],[69,0],[69,2],[70,2],[94,0],[95,2]]}}')
     p = json.loads(response.data)["actions"]
