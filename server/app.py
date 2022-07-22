@@ -91,7 +91,7 @@ def solve():
         solution['sight'] = sight
 
     # if IsDebugEnv:
-    #   print solution
+    #   print(solution)
     return jsonify(solution)
 
 

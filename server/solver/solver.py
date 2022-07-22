@@ -9,7 +9,6 @@ from solver.utils import *
 from solver.settings import *
 from solver.print_map import *
 
-
 class Scenario:
     correct_answer = None
     valid = True
@@ -20,7 +19,6 @@ class Scenario:
     path_cache = [{}, {}, {}, {}]
     debug_lines = set()
     test_switch = False
-    reduced = False
     ACTION_MOVE = 0
     ACTION_RANGE = 0
     ACTION_TARGET = 1
@@ -53,7 +51,6 @@ class Scenario:
         self.path_cache = [{}, {}, {}, {}]
         self.debug_lines = set()
         self.test_switch = False
-        self.reduced = False
 
         self.MAP_WIDTH = width
         self.MAP_HEIGHT = height
@@ -84,14 +81,14 @@ class Scenario:
         if int(self.AOE_CENTER) - self.AOE_CENTER != 0:
             exit('aoe has no center')
 
-    def reduce_map(self):
-        self.reduced = True
+    #def reduce_map(self):
+        #self.reduced = True
         # print self.effective_walls
         # if hasattr( self, 'effective_walls' ):
         #   exit(-1)
 
         # TODO: currently not used
-        assert False
+        #assert False
 
         # # TODO: make sure we don't prepare twice
 
@@ -225,8 +222,8 @@ class Scenario:
         self.setup_vertices_list()
         self.setup_neighbors_mapping()
 
-        contents_walls = [None] * self.MAP_SIZE
-        self.effective_walls = [0] * self.MAP_SIZE
+        contents_walls = [[False] *6]* self.MAP_SIZE
+        self.effective_walls = [[False] *6]* self.MAP_SIZE
         for location in range(self.MAP_SIZE):
             if self.contents[location] == 'X':
                 contents_walls[location] = [True] * 6
@@ -246,7 +243,7 @@ class Scenario:
                     if contents_walls[location][edge]:
                         contents_walls[neighbor][neighbor_edge] = True
 
-        self.extra_walls = [0] * self.MAP_SIZE
+        self.extra_walls = [[False] *6]* self.MAP_SIZE
         for location in range(self.MAP_SIZE):
             self.extra_walls[location] = [self.walls[location][_]
                                           and not contents_walls[location][_] for _ in range(6)]
@@ -388,7 +385,7 @@ class Scenario:
         return int(self.contents[location] == 'D')
 
     def setup_vertices_list(self) -> None:
-        def calculate_vertex(location, vertex):
+        def calculate_vertex(location:int, vertex:int)->tuple[float,float]:
             hex_row = location % self.MAP_HEIGHT
             hex_column = location // self.MAP_HEIGHT
 
@@ -406,7 +403,7 @@ class Scenario:
 
             return (x, y)
 
-        self.vertices = [0] * (self.MAP_SIZE * 6)
+        self.vertices = ([(0.0, 0.0)] * (self.MAP_SIZE * 6))
         for location in range(self.MAP_SIZE):
             for vertex in range(6):
                 self.vertices[location * 6 +
@@ -827,7 +824,7 @@ class Scenario:
             return False
         # at each line intersection, determine whether there is a visibility window
         for x in occluder_intersections(occluder_mapping_set[0]):
-            if get_visibility_windows_at(x, occluder_mapping_set, True):
+            if len(get_visibility_windows_at(x, occluder_mapping_set))>0:
                 return True
 
         # this logic can be used to prove that both cross_sections are not needed with
@@ -849,7 +846,7 @@ class Scenario:
 
         return False
 
-    def find_best_full_hex_los_sightline(self, location_a: int, location_b: int) -> tuple[float, float]:
+    def find_best_full_hex_los_sightline(self, location_a: int, location_b: int) -> tuple[tuple[float, float],tuple[float, float]]:
         # Find the unblocked region in the visibility square with the largest area.
         # Place the sightline at its center of mass.
 
@@ -857,7 +854,7 @@ class Scenario:
         occluder_mapping_set = self.calculate_occluder_mapping_set(
             location_a, location_b)
         if occluder_mapping_set is None:
-            return (-1.0, -1.0)
+            return ((-1.0, -1.0),(-1.0, -1.0))
         occluder_mappings = occluder_mapping_set[0]
 
         # self.plot_debug_visibility_graph( occluder_mapping_set )
@@ -876,7 +873,7 @@ class Scenario:
         window_polygons = []
         polygon_starts = []
         for x in occluder_intersections(occluder_mappings):
-            for window in get_visibility_windows_at(x, occluder_mapping_set, False):
+            for window in get_visibility_windows_at(x, occluder_mapping_set):
                 # build a polygon around the open area
                 polygon = map_window_polygon(
                     window, polygon_starts, occluder_mappings, lines)
@@ -901,6 +898,7 @@ class Scenario:
         edge_target = (target_vertex_1, target_vertex_0)
         start_point = lerp_along_line(edge_source, x)
         end_point = lerp_along_line(edge_target, 1.0 - y)
+        sightline_start = (0.0 , 0.0)
         for edge in [cross_section_edge, (cross_section_edge + 1) % 6, (cross_section_edge + 2) % 6]:
             edge_line = (self.get_vertex(location_a, edge),
                          self.get_vertex(location_a, (edge + 1) % 6))
@@ -909,6 +907,7 @@ class Scenario:
             if factor is not None:
                 sightline_start = lerp_along_line(edge_line, factor)
                 break
+        sightline_end = (0.0 , 0.0)
         for edge in [(cross_section_edge + 3) % 6, (cross_section_edge + 4) % 6, (cross_section_edge + 5) % 6]:
             edge_line = (self.get_vertex(location_b, edge),
                          self.get_vertex(location_b, (edge + 1) % 6))
@@ -982,7 +981,7 @@ class Scenario:
 
         class v:
             shortest_length = float('inf')
-            shortest_line = None
+            shortest_line = ((-1.0, -1.0),(-1.0, -1.0))
 
         def consider_sightline(location_a, vertex_a, location_b, vertex_b):
             length = calculate_distance(vertex_position_a, vertex_position_b)
@@ -1037,15 +1036,10 @@ class Scenario:
     #     return point_a * self.MAP_VERTEX_COUNT + point_b
 
     def dereduce_location(self, location: int) -> int:
-        if not self.reduced:
-            return location
-        column = location // self.MAP_HEIGHT
-        row = location % self.MAP_HEIGHT
-        column += self.REDUCE_COLUMN
-        row += self.REDUCE_ROW
-        return row + column * self.ORIGINAL_MAP_HEIGHT
+        return location
+        
 
-    def find_path_distances(self, start: int, traversal_test: Callable[[int], bool]) -> tuple[int, int]:
+    def find_path_distances(self, start: int, traversal_test: Callable[['Scenario',int], bool]) -> tuple[list[int], list[int]]:
         cache_key = (start, traversal_test)
         if cache_key in self.path_cache[0]:
             return self.path_cache[0][cache_key]
@@ -1088,7 +1082,7 @@ class Scenario:
         self.path_cache[0][cache_key] = (distances, traps)
         return distances, traps
 
-    def find_path_distances_reverse(self, destination: int, traversal_test: Callable[[int], bool]) -> tuple[list[int], list[int]]:
+    def find_path_distances_reverse(self, destination: int, traversal_test: Callable[['Scenario',int], bool]) -> tuple[list[int], list[int]]:
         # reverse in that we find the path distance to the destination from every location
         # path distance is symetric except for difficult terrain and traps
         # we correct for the asymetry of starting vs ending on difficult terrain
@@ -1174,6 +1168,7 @@ class Scenario:
         return distances
 
     def calculate_monster_move(self) -> tuple[set, dict, dict, dict, dict, dict]:
+        map_debug_tags = [' '] * self.MAP_SIZE
         if self.ACTION_RANGE == 0 or self.ACTION_TARGET == 0:
             ATTACK_RANGE = 1
             SUSCEPTIBLE_TO_DISADVANTAGE = False
@@ -1201,7 +1196,7 @@ class Scenario:
             self.is_trap = Scenario.is_trap_standard
 
         if self.logging:
-            map_debug_tags = [' '] * self.MAP_SIZE
+            
             # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in range( self.MAP_SIZE ) ] )
             if AOE_ACTION:
                 false_contents = ['   '] * self.AOE_SIZE
@@ -1270,7 +1265,7 @@ class Scenario:
         # doesn't speed things up but makes los testing order more intuitive for debugging
         travel_distance_sorted_map = sorted(
             list(range(self.MAP_SIZE)), key=lambda x: travel_distances[x])
-
+        aoe=([(int(0), int(0),int(0))] * 2)
         # process aoe
         if AOE_ACTION:
             center_location = self.AOE_CENTER if AOE_MELEE else self.aoe.index(
@@ -1314,7 +1309,7 @@ class Scenario:
             self.figures) if figure == 'C']
 
         # find monster focuses
-
+        num_focus_ranks=0
         if not len(characters):
             focuses = set()
 
@@ -1327,7 +1322,7 @@ class Scenario:
                     MAX_VALUE - 1,  # proximity of potential focus
                     MAX_VALUE - 1,  # initiative of potential focus
                 )
-
+            
             def consider_focus():
                 this_path = (
                     trap_counts[location],
@@ -1883,10 +1878,11 @@ class Scenario:
 
     def solve(self, solve_reach: bool, solve_sight: bool) -> tuple[list[dict], list[list[tuple[int, int]]] | None, list[list[tuple[int, int]]] | None]:
         actions = self.solve_move(False)
-        reach = self.solve_reaches(_['move']
-                                   for _ in actions) if solve_reach else None
-        sight = self.solve_sights(_['move']
-                                  for _ in actions) if solve_sight else None
+
+        moves = list((int(_['move']) for _ in actions))
+                
+        reach = self.solve_reaches(moves) if solve_reach else None
+        sight = self.solve_sights(moves) if solve_sight else None
         return actions, reach, sight
 
     # def debug_plot_line(self, color, line):

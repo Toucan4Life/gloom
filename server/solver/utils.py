@@ -6,7 +6,7 @@ from typing import Iterable
 from solver.settings import *
 from functools import cmp_to_key
 
-COS_30 = math.cos(old_div(30.0, 180.0) * math.pi)
+COS_30 = math.cos(30.0 / 180.0 * math.pi)
 EPSILON = 1e-12
 
 
@@ -37,7 +37,7 @@ def get_offset(center: int, location: int, grid_height: int) -> tuple[int, int, 
     return (x, y, z)
 
 
-def apply_offset(center: int, offset: tuple[int, int, int], grid_height: int, grid_size: int) -> int | None:
+def apply_offset(center: int, offset: tuple[int, int, int], grid_height: int, grid_size: int) -> int:
     location = center
     column = center // grid_height
 
@@ -52,11 +52,11 @@ def apply_offset(center: int, offset: tuple[int, int, int], grid_height: int, gr
     # test whether we went off the top or bottom of the board
     final_column = location // grid_height
     if final_column != column:
-        return None
+        return -1
 
     # test whether we went off the left or right of the board
     if location < 0 or location >= grid_size:
-        return None
+        return -1
 
     return location
 
@@ -78,7 +78,7 @@ def rotate_offset(offset: tuple[int, int, int], rotation: int) -> tuple[int, int
     )
 
 
-def pin_offset(offset: list[int], pin: list[int]) -> tuple[int, int, int]:
+def pin_offset(offset: tuple[int, int, int], pin: tuple[int, int, int]) -> tuple[int, int, int]:
     return (
         offset[0] - pin[0],
         offset[1] - pin[1],
@@ -89,7 +89,7 @@ def pin_offset(offset: list[int], pin: list[int]) -> tuple[int, int, int]:
 def lengthen_line(line: tuple[tuple[float, float], tuple[float, float]]) -> tuple[tuple[float, float], tuple[float, float]]:
     delta = (line[1][0] - line[0][0], line[1][1] - line[0][1])
     length = math.sqrt(delta[0] * delta[0] + delta[1] * delta[1])
-    normal = (old_div(delta[0], length), old_div(delta[1], length))
+    normal = (delta[0]/ length, delta[1]/ length)
     addition = (EPSILON * normal[0], EPSILON * normal[1])
     return (
         (line[0][0] - addition[0], line[0][1] - addition[1]),
@@ -251,7 +251,7 @@ def get_occluder_value_at(xxx_todo_changeme4: tuple[float, float, float], at: fl
     return lerp(value_at_zero, value_at_one, at), slope
 
 
-def occluder_intersections(occluder_mappings: tuple[tuple[float, float, float], tuple[float, float, float]]) -> Iterable[float]:
+def occluder_intersections(occluder_mappings: list[tuple[float, float, float]]) -> Iterable[float]:
     yield 0.0
     for index, occluder_a in enumerate(occluder_mappings):
         for occluder_b in occluder_mappings[:index]:
@@ -289,8 +289,7 @@ def get_visibility_windows_at(
             list[tuple[float, float, float]],
             list[tuple[tuple[float, float, float], int]],
             list[tuple[tuple[float, float, float], int]],
-            list[tuple[tuple[float, float, float], tuple[float, float, float], int, int]]],
-        test_visibility: bool) -> bool | list[tuple[float, float, float, int]]:
+            list[tuple[tuple[float, float, float], tuple[float, float, float], int, int]]]) -> list[tuple[float, float, float, int]]:
     (
         occluder_mappings,
         occluder_mappings_below,
@@ -322,11 +321,11 @@ def get_visibility_windows_at(
 
     if occluder_greater_than((window_bottom, window_bottom_slope + EPSILON), (window_top, window_top_slope)):
         # no visibility window exists
-        return False if test_visibility else []
+        return []
 
     if len(occluder_mappings_internal) == 0:
         # a visibility window exists and there are no internal occluders to cover it
-        return True if test_visibility else [(x, window_bottom, window_top, window_top_mapping_index)]
+        return [(x, window_bottom, window_top, window_top_mapping_index)]
 
     # build a sorted list of internal occluders in the window
     internal_values = []
@@ -354,8 +353,6 @@ def get_visibility_windows_at(
     for internal_value in internal_values:
         if occluder_greater_than((internal_value[0], internal_value[1] - EPSILON), (window_bottom, window_bottom_slope)):
             # there is a visibility gap below the lowest internal occluder; record then find further windows
-            if test_visibility:
-                return True
             windows.append(
                 (x, window_bottom, internal_value[0], internal_value[2]))
             if occluder_greater_than((internal_value[3], internal_value[4] + EPSILON), (window_top, window_top_slope)):
@@ -367,8 +364,6 @@ def get_visibility_windows_at(
 
         elif occluder_greater_than((internal_value[3], internal_value[4] + EPSILON), (window_top, window_top_slope)):
             # the internal occluder fully covers the visibilty window; there is no visibility at this intersection
-            if test_visibility:
-                return False
             break
 
         elif occluder_greater_than((internal_value[3], internal_value[4]), (window_bottom, window_bottom_slope)):
@@ -383,8 +378,6 @@ def get_visibility_windows_at(
 
     else:
         # the internal occluders did not cover the visibility window
-        if test_visibility:
-            return True
         windows.append((x, window_bottom, window_top,
                        window_top_mapping_index))
 
@@ -403,7 +396,7 @@ def get_line_intersections(line_index: int, occluder_mappings: list[tuple[float,
             divisor = occluder_a[2] - occluder_b[2]
             if divisor == 0.0:
                 continue
-            intersection = old_div((occluder_b[0] - occluder_a[0]), divisor)
+            intersection = (occluder_b[0] - occluder_a[0])/ divisor
             if intersection > -EPSILON and intersection < 1.0 + EPSILON:
                 intersections.append((intersection, index, intersection))
 
@@ -476,14 +469,14 @@ def calculate_polygon_properties(polygon: list[tuple[float, float]]) -> tuple[fl
         if next_top_x != prev_top_x and next_bot_x != prev_bot_x:
             x_l = x
             x_r = next_top_x if next_top_x < next_bot_x else next_bot_x
-            top_y_l = lerp(prev_top_y, next_top_y, old_div(
-                (x_l - prev_top_x), (next_top_x - prev_top_x)))
-            top_y_r = lerp(prev_top_y, next_top_y, old_div(
-                (x_r - prev_top_x), (next_top_x - prev_top_x)))
-            bot_y_l = lerp(prev_bot_y, next_bot_y, old_div(
-                (x_l - prev_bot_x), (next_bot_x - prev_bot_x)))
-            bot_y_r = lerp(prev_bot_y, next_bot_y, old_div(
-                (x_r - prev_bot_x), (next_bot_x - prev_bot_x)))
+            top_y_l = lerp(prev_top_y, next_top_y, 
+                (x_l - prev_top_x)/ (next_top_x - prev_top_x))
+            top_y_r = lerp(prev_top_y, next_top_y, 
+                (x_r - prev_top_x)/ (next_top_x - prev_top_x))
+            bot_y_l = lerp(prev_bot_y, next_bot_y, 
+                (x_l - prev_bot_x)/ (next_bot_x - prev_bot_x))
+            bot_y_r = lerp(prev_bot_y, next_bot_y, 
+                (x_r - prev_bot_x)/ (next_bot_x - prev_bot_x))
 
             delta_x = x_r - x_l
 
@@ -503,15 +496,13 @@ def calculate_polygon_properties(polygon: list[tuple[float, float]]) -> tuple[fl
             )
 
             center_of_mass_top_triangle = (
-                (x_l + old_div(delta_x, 3.0) if top_y_l <
-                 top_y_r else x_r - old_div(delta_x, 3.0)),
-                old_div((top_y_min + 2.0 * top_y_max), 3.0)
+                (x_l + delta_x/ 3.0 if top_y_l < top_y_r else x_r - delta_x/ 3.0),
+                (top_y_min + 2.0 * top_y_max)/ 3.0
             )
 
             center_of_mass_bot_triangle = (
-                (x_l + old_div(delta_x, 3.0) if bot_y_l >
-                 bot_y_r else x_r - old_div(delta_x, 3.0)),
-                old_div((bot_y_max + 2.0 * bot_y_min), 3.0)
+                (x_l + delta_x/ 3.0 if bot_y_l > bot_y_r else x_r - delta_x/ 3.0),
+                (bot_y_max + 2.0 * bot_y_min)/ 3.0
             )
 
             center_of_mass_square = scale_vector(
@@ -546,7 +537,7 @@ def calculate_polygon_properties(polygon: list[tuple[float, float]]) -> tuple[fl
             (prev_bot_x, prev_bot_y) = (next_bot_x, next_bot_y)
             (next_bot_x, next_bot_y) = polygon[next_bot_index]
 
-    center_of_mass = scale_vector(old_div(1.0, area), center_of_mass)
+    center_of_mass = scale_vector(1.0/ area, center_of_mass)
     return area, center_of_mass
 
 
