@@ -1,8 +1,6 @@
-import sys
 import collections
 import textwrap
 import itertools
-import pprint
 from typing import Callable
 from solver.scenarios import *
 from solver.utils import *
@@ -12,34 +10,34 @@ from solver.print_map import *
 class Scenario:
     correct_answer = None
     valid = True
-    logging = False
-    debug_visuals = False
-    show_each_action_separately = False
+    logging:bool
+    debug_visuals:bool
+    show_each_action_separately:bool
     visibility_cache = {}
-    path_cache = [{}, {}, {}, {}]
-    debug_lines = set()
-    test_switch = False
-    ACTION_MOVE = 0
-    ACTION_RANGE = 0
-    ACTION_TARGET = 1
-    FLYING = False
-    JUMPING = False
-    MUDDLED = False
-    DEBUG_TOGGLE = False
-    message = ''
-    MAP_WIDTH = 0
-    MAP_HEIGHT = 0
-    MAP_SIZE = 0
-    MAP_VERTEX_COUNT = 0
-    walls = [[False] * 6 for _ in range(0)]
-    contents = [' '] * 0
-    figures = [' '] * 0
-    initiatives = [0] * 0
-    AOE_WIDTH = 0
-    AOE_HEIGHT = 0
-    AOE_SIZE = 0
-    aoe = [False] * 0
-    AOE_CENTER = (0 - 1) // 2
+    path_cache : tuple[dict[tuple[int,Callable[['Scenario',int], bool]],tuple[list[int],list[int]]],int,dict[int,list[int]],int]
+    debug_lines: set[tuple[int,tuple[tuple[float,float],tuple[float,float]]]]
+    test_switch:bool
+    ACTION_MOVE:int
+    ACTION_RANGE:int
+    ACTION_TARGET:int
+    FLYING:bool
+    JUMPING:bool
+    MUDDLED:bool
+    DEBUG_TOGGLE:bool
+    message:str
+    map_width :int
+    map_height:int
+    map_size:int
+    map_vertex_count:int
+    walls:list[list[bool]]
+    contents:list[str]
+    figures:list[str]
+    initiatives:list[int]
+    aoe_width:int
+    aoe_height:int
+    aoe_size:int
+    aoe:list[bool]
+    aoe_center:int
 
     def __init__(self, width: int, height: int, aoe_width: int, aoe_height: int):
         self.correct_answer = None
@@ -52,20 +50,20 @@ class Scenario:
         self.debug_lines = set()
         self.test_switch = False
 
-        self.MAP_WIDTH = width
-        self.MAP_HEIGHT = height
-        self.MAP_SIZE = self.MAP_WIDTH * self.MAP_HEIGHT
-        self.MAP_VERTEX_COUNT = 6 * self.MAP_SIZE
-        self.walls = [[False] * 6 for _ in range(self.MAP_SIZE)]
-        self.contents = [' '] * self.MAP_SIZE
-        self.figures = [' '] * self.MAP_SIZE
-        self.initiatives = [0] * self.MAP_SIZE
+        self.map_width = width
+        self.map_height = height
+        self.map_size = self.map_width * self.map_height
+        self.map_vertex_count = 6 * self.map_size
+        self.walls = [[False] * 6 for _ in range(self.map_size)]
+        self.contents = [' '] * self.map_size
+        self.figures = [' '] * self.map_size
+        self.initiatives = [0] * self.map_size
 
-        self.AOE_WIDTH = aoe_width
-        self.AOE_HEIGHT = aoe_height
-        self.AOE_SIZE = self.AOE_WIDTH * self.AOE_HEIGHT
-        self.AOE_CENTER = (self.AOE_SIZE - 1) // 2
-        self.aoe = [False] * self.AOE_SIZE
+        self.aoe_width = aoe_width
+        self.aoe_height = aoe_height
+        self.aoe_size = self.aoe_width * self.aoe_height
+        self.aoe_center = (self.aoe_size - 1) // 2
+        self.aoe = [False] * self.aoe_size
 
         self.message = ''
         self.ACTION_MOVE = 0
@@ -76,9 +74,9 @@ class Scenario:
         self.MUDDLED = False
         self.DEBUG_TOGGLE = False
 
-        if self.AOE_WIDTH != 7 or self.AOE_HEIGHT != 7:
+        if self.aoe_width != 7 or self.aoe_height != 7:
             exit()
-        if int(self.AOE_CENTER) - self.AOE_CENTER != 0:
+        if int(self.aoe_center) - self.aoe_center != 0:
             exit('aoe has no center')
 
     #def reduce_map(self):
@@ -222,9 +220,9 @@ class Scenario:
         self.setup_vertices_list()
         self.setup_neighbors_mapping()
 
-        contents_walls = [[False] *6]* self.MAP_SIZE
-        self.effective_walls = [[False] *6]* self.MAP_SIZE
-        for location in range(self.MAP_SIZE):
+        contents_walls = [[False] *6]* self.map_size
+        self.effective_walls = [[False] *6]* self.map_size
+        for location in range(self.map_size):
             if self.contents[location] == 'X':
                 contents_walls[location] = [True] * 6
                 self.effective_walls[location] = [True] * 6
@@ -232,7 +230,7 @@ class Scenario:
                 contents_walls[location] = [False] * 6
                 self.effective_walls[location] = list(self.walls[location])
 
-        for location in range(self.MAP_SIZE):
+        for location in range(self.map_size):
             for edge, neighbor in enumerate(self.neighbors[location]):
                 if neighbor != -1:
                     neighbor_edge = (edge + 3) % 6
@@ -243,8 +241,8 @@ class Scenario:
                     if contents_walls[location][edge]:
                         contents_walls[neighbor][neighbor_edge] = True
 
-        self.extra_walls = [[False] *6]* self.MAP_SIZE
-        for location in range(self.MAP_SIZE):
+        self.extra_walls = [[False] *6]* self.map_size
+        for location in range(self.map_size):
             self.extra_walls[location] = [self.walls[location][_]
                                           and not contents_walls[location][_] for _ in range(6)]
 
@@ -285,9 +283,9 @@ class Scenario:
         # added to packed_scenario in v2.6.0
         self.set_rules(int(packed_scenario.get('game_rules', '0')))
 
-        self.DEBUG_TOGGLE = int(packed_scenario.get('debug_toggle', '0'))
+        self.DEBUG_TOGGLE = bool(packed_scenario.get('debug_toggle', '0'))
 
-        def add_elements(grid, key, content):
+        def add_elements(grid:list[str], key:str, content:str):
             for _ in packed_scenario['map'][key]:
                 grid[_] = content
 
@@ -304,14 +302,14 @@ class Scenario:
         self.figures[active_figure_location] = 'A'
 
         if switch_factions:
-            for _ in range(self.MAP_SIZE):
+            for _ in range(self.map_size):
                 if self.figures[_] == 'C':
                     self.figures[_] = 'M'
                 elif self.figures[_] == 'M':
                     self.figures[_] = 'C'
 
         for _ in packed_scenario['aoe']:
-            if _ != self.AOE_CENTER or self.ACTION_RANGE > 0:
+            if _ != self.aoe_center or self.ACTION_RANGE > 0:
                 self.aoe[_] = True
 
         remap = {
@@ -386,8 +384,8 @@ class Scenario:
 
     def setup_vertices_list(self) -> None:
         def calculate_vertex(location:int, vertex:int)->tuple[float,float]:
-            hex_row = location % self.MAP_HEIGHT
-            hex_column = location // self.MAP_HEIGHT
+            hex_row = location % self.map_height
+            hex_column = location // self.map_height
 
             vertex_column = hex_column + [1, 1, 0, 0, 0, 1][vertex]
             vertex_row = 2 * hex_row + \
@@ -403,8 +401,8 @@ class Scenario:
 
             return (x, y)
 
-        self.vertices = ([(0.0, 0.0)] * (self.MAP_SIZE * 6))
-        for location in range(self.MAP_SIZE):
+        self.vertices = ([(0.0, 0.0)] * (self.map_size * 6))
+        for location in range(self.map_size):
             for vertex in range(6):
                 self.vertices[location * 6 +
                               vertex] = calculate_vertex(location, vertex)
@@ -414,13 +412,13 @@ class Scenario:
 
     def setup_neighbors_mapping(self) -> None:
         def get_neighbors(location):
-            row = location % self.MAP_HEIGHT
-            column = location // self.MAP_HEIGHT
+            row = location % self.map_height
+            column = location // self.map_height
 
             bottom_edge = row == 0
-            top_edge = row == self.MAP_HEIGHT - 1
+            top_edge = row == self.map_height - 1
             left_edge = column == 0
-            right_edge = column == self.MAP_WIDTH - 1
+            right_edge = column == self.map_width - 1
             base_column_value = (column + 1) % 2
             base_column = base_column_value == 1
 
@@ -428,19 +426,19 @@ class Scenario:
             if not left_edge:
                 if not bottom_edge or not base_column:
                     neighbors[3] = location - \
-                        self.MAP_HEIGHT - base_column_value
+                        self.map_height - base_column_value
                 if not top_edge or base_column:
                     neighbors[2] = location - \
-                        self.MAP_HEIGHT + 1 - base_column_value
+                        self.map_height + 1 - base_column_value
             if not top_edge:
                 neighbors[1] = location + 1
             if not right_edge:
                 if not top_edge or base_column:
                     neighbors[0] = location + \
-                        self.MAP_HEIGHT + 1 - base_column_value
+                        self.map_height + 1 - base_column_value
                 if not bottom_edge or not base_column:
                     neighbors[5] = location + \
-                        self.MAP_HEIGHT - base_column_value
+                        self.map_height - base_column_value
             if not bottom_edge:
                 neighbors[4] = location - 1
 
@@ -448,7 +446,7 @@ class Scenario:
 
         self.neighbors = {
             _: get_neighbors(_)
-            for _ in range(self.MAP_SIZE)
+            for _ in range(self.map_size)
         }
 
     def is_adjacent(self, location_a: int, location_b: int) -> bool:
@@ -459,35 +457,35 @@ class Scenario:
 
     def apply_rotated_aoe_offset(self, center: int, offset: tuple[int, int, int], rotation: int) -> int | None:
         offset = rotate_offset(offset, rotation)
-        return apply_offset(center, offset, self.MAP_HEIGHT, self.MAP_SIZE)
+        return apply_offset(center, offset, self.map_height, self.map_size)
 
     def apply_aoe_offset(self, center: int, offset: tuple[int, int, int]):
-        return apply_offset(center, offset, self.MAP_HEIGHT, self.MAP_SIZE)
+        return apply_offset(center, offset, self.map_height, self.map_size)
 
     def calculate_bounds(self, location_a: int, location_b: int) -> tuple[int, int, int, int]:
-        column_a = location_a // self.MAP_HEIGHT
-        column_b = location_b // self.MAP_HEIGHT
+        column_a = location_a // self.map_height
+        column_b = location_b // self.map_height
         if column_a < column_b:
             column_lower = max(column_a - 1, 0)
-            column_upper = min(column_b + 2, self.MAP_WIDTH)
+            column_upper = min(column_b + 2, self.map_width)
         else:
             column_lower = max(column_b - 1, 0)
-            column_upper = min(column_a + 2, self.MAP_WIDTH)
+            column_upper = min(column_a + 2, self.map_width)
 
-        row_a = location_a - column_a * self.MAP_HEIGHT
-        row_b = location_b - column_b * self.MAP_HEIGHT
+        row_a = location_a - column_a * self.map_height
+        row_b = location_b - column_b * self.map_height
         if row_a < row_b:
             row_lower = max(row_a - 1, 0)
-            row_upper = min(row_b + 2, self.MAP_HEIGHT)
+            row_upper = min(row_b + 2, self.map_height)
         else:
             row_lower = max(row_b - 1, 0)
-            row_upper = min(row_a + 2, self.MAP_HEIGHT)
+            row_upper = min(row_a + 2, self.map_height)
 
         return (row_lower, column_lower, row_upper, column_upper)
 
     def occluders_in(self, bounds: tuple[int, int, int, int]) -> Iterable[tuple[tuple[float, float], tuple[float, float]]]:
         for column in range(bounds[1], bounds[3]):
-            column_location = column * self.MAP_HEIGHT
+            column_location = column * self.map_height
             for row in range(bounds[0], bounds[2]):
                 location = column_location + row
 
@@ -507,7 +505,7 @@ class Scenario:
 
     def walls_in(self, bounds: tuple[int, int, int, int]) -> Iterable[tuple[int, int]]:
         for column in range(bounds[1], bounds[3]):
-            column_location = column * self.MAP_HEIGHT
+            column_location = column * self.map_height
             for row in range(bounds[0], bounds[2]):
                 location = column_location + row
 
@@ -1044,8 +1042,8 @@ class Scenario:
         if cache_key in self.path_cache[0]:
             return self.path_cache[0][cache_key]
 
-        distances = [MAX_VALUE] * self.MAP_SIZE
-        traps = [MAX_VALUE] * self.MAP_SIZE
+        distances = [MAX_VALUE] * self.map_size
+        traps = [MAX_VALUE] * self.map_size
 
         frontier = collections.deque()
         frontier.append(start)
@@ -1075,7 +1073,7 @@ class Scenario:
 
         if self.RULE_DIFFICULT_TERRAIN_JUMP:
             if self.JUMPING:
-                for location in range(self.MAP_SIZE):
+                for location in range(self.map_size):
                     distances[location] += self.additional_path_cost(location)
                 distances[start] -= self.additional_path_cost(start)
 
@@ -1102,12 +1100,12 @@ class Scenario:
                 if destination_additional_path_cost > 0:
                     distances = [
                         _ + destination_additional_path_cost if _ != MAX_VALUE else _ for _ in distances]
-                for location in range(self.MAP_SIZE):
+                for location in range(self.map_size):
                     distances[location] -= self.additional_path_cost(location)
 
             if self.is_trap(self, destination):
                 traps = [_ + 1 if _ != MAX_VALUE else _ for _ in traps]
-            for location in range(self.MAP_SIZE):
+            for location in range(self.map_size):
                 traps[location] -= int(self.is_trap(self, location))
 
         self.path_cache[1][cache_key] = (distances, traps)
@@ -1118,7 +1116,7 @@ class Scenario:
         if cache_key in self.path_cache[2]:
             return self.path_cache[2][cache_key]
 
-        distances = [MAX_VALUE] * self.MAP_SIZE
+        distances = [MAX_VALUE] * self.map_size
 
         frontier = collections.deque()
         frontier.append(start)
@@ -1142,30 +1140,30 @@ class Scenario:
         self.path_cache[2][cache_key] = distances
         return distances
 
-    def find_distances(self, start: int) -> list[int]:
-        cache_key = (start)
-        if cache_key in self.path_cache[3]:
-            return self.path_cache[3][cache_key]
+    # def find_distances(self, start: int) -> list[int]:
+    #     cache_key = (start)
+    #     if cache_key in self.path_cache[3]:
+    #         return self.path_cache[3][cache_key]
 
-        distances = [MAX_VALUE] * self.MAP_SIZE
+    #     distances = [MAX_VALUE] * self.MAP_SIZE
 
-        frontier = collections.deque()
-        frontier.append(start)
-        distances[start] = 0
+    #     frontier = collections.deque()
+    #     frontier.append(start)
+    #     distances[start] = 0
 
-        while not len(frontier) == 0:
-            current = frontier.popleft()
-            distance = distances[current]
-            for neighbor in self.neighbors[current]:
-                if neighbor == -1:
-                    continue
-                neighbor_distance = distance + 1
-                if neighbor_distance < distances[neighbor]:
-                    frontier.append(neighbor)
-                    distances[neighbor] = neighbor_distance
+    #     while not len(frontier) == 0:
+    #         current = frontier.popleft()
+    #         distance = distances[current]
+    #         for neighbor in self.neighbors[current]:
+    #             if neighbor == -1:
+    #                 continue
+    #             neighbor_distance = distance + 1
+    #             if neighbor_distance < distances[neighbor]:
+    #                 frontier.append(neighbor)
+    #                 distances[neighbor] = neighbor_distance
 
-        self.path_cache[3][cache_key] = distances
-        return distances
+    #     self.path_cache[3][cache_key] = distances
+    #     return distances
 
     def calculate_monster_move(self) -> tuple[
         set[tuple[int,int,int]],
@@ -1174,7 +1172,7 @@ class Scenario:
         dict[tuple[int,int,int],set[int]],
         dict[tuple[int,int,int],set[tuple[tuple[float,float],tuple[tuple[float,float]]]]],
         dict[tuple[int,int,int],set[int]]]:
-        map_debug_tags = [' '] * self.MAP_SIZE
+        map_debug_tags = [' '] * self.map_size
         if self.ACTION_RANGE == 0 or self.ACTION_TARGET == 0:
             ATTACK_RANGE = 1
             SUSCEPTIBLE_TO_DISADVANTAGE = False
@@ -1205,9 +1203,9 @@ class Scenario:
             
             # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in range( self.MAP_SIZE ) ] )
             if AOE_ACTION:
-                false_contents = ['   '] * self.AOE_SIZE
+                false_contents = ['   '] * self.aoe_size
                 if AOE_MELEE:
-                    false_contents[self.AOE_CENTER] = ' A '
+                    false_contents[self.aoe_center] = ' A '
                 # print_map( self, self.AOE_WIDTH, self.AOE_HEIGHT, [ [ False ] * 6 ] * self.AOE_SIZE, false_contents, [ format_aoe( _ ) for _ in self.aoe ] )
             # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_initiative( _ ) for _ in self.initiatives ] )
 
@@ -1270,15 +1268,15 @@ class Scenario:
 
         # doesn't speed things up but makes los testing order more intuitive for debugging
         travel_distance_sorted_map = sorted(
-            list(range(self.MAP_SIZE)), key=lambda x: travel_distances[x])
+            list(range(self.map_size)), key=lambda x: travel_distances[x])
         aoe=([(int(0), int(0),int(0))] * 2)
         # process aoe
         if AOE_ACTION:
-            center_location = self.AOE_CENTER if AOE_MELEE else self.aoe.index(
+            center_location = self.aoe_center if AOE_MELEE else self.aoe.index(
                 True)
             aoe = [
-                get_offset(center_location, location, self.AOE_HEIGHT)
-                for location in range(self.AOE_SIZE) if self.aoe[location]
+                get_offset(center_location, location, self.aoe_height)
+                for location in range(self.aoe_size) if self.aoe[location]
             ]
 
         # precalculate aoe patterns to remove degenerate cases
@@ -1453,7 +1451,7 @@ class Scenario:
                         t.groups = {group}
                     # print t.groups
 
-            for location in range(self.MAP_SIZE):
+            for location in range(self.map_size):
                 if self.can_end_move_on(self, location):
                     can_reach_location = travel_distances[location] <= self.ACTION_MOVE
 
@@ -1589,7 +1587,7 @@ class Scenario:
                     # print action, this_destination, u.best_destination
                     # print u.destinations
 
-            for location in range(self.MAP_SIZE):
+            for location in range(self.map_size):
                 if self.can_end_move_on(self, location):
 
                     # early test of location using the first two elements of the minimized tuple
@@ -1701,7 +1699,7 @@ class Scenario:
                     )
                     distance_to_destination, traps_to_destination = self.find_path_distances_reverse(
                         destination[0], self.can_travel_through)
-                    for location in range(self.MAP_SIZE):
+                    for location in range(self.map_size):
                         if travel_distances[location] <= self.ACTION_MOVE:
                             if self.can_end_move_on(self, location):
                                 this_move = (
@@ -1803,7 +1801,7 @@ class Scenario:
 
         reach = []
         run_begin = None
-        for location in range(self.MAP_SIZE):
+        for location in range(self.map_size):
             has_reach = False
             if distances[location] <= ATTACK_RANGE:
                 if not self.blocks_los(location):
@@ -1817,13 +1815,13 @@ class Scenario:
                 reach.append((run_begin, location))
                 run_begin = None
         if run_begin != None:
-            reach.append((run_begin, self.MAP_SIZE))
+            reach.append((run_begin, self.map_size))
         return reach
 
     def solve_sight(self, monster: int) -> list[tuple[int, int]]:
         sight = []
         run_begin = None
-        for location in range(self.MAP_SIZE):
+        for location in range(self.map_size):
             has_sight = False
             if not self.blocks_los(location):
                 if location != monster:
@@ -1836,7 +1834,7 @@ class Scenario:
                 sight.append((run_begin, location))
                 run_begin = None
         if run_begin != None:
-            sight.append((run_begin, self.MAP_SIZE))
+            sight.append((run_begin, self.map_size))
         return sight
 
     def solve_reaches(self, viewpoints: list[int]) -> list[list[tuple[int, int]]]:

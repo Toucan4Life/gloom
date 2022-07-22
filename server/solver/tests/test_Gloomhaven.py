@@ -5,7 +5,7 @@ def init_test():
     scenario.set_rules(1)
     return scenario
 
-def assert_answers(scenario, correct_answers):
+def assert_answers(scenario:'Scenario', correct_answers:set[tuple[int]]):
     scenario.prepare_map()
     answers, _, _, _, _, _ = scenario.calculate_monster_move()
     answers = set(

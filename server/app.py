@@ -62,17 +62,12 @@ def templates(filename:str, params:dict[str,bool]={})->str:
 
 @app.route('/solve', methods=['PUT'])
 def solve():
-    packed_scenario = json.loads(request.data)
-    # if IsDebugEnv:
-    #   print packed_scenario
 
-    # todo: validate packed scenario format
-    map_width = packed_scenario['width']
-    map_height = packed_scenario['height']
-
-    s = Scenario(map_width, map_height, 7, 7)
-
-    s.unpack_scenario(packed_scenario)
+    (s,solve_reach,solve_sight,scenario_id)=unpack_scenario(request.data)
+    if IsDebugEnv:
+        s.logging = True
+        s.debug_visuals = True
+    s.prepare_map()
 
     raw_actions, aoes, destinations, focuses, sightlines, debug_lines = s.calculate_monster_move()
 
@@ -106,20 +101,85 @@ def solve():
             actions[_]['debug_lines'] = list(debug_lines[raw_action])  
 
     solution = {
-        'scenario_id': packed_scenario['scenario_id'],
+        'scenario_id': scenario_id,
         'actions': actions,
     }
     moves = list((raw_action[0] for raw_action in raw_actions))
-    solve_view = packed_scenario['solve_view']
-    if solve_view > 0:
+    if solve_reach :
         solution['reach'] = s.solve_reaches(moves)
-    if solve_view > 1:
+    if solve_sight :
         solution['sight'] = s.solve_sights(moves)
 
     # if IsDebugEnv:
     #   print(solution)
     return jsonify(solution)
 
+def unpack_scenario(data: bytes) -> tuple['Scenario', bool, bool,int]:
+    
+    # if IsDebugEnv:
+    #   print packed_scenario
+
+    # todo: validate packed scenario format
+    packed_scenario = json.loads(data)
+    map_width = packed_scenario['width']
+    map_height = packed_scenario['height']
+    solve_view = packed_scenario['solve_view']
+    s = Scenario(map_width, map_height, 7, 7)
+    s.ACTION_MOVE = int(packed_scenario['move'])
+    s.ACTION_RANGE = int(packed_scenario['range'])
+    s.ACTION_TARGET = int(packed_scenario['target'])
+    s.JUMPING = int(packed_scenario['flying']) == 1
+    s.FLYING = int(packed_scenario['flying']) == 2
+    s.MUDDLED = int(packed_scenario['muddled']) == 1
+
+    s.set_rules(int(packed_scenario.get('game_rules', '0')))
+
+    s.DEBUG_TOGGLE = bool(packed_scenario.get('debug_toggle', '0'))
+
+    def add_elements(grid:list[str], key:str, content:str):
+        for _ in packed_scenario['map'][key]:
+            grid[_] = content
+
+    add_elements(s.contents, 'walls', 'X')
+    add_elements(s.contents, 'obstacles', 'O')
+    add_elements(s.contents, 'traps', 'T')
+    add_elements(s.contents, 'hazardous', 'H')
+    add_elements(s.contents, 'difficult', 'D')
+    add_elements(s.figures, 'characters', 'C')
+    add_elements(s.figures, 'monsters', 'M')
+
+    active_figure_location = packed_scenario['active_figure']
+    switch_factions = s.figures[active_figure_location] == 'C'
+    s.figures[active_figure_location] = 'A'
+
+    if switch_factions:
+        for _ in range(s.map_size):
+            if s.figures[_] == 'C':
+                s.figures[_] = 'M'
+            elif s.figures[_] == 'M':
+                s.figures[_] = 'C'
+
+    for _ in packed_scenario['aoe']:
+        if _ != s.aoe_center or s.ACTION_RANGE > 0:
+            s.aoe[_] = True
+
+    remap = {
+        1: 0,
+        0: 1,
+        2: 5,
+    }
+    for _ in packed_scenario['map']['thin_walls']:
+        ss = remap[_[1]]
+        s.walls[_[0]][ss] = True
+
+    if switch_factions:
+        victims = packed_scenario['map']['monsters']
+    else:
+        victims = packed_scenario['map']['characters']
+
+    for i, j in zip(packed_scenario['map']['initiatives'], victims):
+        s.initiatives[j] = int(i)
+    return (s,solve_view > 0,solve_view > 0,packed_scenario['scenario_id'])
 
 @app.route('/views', methods=['PUT'])
 def views():
