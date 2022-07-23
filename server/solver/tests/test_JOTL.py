@@ -23,7 +23,7 @@ def test_Scenario1():
     s.figures[38] = 'M'
     s.figures[39] = 'A'
 
-    s.ACTION_MOVE = 1
+    s.action_move = 1
 
     assert_answers(s,{(46, ), (47, )})
 
@@ -36,7 +36,7 @@ def test_Scenario2():
     s.figures[37] = 'M'
     s.figures[38] = 'A'
 
-    s.ACTION_MOVE = 1
+    s.action_move = 1
 
     assert_answers(s,{(45, ), (31, )})
 
@@ -49,7 +49,7 @@ def test_Scenario3():
     s.figures[38] = 'M'
     s.figures[39] = 'A'
 
-    s.ACTION_MOVE = 1
+    s.action_move = 1
 
     assert_answers(s,{(39, )})
 
@@ -77,7 +77,7 @@ def test_Scenario4():
 
     s.figures[25] = 'A'
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(34, ), (20, )})
 
@@ -92,7 +92,7 @@ def test_Scenario5():
     s.figures[44] = 'M'
     s.figures[38] = 'A'
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(45, ), (31, )})
 
@@ -109,7 +109,7 @@ def test_Scenario6():
     s.contents[30] = 'O'
     s.figures[31] = 'A'
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(44, 50)})
 
@@ -126,7 +126,7 @@ def test_Scenario7():
     s.contents[30] = 'X'
     s.figures[31] = 'A'
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(44, 50)})
 
@@ -142,7 +142,7 @@ def test_Scenario8():
 
     s.figures[32] = 'A'
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(17, 9)})
 
@@ -158,7 +158,7 @@ def test_Scenario9():
 
     s.figures[32] = 'A'
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(17, 9), (30, 29)})
 
@@ -194,7 +194,7 @@ def test_Scenario10():
 
     s.figures[99] = 'C'
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(79, )})
 
@@ -228,7 +228,7 @@ def test_Scenario11():
 
     s.figures[99] = 'C'
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(94, )})
 
@@ -262,7 +262,7 @@ def test_Scenario12():
 
     s.figures[99] = 'C'
 
-    s.ACTION_MOVE = 1
+    s.action_move = 1
 
     assert_answers(s,{(79, )})
 
@@ -279,7 +279,7 @@ def test_Scenario13():
 
     s.figures[29] = 'C'
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(32, ), (25, ), (38, )})
 
@@ -309,7 +309,7 @@ def test_Scenario14():
 
     s.figures[44] = 'C'
 
-    s.ACTION_MOVE = 3
+    s.action_move = 3
 
     assert_answers(s,{(11, )})
 
@@ -329,7 +329,7 @@ def test_Scenario15():
 
     s.figures[32] = 'A'
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(45, 51)})
 
@@ -353,7 +353,7 @@ def test_Scenario16():
 
     s.figures[32] = 'A'
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(45, )})
 
@@ -374,7 +374,7 @@ def test_Scenario17():
 
     s.figures[33] = 'A'
 
-    s.ACTION_MOVE = 3
+    s.action_move = 3
 
     assert_answers(s,{(25, )})
 
@@ -392,7 +392,7 @@ def test_Scenario18():
 
     s.figures[32] = 'A'
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(40, ), (26, )})
 
@@ -411,7 +411,7 @@ def test_Scenario19():
 
     s.figures[32] = 'A'
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(30, )})
 
@@ -441,7 +441,7 @@ def test_Scenario20():
 
     s.figures[32] = 'A'
 
-    s.ACTION_MOVE = 3
+    s.action_move = 3
 
     assert_answers(s,{(20, )})
 
@@ -471,8 +471,8 @@ def test_Scenario21():
 
     s.figures[32] = 'A'
 
-    s.ACTION_MOVE = 3
-    s.FLYING = True
+    s.action_move = 3
+    s.flying = True
 
     assert_answers(s,{(29, 28)})
 
@@ -502,8 +502,8 @@ def test_Scenario22():
 
     s.figures[32] = 'A'
 
-    s.ACTION_MOVE = 3
-    s.JUMPING = True
+    s.action_move = 3
+    s.jumping = True
 
     assert_answers(s,{(29, 28)})
 
@@ -534,8 +534,8 @@ def test_Scenario23():
 
     s.figures[32] = 'A'
 
-    s.ACTION_MOVE = 3
-    s.JUMPING = True
+    s.action_move = 3
+    s.jumping = True
 
     assert_answers(s,{(22, ), (36, )})
 
@@ -573,7 +573,7 @@ def test_Scenario24():
 
     s.figures[24] = 'A'
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(38, )})
 
@@ -599,7 +599,7 @@ def test_Scenario25():
 
     s.figures[32] = 'A'
 
-    s.ACTION_MOVE = 3
+    s.action_move = 3
 
     assert_answers(s,{(52, )})
 
@@ -639,7 +639,7 @@ def test_Scenario26():
 
     s.figures[24] = 'A'
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(39, )})
 
@@ -668,7 +668,7 @@ def test_Scenario27():
 
     s.figures[38] = 'A'
 
-    s.ACTION_MOVE = 3
+    s.action_move = 3
 
     assert_answers(s,{(16, )})
 
@@ -697,7 +697,7 @@ def test_Scenario28():
 
     s.figures[31] = 'A'
 
-    s.ACTION_MOVE = 3
+    s.action_move = 3
 
     assert_answers(s,{(36, )})
 
@@ -727,7 +727,7 @@ def test_Scenario29():
     s.figures[44] = 'M'
     s.figures[31] = 'A'
 
-    s.ACTION_MOVE = 3
+    s.action_move = 3
 
     assert_answers(s,{(43, 36)})
 
@@ -760,7 +760,7 @@ def test_Scenario30():
     # s.figures[44] = 'M'
     s.figures[31] = 'A'
 
-    s.ACTION_MOVE = 3
+    s.action_move = 3
 
     assert_answers(s,{(38, 46)})
 
@@ -771,7 +771,7 @@ def test_Scenario31():
     s.figures[36] = 'C'
     s.figures[30] = 'A'
 
-    s.ACTION_MOVE = 1
+    s.action_move = 1
 
     assert_answers(s,{(30, 36)})
 
@@ -783,8 +783,8 @@ def test_Scenario32():
 
     s.figures[25] = 'A'
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 4
+    s.action_move = 2
+    s.action_range = 4
 
     assert_answers(s,{(25, 29)})
 
@@ -802,8 +802,8 @@ def test_Scenario33():
 
     s.figures[26] = 'A'
 
-    s.ACTION_MOVE = 4
-    s.ACTION_RANGE = 5
+    s.action_move = 4
+    s.action_range = 5
 
     assert_answers(s,{(39, 29), (40, 29)})
 
@@ -832,8 +832,8 @@ def test_Scenario34():
 
     s.figures[3] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 7
+    s.action_move = 6
+    s.action_range = 7
 
     assert_answers(s,{(44, 15)})
 
@@ -862,8 +862,8 @@ def test_Scenario35():
 
     s.figures[3] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 7
+    s.action_move = 6
+    s.action_range = 7
 
     assert_answers(s,{(44, 21), (45, 21)})
 
@@ -892,8 +892,8 @@ def test_Scenario36():
 
     s.figures[3] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 7
+    s.action_move = 6
+    s.action_range = 7
 
     assert_answers(s, {(44, 22)})
 
@@ -922,8 +922,8 @@ def test_Scenario37():
 
     s.figures[3] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 7
+    s.action_move = 6
+    s.action_range = 7
 
     assert_answers(s,{(37, 28)})
 
@@ -952,8 +952,8 @@ def test_Scenario38():
 
     s.figures[3] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 7
+    s.action_move = 6
+    s.action_range = 7
     assert_answers(s,{(44, 29), (45, 29)})
 
 # Doorway line of sight
@@ -980,8 +980,8 @@ def test_Scenario39():
 
     s.figures[3] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 7
+    s.action_move = 6
+    s.action_range = 7
 
     assert_answers(s,{(40, 35), (34, 35), (37, 35),(38, 35), (39, 35)})
 
@@ -1010,8 +1010,8 @@ def test_Scenario40():
 
     s.figures[3] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 7
+    s.action_move = 6
+    s.action_range = 7
 
     assert_answers(s,{(32, 36), (33, 36), (26, 36)})
 
@@ -1040,8 +1040,8 @@ def test_Scenario41():
 
     s.figures[3] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 7
+    s.action_move = 6
+    s.action_range = 7
 
     assert_answers(s,{(32, 42), (33, 42), (26, 42)})
 
@@ -1070,8 +1070,8 @@ def test_Scenario42():
 
     s.figures[3] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 7
+    s.action_move = 6
+    s.action_range = 7
 
     assert_answers(s,{(18, 43), (11, 43), (5, 43)})
 
@@ -1097,8 +1097,8 @@ def test_Scenario43():
     s.walls[64][1] = True
     s.walls[78][1] = True
     s.figures[3] = 'A'
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 7
+    s.action_move = 6
+    s.action_range = 7
 
     assert_answers(s,{(3, 44)})
 
@@ -1117,8 +1117,8 @@ def test_Scenario44():
 
     s.figures[35] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 7
+    s.action_move = 6
+    s.action_range = 7
 
     assert_answers(s,{(38, 7), (31, 7)})
 
@@ -1137,8 +1137,8 @@ def test_Scenario45():
 
     s.figures[35] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 7
+    s.action_move = 6
+    s.action_range = 7
 
     assert_answers(s, {(38, 15), (31, 15)})
 
@@ -1157,8 +1157,8 @@ def test_Scenario46():
 
     s.figures[35] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 7
+    s.action_move = 6
+    s.action_range = 7
 
     assert_answers(s,{(31, 21)})
 
@@ -1177,8 +1177,8 @@ def test_Scenario47():
 
     s.figures[35] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 7
+    s.action_move = 6
+    s.action_range = 7
 
     assert_answers(s,{(37, 8)})
 
@@ -1197,8 +1197,8 @@ def test_Scenario48():
 
     s.figures[35] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 7
+    s.action_move = 6
+    s.action_range = 7
 
     assert_answers(s,{(37, 16)})
 
@@ -1217,8 +1217,8 @@ def test_Scenario49():
 
     s.figures[35] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 7
+    s.action_move = 6
+    s.action_range = 7
 
     assert_answers(s,{(38, 22), (31, 22)})
 
@@ -1237,8 +1237,8 @@ def test_Scenario50():
 
     s.figures[35] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 7
+    s.action_move = 6
+    s.action_range = 7
 
     assert_answers(s,{(44, 9), (37, 9)})
 
@@ -1257,8 +1257,8 @@ def test_Scenario51():
 
     s.figures[35] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 7
+    s.action_move = 6
+    s.action_range = 7
 
     assert_answers(s, {(50, 17), (44, 17), (37, 17)})
 
@@ -1277,8 +1277,8 @@ def test_Scenario52():
 
     s.figures[35] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 7
+    s.action_move = 6
+    s.action_range = 7
 
     assert_answers(s,{(50, 23), (44, 23), (37, 23)})
 
@@ -1297,8 +1297,8 @@ def test_Scenario53():
 
     s.figures[35] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 7
+    s.action_move = 6
+    s.action_range = 7
 
     assert_answers(s,{(35, 31)})
 
@@ -1332,8 +1332,8 @@ def test_Scenario54():
 
     s.figures[43] = 'A'
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 7
+    s.action_move = 2
+    s.action_range = 7
 
     assert_answers(s,{(43, 76)})
 
@@ -1366,8 +1366,8 @@ def test_Scenario55():
 
     s.figures[49] = 'A'
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 3
+    s.action_move = 2
+    s.action_range = 3
 
     assert_answers(s,{(43, 65)})
 
@@ -1384,8 +1384,8 @@ def test_Scenario56():
 
     s.figures[39] = 'A'
 
-    s.ACTION_MOVE = 1
-    s.ACTION_RANGE = 3
+    s.action_move = 1
+    s.action_range = 3
 
     assert_answers(s,{(38, 36), (46, 36)})
 
@@ -1422,8 +1422,8 @@ def test_Scenario57():
 
     s.figures[79] = 'A'
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 2
+    s.action_move = 2
+    s.action_range = 2
 
     assert_answers(s,{(94, )})
 
@@ -1434,8 +1434,8 @@ def test_Scenario58():
     s.figures[29] = 'C'
     s.figures[12] = 'A'
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 2
+    s.action_move = 2
+    s.action_range = 2
 
     assert_answers(s,{(25, ), (10, ), (18, )})
 
@@ -1454,8 +1454,8 @@ def test_Scenario59():
 
     s.figures[25] = 'A'
 
-    s.ACTION_MOVE = 3
-    s.ACTION_RANGE = 3
+    s.action_move = 3
+    s.action_range = 3
 
     assert_answers(s,{(3, )})
 
@@ -1476,8 +1476,8 @@ def test_Scenario60():
 
     s.figures[37] = 'A'
 
-    s.ACTION_MOVE = 3
-    s.ACTION_RANGE = 4
+    s.action_move = 3
+    s.action_range = 4
 
     assert_answers(s,{(45, 30)})
 
@@ -1498,9 +1498,9 @@ def test_Scenario61():
 
     s.figures[37] = 'A'
 
-    s.ACTION_MOVE = 3
-    s.ACTION_RANGE = 4
-    s.MUDDLED = True
+    s.action_move = 3
+    s.action_range = 4
+    s.muddled = True
 
     assert_answers(s,{(37, 30)})
 
@@ -1523,8 +1523,8 @@ def test_Scenario62():
 
     s.figures[37] = 'A'
 
-    s.ACTION_MOVE = 3
-    s.ACTION_RANGE = 4
+    s.action_move = 3
+    s.action_range = 4
 
     assert_answers(s,{(37, 30)})
 
@@ -1539,8 +1539,8 @@ def test_Scenario63():
 
     s.figures[18] = 'A'
 
-    s.ACTION_MOVE = 2
-    s.ACTION_TARGET = 2
+    s.action_move = 2
+    s.action_target = 2
 
     assert_answers(s,{(23, 16, 22)})
 
@@ -1559,9 +1559,9 @@ def test_Scenario64():
 
     s.figures[24] = 'A'
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 2
-    s.ACTION_TARGET = 3
+    s.action_move = 2
+    s.action_range = 2
+    s.action_target = 3
 
     assert_answers(s,{(30, 16, 31, 35)})
 
@@ -1580,10 +1580,10 @@ def test_Scenario65():
 
     s.figures[24] = 'A'
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 2
-    s.ACTION_TARGET = 3
-    s.MUDDLED = True
+    s.action_move = 2
+    s.action_range = 2
+    s.action_target = 3
+    s.muddled = True
 
     assert_answers(s,{(30, 16, 31, 35)})
 
@@ -1602,10 +1602,10 @@ def test_Scenario66():
 
     s.figures[24] = 'A'
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 2
-    s.ACTION_TARGET = 3
-    s.FLYING = True
+    s.action_move = 2
+    s.action_range = 2
+    s.action_target = 3
+    s.flying = True
 
     assert_answers(s,{(30, 16, 31, 35)})
 
@@ -1625,8 +1625,8 @@ def test_Scenario67():
 
     s.figures[22] = 'A'
 
-    s.ACTION_MOVE = 1
-    s.ACTION_RANGE = 2
+    s.action_move = 1
+    s.action_range = 2
 
     assert_answers(s,{(22, 36)})
 
@@ -1645,9 +1645,9 @@ def test_Scenario68():
 
     s.figures[17] = 'A'
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 2
-    s.ACTION_TARGET = 2
+    s.action_move = 2
+    s.action_range = 2
+    s.action_target = 2
 
     assert_answers(s,{(9, 22, 24)})
 
@@ -1670,9 +1670,9 @@ def test_Scenario69():
 
     s.figures[30] = 'A'
 
-    s.ACTION_MOVE = 1
-    s.ACTION_RANGE = 2
-    s.ACTION_TARGET = 2
+    s.action_move = 1
+    s.action_range = 2
+    s.action_target = 2
 
     assert_answers(s,{(31, 17, 29)})
 
@@ -1689,9 +1689,9 @@ def test_Scenario70():
 
     s.figures[24] = 'A'
 
-    s.ACTION_MOVE = 3
-    s.ACTION_RANGE = 4
-    s.ACTION_TARGET = 2
+    s.action_move = 3
+    s.action_range = 4
+    s.action_target = 2
 
     assert_answers(s,{(24, 9, 47)})
 
@@ -1708,9 +1708,9 @@ def test_Scenario71():
 
     s.figures[24] = 'A'
 
-    s.ACTION_MOVE = 3
-    s.ACTION_RANGE = 3
-    s.ACTION_TARGET = 2
+    s.action_move = 3
+    s.action_range = 3
+    s.action_target = 2
 
     assert_answers(s,{(39, 17, 62)})
 
@@ -1729,9 +1729,9 @@ def test_Scenario72():
 
     s.figures[24] = 'A'
 
-    s.ACTION_MOVE = 3
-    s.ACTION_RANGE = 3
-    s.ACTION_TARGET = 2
+    s.action_move = 3
+    s.action_range = 3
+    s.action_target = 2
 
     assert_answers(s,{(37, 17, 57)})
 
@@ -1748,9 +1748,9 @@ def test_Scenario73():
 
     s.figures[24] = 'A'
 
-    s.ACTION_MOVE = 3
-    s.ACTION_RANGE = 3
-    s.ACTION_TARGET = 2
+    s.action_move = 3
+    s.action_range = 3
+    s.action_target = 2
 
     assert_answers(s,{(37, 17, 57), (39, 17, 62)})
 
@@ -1766,8 +1766,8 @@ def test_Scenario74():
 
     s.figures[32] = 'A'
 
-    s.ACTION_MOVE = 2
-    s.ACTION_TARGET = 2
+    s.action_move = 2
+    s.action_target = 2
 
     assert_answers(s,{(17, 9)})
 
@@ -1790,8 +1790,8 @@ def test_Scenario75():
 
     s.figures[23] = 'A'
 
-    s.ACTION_MOVE = 1
-    s.ACTION_TARGET = 4
+    s.action_move = 1
+    s.action_target = 4
 
     assert_answers(s,{(23, 16, 22, 24, 31), (23, 16, 17, 24, 31)})
 
@@ -1801,7 +1801,7 @@ def test_Scenario76():
 
     s.figures[30] = 'A'
 
-    s.ACTION_MOVE = 1
+    s.action_move = 1
 
     assert_answers(s,{(30, )})
 
@@ -1826,7 +1826,7 @@ def test_Scenario77():
 
     s.figures[37] = 'A'
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(37, )})
 
@@ -1840,7 +1840,7 @@ def test_Scenario78():
 
     s.figures[32] = 'A'
 
-    s.ACTION_MOVE = 3
+    s.action_move = 3
 
     assert_answers(s,{(22, ), (36, )})
 
@@ -1857,7 +1857,7 @@ def test_Scenario79():
     s.aoe[31] = True
     s.aoe[32] = True
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(23, 16, 22)})
 
@@ -1873,7 +1873,7 @@ def test_Scenario80():
     s.aoe[31] = True
     s.aoe[37] = True
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(9, 16, 22)})
 
@@ -1893,7 +1893,7 @@ def test_Scenario81():
     s.aoe[31] = True
     s.aoe[37] = True
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(23, 8, 16)})
 
@@ -1913,8 +1913,8 @@ def test_Scenario82():
     s.aoe[31] = True
     s.aoe[37] = True
 
-    s.ACTION_MOVE = 2
-    s.ACTION_TARGET = 2
+    s.action_move = 2
+    s.action_target = 2
 
     assert_answers(s,{(23, 16, 22), (9, 16, 22)})
 
@@ -1931,8 +1931,8 @@ def test_Scenario83():
     s.aoe[31] = True
     s.aoe[37] = True
 
-    s.ACTION_MOVE = 2
-    s.ACTION_TARGET = 2
+    s.action_move = 2
+    s.action_target = 2
 
     assert_answers(s,{(9, 16, 17, 22)})
 
@@ -1954,7 +1954,7 @@ def test_Scenario84():
     s.aoe[31] = True
     s.aoe[37] = True
 
-    s.ACTION_MOVE = 3
+    s.action_move = 3
 
     assert_answers(s,{(17, 15)})
 
@@ -1988,7 +1988,7 @@ def test_Scenario85():
     s.aoe[25] = True
     s.aoe[32] = True
 
-    s.ACTION_MOVE = 3
+    s.action_move = 3
 
     assert_answers(s,{(37, 36)})
 
@@ -2010,7 +2010,7 @@ def test_Scenario86():
     s.aoe[25] = True
     s.aoe[26] = True
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(22, 18, 23, 24), (50, 51, 52, 60)})
 
@@ -2032,8 +2032,8 @@ def test_Scenario87():
     s.aoe[24] = True
     s.aoe[31] = True
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 3
+    s.action_move = 2
+    s.action_range = 3
 
     assert_answers(s,{(37, 15, 16, 17), (37, 60, 67, 75)})
 
@@ -2051,8 +2051,8 @@ def test_Scenario88():
 
     s.figures[38] = 'A'
 
-    s.ACTION_MOVE = 3
-    s.ACTION_RANGE = 4
+    s.action_move = 3
+    s.action_range = 4
 
     assert_answers(s,{(38, 10)})
 
@@ -2073,7 +2073,7 @@ def test_Scenario89():
 
     s.figures[31] = 'A'
 
-    s.ACTION_MOVE = 1
+    s.action_move = 1
 
     assert_answers(s,{(38, )})
 
@@ -2094,7 +2094,7 @@ def test_Scenario90():
 
     s.figures[31] = 'A'
 
-    s.ACTION_MOVE = 1
+    s.action_move = 1
 
     assert_answers(s,{(38, )})
 
@@ -2115,7 +2115,7 @@ def test_Scenario91():
 
     s.figures[31] = 'A'
 
-    s.ACTION_MOVE = 1
+    s.action_move = 1
 
     assert_answers(s,{(38, )})
 
@@ -2141,8 +2141,8 @@ def test_Scenario92():
 
     s.figures[32] = 'A'
 
-    s.ACTION_MOVE = 1
-    s.ACTION_RANGE = 2
+    s.action_move = 1
+    s.action_range = 2
 
     assert_answers(s,{(32, 29)})
 
@@ -2166,9 +2166,9 @@ def test_Scenario93():
 
     s.figures[15] = 'A'
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 3
-    s.ACTION_TARGET = 3
+    s.action_move = 2
+    s.action_range = 3
+    s.action_target = 3
 
     assert_answers(s,{(23, 11, 33, 38)})
 
@@ -2187,8 +2187,8 @@ def test_Scenario94():
 
     s.figures[22] = 'A'
 
-    s.ACTION_MOVE = 4
-    s.ACTION_TARGET = 3
+    s.action_move = 4
+    s.action_target = 3
 
     assert_answers(s,{(38, 32, 39, 46)})
 
@@ -2207,8 +2207,8 @@ def test_Scenario95():
 
     s.figures[22] = 'A'
 
-    s.ACTION_MOVE = 4
-    s.ACTION_TARGET = 3
+    s.action_move = 4
+    s.action_target = 3
 
     assert_answers(s,{(24, 25, 32)})
 
@@ -2230,7 +2230,7 @@ def test_Scenario96():
     s.aoe[17] = True
     s.aoe[9] = True
 
-    s.ACTION_MOVE = 4
+    s.action_move = 4
 
     assert_answers(s,{(24, 32, 39)})
 
@@ -2249,8 +2249,8 @@ def test_Scenario97():
 
     s.figures[22] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_TARGET = 3
+    s.action_move = 6
+    s.action_target = 3
 
     assert_answers(s,{(38, 32, 39, 46)})
 
@@ -2271,7 +2271,7 @@ def test_Scenario98():
 
     s.figures[10] = 'A'
 
-    s.ACTION_MOVE = 4
+    s.action_move = 4
 
     assert_answers(s,{(31, )})
 
@@ -2295,7 +2295,7 @@ def test_Scenario99():
 
     s.figures[10] = 'A'
 
-    s.ACTION_MOVE = 4
+    s.action_move = 4
 
     assert_answers(s,{(23, ), (24, )})
 
@@ -2321,7 +2321,7 @@ def test_Scenario100():
 
     s.figures[10] = 'A'
 
-    s.ACTION_MOVE = 4
+    s.action_move = 4
 
     assert_answers(s,{(21, ), (23, ), (24, )})
 
@@ -2346,7 +2346,7 @@ def test_Scenario101():
 
     s.figures[10] = 'A'
 
-    s.ACTION_MOVE = 4
+    s.action_move = 4
 
     assert_answers(s,{(29, )})
 
@@ -2368,8 +2368,8 @@ def test_Scenario102():
 
     s.figures[10] = 'A'
 
-    s.ACTION_MOVE = 4
-    s.FLYING = True
+    s.action_move = 4
+    s.flying = True
 
     assert_answers(s,{(37, ), (38, )})
 
@@ -2391,8 +2391,8 @@ def test_Scenario103():
 
     s.figures[10] = 'A'
 
-    s.ACTION_MOVE = 4
-    s.JUMPING = True
+    s.action_move = 4
+    s.jumping = True
 
     assert_answers(s,{(37, ), (38, )})
 
@@ -2421,8 +2421,8 @@ def test_Scenario104():
 
     s.figures[10] = 'A'
 
-    s.ACTION_MOVE = 4
-    s.JUMPING = True
+    s.action_move = 4
+    s.jumping = True
 
     assert_answers(s,{(37, ), (38, )})
 
@@ -2441,8 +2441,8 @@ def test_Scenario105():
 
     s.figures[32] = 'A'
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 2
+    s.action_move = 2
+    s.action_range = 2
 
     assert_answers(s,{(45, ), (30, )})
 
@@ -2457,8 +2457,8 @@ def test_Scenario106():
 
     s.figures[25] = 'A'
 
-    s.ACTION_MOVE = 2
-    s.JUMPING = True
+    s.action_move = 2
+    s.jumping = True
 
     assert_answers(s,{(23, ), (32, )})
 
@@ -2480,7 +2480,7 @@ def test_Scenario107():
 
     s.figures[17] = 'A'
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(17, )})
 
@@ -2499,9 +2499,9 @@ def test_Scenario108():
 
     s.figures[10] = 'A'
 
-    s.ACTION_MOVE = 3
-    s.ACTION_TARGET = 4
-    s.FLYING = True
+    s.action_move = 3
+    s.action_target = 4
+    s.flying = True
 
     assert_answers(s,{(31, 23, 24, 30, 32)})
 
@@ -2521,9 +2521,9 @@ def test_Scenario109():
     s.aoe[24] = True
     s.aoe[25] = True
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 3
-    s.ACTION_TARGET = 2
+    s.action_move = 2
+    s.action_range = 3
+    s.action_target = 2
 
     assert_answers(s,{(17, 15, 39, 46)})
 
@@ -2535,9 +2535,9 @@ def test_Scenario110():
 
     s.figures[18] = 'A'
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 3
-    s.ACTION_TARGET = 0
+    s.action_move = 2
+    s.action_range = 3
+    s.action_target = 0
 
     assert_answers(s,{(16, )})
 
@@ -2552,8 +2552,8 @@ def test_Scenario111():
     s.aoe[24] = True
     s.aoe[25] = True
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 1
+    s.action_move = 2
+    s.action_range = 1
 
     assert_answers(s,{(17, 15), (23, 15), (9, 15)})
 
@@ -2567,7 +2567,7 @@ def test_Scenario112():
 
     s.figures[18] = 'A'
 
-    s.ACTION_MOVE = 3
+    s.action_move = 3
 
     assert_answers(s,{(22, 15), (8, 15)})
 
@@ -2581,8 +2581,8 @@ def test_Scenario113():
 
     s.figures[18] = 'A'
 
-    s.ACTION_MOVE = 3
-    s.JUMPING = True
+    s.action_move = 3
+    s.jumping = True
 
     assert_answers(s,{(22, 15), (8, 15)})
 
@@ -2596,8 +2596,8 @@ def test_Scenario114():
 
     s.figures[18] = 'A'
 
-    s.ACTION_MOVE = 3
-    s.FLYING = True
+    s.action_move = 3
+    s.flying = True
 
     assert_answers(s,{(16, 15)})
 
@@ -2616,7 +2616,7 @@ def test_Scenario115():
 
     s.figures[18] = 'A'
 
-    s.ACTION_MOVE = 3
+    s.action_move = 3
 
     assert_answers(s,{(16, 15)})
 
@@ -2634,7 +2634,7 @@ def test_Scenario116():
 
     s.aoe[25] = True
 
-    s.ACTION_MOVE = 3
+    s.action_move = 3
 
     assert_answers(s,{(17, ), (45, )})
 
@@ -2662,8 +2662,8 @@ def test_Scenario117():
     s.aoe[24] = True
     s.aoe[31] = True
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 3
+    s.action_move = 2
+    s.action_range = 3
 
     assert_answers(s,{(35, 16, 17, 18), (35, 58, 59, 60)})
 
@@ -2687,8 +2687,8 @@ def test_Scenario118():
     s.aoe[24] = True
     s.aoe[31] = True
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 3
+    s.action_move = 2
+    s.action_range = 3
 
     assert_answers(s,{(35, 16), (35, 58, 59, 60)})
 
@@ -2712,8 +2712,8 @@ def test_Scenario119():
     s.aoe[24] = True
     s.aoe[31] = True
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 3
+    s.action_move = 2
+    s.action_range = 3
 
     assert_answers(s,{(35, 16, 17, 18), (35, 58)})
 
@@ -2741,8 +2741,8 @@ def test_Scenario120():
     s.aoe[24] = True
     s.aoe[31] = True
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 3
+    s.action_move = 2
+    s.action_range = 3
 
     assert_answers(s,{(35, 16, 17, 18), (35, 58, 59, 60)})
 
@@ -2767,8 +2767,8 @@ def test_Scenario121():
     s.aoe[24] = True
     s.aoe[31] = True
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 3
+    s.action_move = 2
+    s.action_range = 3
 
     assert_answers(s,{(35, 58, 59, 60)})
 
@@ -2784,9 +2784,9 @@ def test_Scenario122():
     s.aoe[25] = True
     s.aoe[32] = True
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 3
-    s.ACTION_TARGET = 0
+    s.action_move = 2
+    s.action_range = 3
+    s.action_target = 0
 
     assert_answers(s,{(51, )})
 
@@ -2802,8 +2802,8 @@ def test_Scenario123():
 
     s.figures[59] = 'A'
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 4
+    s.action_move = 2
+    s.action_range = 4
 
     assert_answers(s,{(59, 36, )})
 
@@ -2835,8 +2835,8 @@ def test_Scenario124():
 
     s.figures[36] = 'A'
 
-    s.ACTION_MOVE = 2
-    s.ACTION_TARGET = 2
+    s.action_move = 2
+    s.action_target = 2
 
     assert_answers(s,{(38, 39, )})
 
@@ -2868,8 +2868,8 @@ def test_Scenario125():
 
     s.figures[36] = 'A'
 
-    s.ACTION_MOVE = 1
-    s.ACTION_TARGET = 2
+    s.action_move = 1
+    s.action_target = 2
 
     assert_answers(s,{(30, )})
 
@@ -2891,7 +2891,7 @@ def test_Scenario126():
     s.aoe[25] = True
     s.aoe[26] = True
 
-    s.ACTION_MOVE = 3
+    s.action_move = 3
 
     assert_answers(s,{(32, 39, 47)})
 
@@ -2905,7 +2905,7 @@ def test_Scenario127():
 
     s.figures[36] = 'A'
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(31, ), (45, ), (37, )})
 
@@ -2920,7 +2920,7 @@ def test_Scenario128():
 
     s.figures[37] = 'A'
 
-    s.ACTION_MOVE = 1
+    s.action_move = 1
 
     assert_answers(s,{(37, ), (45, )})
 
@@ -2935,7 +2935,7 @@ def test_Scenario129():
 
     s.figures[37] = 'A'
 
-    s.ACTION_MOVE = 1
+    s.action_move = 1
 
     assert_answers(s,{(37, ), (45, )})
 
@@ -2952,7 +2952,7 @@ def test_Scenario130():
 
     s.figures[37] = 'A'
 
-    s.ACTION_MOVE = 1
+    s.action_move = 1
 
     assert_answers(s,{(45, )})
 
@@ -2998,9 +2998,9 @@ def test_Scenario131():
 
     s.figures[37] = 'A'
 
-    s.ACTION_MOVE = 7
-    s.ACTION_RANGE = 7
-    s.ACTION_TARGET = 5
+    s.action_move = 7
+    s.action_range = 7
+    s.action_target = 5
 
     s.aoe[17] = True
     s.aoe[18] = True
@@ -3048,7 +3048,7 @@ def test_Scenario132():
 
     s.figures[29] = 'A'
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(37, )})
 
@@ -3078,9 +3078,9 @@ def test_Scenario133():
 
     s.figures[37] = 'A'
 
-    s.ACTION_MOVE = 1
-    s.ACTION_RANGE = 2
-    s.ACTION_TARGET = 2
+    s.action_move = 1
+    s.action_range = 2
+    s.action_target = 2
 
     assert_answers(s,{(37, 38, 45)})
 
@@ -3106,8 +3106,8 @@ def test_Scenario134():
     s.aoe[24] = True
     s.aoe[31] = True
 
-    s.ACTION_MOVE = 0
-    s.ACTION_RANGE = 2
+    s.action_move = 0
+    s.action_range = 2
 
     assert_answers(s,{(36, )})
 
@@ -3133,8 +3133,8 @@ def test_Scenario135():
     s.aoe[24] = True
     s.aoe[31] = True
 
-    s.ACTION_MOVE = 0
-    s.ACTION_RANGE = 2
+    s.action_move = 0
+    s.action_range = 2
 
     assert_answers(s,{(36, )})
 
@@ -3161,8 +3161,8 @@ def test_Scenario136():
     s.aoe[24] = True
     s.aoe[31] = True
 
-    s.ACTION_MOVE = 0
-    s.ACTION_RANGE = 2
+    s.action_move = 0
+    s.action_range = 2
 
     assert_answers(s,{(36, )})
 
@@ -3183,9 +3183,9 @@ def test_Scenario137():
 
     s.figures[49] = 'A'
 
-    s.ACTION_MOVE = 5
-    s.ACTION_RANGE = 2
-    s.ACTION_TARGET = 3
+    s.action_move = 5
+    s.action_range = 2
+    s.action_target = 3
 
     assert_answers(s,{(67, 53, 74, 76)})
 
@@ -3202,9 +3202,9 @@ def test_Scenario138():
 
     s.figures[49] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 2
-    s.ACTION_TARGET = 3
+    s.action_move = 6
+    s.action_range = 2
+    s.action_target = 3
 
     assert_answers(s,{(40, 26, 38, 53)})
 
@@ -3221,10 +3221,10 @@ def test_Scenario139():
 
     s.figures[49] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 2
-    s.ACTION_TARGET = 3
-    s.MUDDLED = True
+    s.action_move = 6
+    s.action_range = 2
+    s.action_target = 3
+    s.muddled = True
 
     assert_answers(s,{(39, 26, 38, 53)})
 
@@ -3241,9 +3241,9 @@ def test_Scenario140():
 
     s.figures[49] = 'A'
 
-    s.ACTION_MOVE = 5
-    s.ACTION_RANGE = 2
-    s.ACTION_TARGET = 3
+    s.action_move = 5
+    s.action_range = 2
+    s.action_target = 3
 
     assert_answers(s,{(39, 26, 38, 53)})
 
@@ -3264,9 +3264,9 @@ def test_Scenario141():
 
     s.figures[49] = 'A'
 
-    s.ACTION_MOVE = 6
-    s.ACTION_RANGE = 2
-    s.ACTION_TARGET = 3
+    s.action_move = 6
+    s.action_range = 2
+    s.action_target = 3
 
     assert_answers(s,{(40, 26, 32, 53)})
 
@@ -3287,8 +3287,8 @@ def test_Scenario142():
 
     s.figures[52] = 'A'
 
-    s.ACTION_MOVE = 0
-    s.ACTION_RANGE = 3
+    s.action_move = 0
+    s.action_range = 3
 
     assert_answers(s,{(52, 32)})
 
@@ -3310,8 +3310,8 @@ def test_Scenario143():
 
     s.figures[31] = 'A'
 
-    s.ACTION_MOVE = 2
-    s.ACTION_RANGE = 2
+    s.action_move = 2
+    s.action_range = 2
 
     assert_answers(s,{(31, 32)})
 
@@ -3355,7 +3355,7 @@ def test_Scenario144():
 
     s.figures[9] = 'A'
 
-    s.ACTION_MOVE = 2
+    s.action_move = 2
 
     assert_answers(s,{(22, ), (23, ), (24, )})
 
@@ -3391,7 +3391,7 @@ def test_Scenario145():
 
     s.figures[29] = 'A'
 
-    s.ACTION_MOVE = 3
+    s.action_move = 3
 
     assert_answers(s,{(38, )})
 
@@ -3427,7 +3427,7 @@ def test_Scenario146():
 
     s.figures[30] = 'A'
 
-    s.ACTION_MOVE = 3
+    s.action_move = 3
 
     assert_answers(s,{(17, )})
 
@@ -3442,8 +3442,8 @@ def test_Scenario147():
 
     s.figures[12] = 'A'
 
-    s.ACTION_MOVE = 0
-    s.ACTION_RANGE = 4
+    s.action_move = 0
+    s.action_range = 4
 
     assert_answers(s,{(12, )})
 
@@ -3458,8 +3458,8 @@ def test_Scenario148():
 
     s.figures[33] = 'A'
 
-    s.ACTION_MOVE = 0
-    s.ACTION_RANGE = 6
+    s.action_move = 0
+    s.action_range = 6
 
     assert_answers(s,{(33, 75)})
 
@@ -3475,8 +3475,8 @@ def test_Scenario149():
 
     s.figures[53] = 'A'
 
-    s.ACTION_MOVE = 0
-    s.ACTION_RANGE = 6
+    s.action_move = 0
+    s.action_range = 6
 
     assert_answers(s,{(53, )})
 
@@ -3494,7 +3494,7 @@ def test_Scenario150():
 
     s.figures[89] = 'A'
 
-    s.ACTION_MOVE = 0
-    s.ACTION_RANGE = 9
+    s.action_move = 0
+    s.action_range = 9
 
     assert_answers(s,{(89, 31)})

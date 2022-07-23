@@ -8,22 +8,23 @@ from solver.settings import *
 from solver.print_map import *
 
 class Scenario:
-    correct_answer = None
-    valid = True
     logging:bool
     debug_visuals:bool
     show_each_action_separately:bool
-    visibility_cache = {}
-    path_cache : tuple[dict[tuple[int,Callable[['Scenario',int], bool]],tuple[list[int],list[int]]],int,dict[int,list[int]],int]
+    visibility_cache :dict[tuple[int,int],bool]
+    path_cache : list[tuple[
+        dict[tuple[int,Callable[['Scenario',int], bool]],tuple[list[int],list[int]]],
+        dict[tuple[int,Callable[['Scenario',int], bool]],tuple[list[int],list[int]]],
+        dict[tuple[int,Callable[['Scenario',int], bool]],list[int]],
+        dict[tuple[int,Callable[['Scenario',int], bool]],list[int]]]]
     debug_lines: set[tuple[int,tuple[tuple[float,float],tuple[float,float]]]]
-    test_switch:bool
-    ACTION_MOVE:int
-    ACTION_RANGE:int
-    ACTION_TARGET:int
-    FLYING:bool
-    JUMPING:bool
-    MUDDLED:bool
-    DEBUG_TOGGLE:bool
+    action_move:int
+    action_range:int
+    action_target:int
+    flying:bool
+    jumping:bool
+    muddled:bool
+    debug_toggle:bool
     message:str
     map_width :int
     map_height:int
@@ -40,15 +41,12 @@ class Scenario:
     aoe_center:int
 
     def __init__(self, width: int, height: int, aoe_width: int, aoe_height: int):
-        self.correct_answer = None
-        self.valid = True
         self.logging = False
         self.debug_visuals = False
         self.show_each_action_separately = False
         self.visibility_cache = {}
         self.path_cache = [{}, {}, {}, {}]
         self.debug_lines = set()
-        self.test_switch = False
 
         self.map_width = width
         self.map_height = height
@@ -66,13 +64,13 @@ class Scenario:
         self.aoe = [False] * self.aoe_size
 
         self.message = ''
-        self.ACTION_MOVE = 0
-        self.ACTION_RANGE = 0
-        self.ACTION_TARGET = 1
-        self.FLYING = False
-        self.JUMPING = False
-        self.MUDDLED = False
-        self.DEBUG_TOGGLE = False
+        self.action_move = 0
+        self.action_range = 0
+        self.action_target = 1
+        self.flying = False
+        self.jumping = False
+        self.muddled = False
+        self.debug_toggle = False
 
         if self.aoe_width != 7 or self.aoe_height != 7:
             exit()
@@ -269,92 +267,6 @@ class Scenario:
             self.RULE_DIFFICULT_TERRAIN_JUMP = False
             self.RULE_PROXIMITY_FOCUS = True
 
-    def unpack_scenario(self, packed_scenario: dict[str,int]) -> None:
-        self.ACTION_MOVE = int(packed_scenario['move'])
-        self.ACTION_RANGE = int(packed_scenario['range'])
-        self.ACTION_TARGET = int(packed_scenario['target'])
-        self.JUMPING = int(packed_scenario['flying']) == 1
-        self.FLYING = int(packed_scenario['flying']) == 2
-        self.MUDDLED = int(packed_scenario['muddled']) == 1
-
-        # added to packed_scenario in v2.5.0; removed in v2.6.0
-        #self.JOTL_RULES = int( packed_scenario.get( 'jotl', '0' ) ) == 1
-
-        # added to packed_scenario in v2.6.0
-        self.set_rules(int(packed_scenario.get('game_rules', '0')))
-
-        self.DEBUG_TOGGLE = bool(packed_scenario.get('debug_toggle', '0'))
-
-        def add_elements(grid:list[str], key:str, content:str):
-            for _ in packed_scenario['map'][key]:
-                grid[_] = content
-
-        add_elements(self.contents, 'walls', 'X')
-        add_elements(self.contents, 'obstacles', 'O')
-        add_elements(self.contents, 'traps', 'T')
-        add_elements(self.contents, 'hazardous', 'H')
-        add_elements(self.contents, 'difficult', 'D')
-        add_elements(self.figures, 'characters', 'C')
-        add_elements(self.figures, 'monsters', 'M')
-
-        active_figure_location = packed_scenario['active_figure']
-        switch_factions = self.figures[active_figure_location] == 'C'
-        self.figures[active_figure_location] = 'A'
-
-        if switch_factions:
-            for _ in range(self.map_size):
-                if self.figures[_] == 'C':
-                    self.figures[_] = 'M'
-                elif self.figures[_] == 'M':
-                    self.figures[_] = 'C'
-
-        for _ in packed_scenario['aoe']:
-            if _ != self.aoe_center or self.ACTION_RANGE > 0:
-                self.aoe[_] = True
-
-        remap = {
-            1: 0,
-            0: 1,
-            2: 5,
-        }
-        for _ in packed_scenario['map']['thin_walls']:
-            s = remap[_[1]]
-            self.walls[_[0]][s] = True
-
-        if switch_factions:
-            victims = packed_scenario['map']['monsters']
-        else:
-            victims = packed_scenario['map']['characters']
-
-        for i, j in zip(packed_scenario['map']['initiatives'], victims):
-            self.initiatives[j] = int(i)
-
-        self.prepare_map()
-
-    # TODO: clean
-    def unpack_scenario_forviews(self, packed_scenario: dict[str,int]) -> None:
-        self.ACTION_RANGE = int(packed_scenario['range'])
-        self.ACTION_TARGET = int(packed_scenario['target'])
-
-        self.set_rules(int(packed_scenario.get('game_rules', '0')))
-
-        def add_elements(grid, key, content):
-            for _ in packed_scenario['map'][key]:
-                grid[_] = content
-
-        add_elements(self.contents, 'walls', 'X')
-
-        remap = {
-            1: 0,
-            0: 1,
-            2: 5,
-        }
-        for _ in packed_scenario['map']['thin_walls']:
-            s = remap[_[1]]
-            self.walls[_[0]][s] = True
-
-        self.prepare_map()
-
     def can_end_move_on_standard(self, location: int) -> bool:
         return self.contents[location] in [' ', 'T', 'H', 'D'] and self.figures[location] in [' ', 'A']
 
@@ -370,7 +282,7 @@ class Scenario:
     def is_trap_standard(self, location: int) -> bool:
         return self.contents[location] in ['T', 'H']
 
-    def is_trap_flying(self, location):
+    def is_trap_flying(self, location: int) -> bool:
         return False
 
     def measure_proximity_through(self,  location: int) -> bool:
@@ -411,7 +323,7 @@ class Scenario:
         return self.vertices[location * 6 + vertex]
 
     def setup_neighbors_mapping(self) -> None:
-        def get_neighbors(location):
+        def get_neighbors(location:int)-> list[int]:
             row = location % self.map_height
             column = location // self.map_height
 
@@ -455,7 +367,7 @@ class Scenario:
         distances = self.find_proximity_distances(location_a)
         return distances[location_b] == 1
 
-    def apply_rotated_aoe_offset(self, center: int, offset: tuple[int, int, int], rotation: int) -> int | None:
+    def apply_rotated_aoe_offset(self, center: int, offset: tuple[int, int, int], rotation: int) -> int:
         offset = rotate_offset(offset, rotation)
         return apply_offset(center, offset, self.map_height, self.map_size)
 
@@ -553,7 +465,7 @@ class Scenario:
             list[tuple[float, float, float]],
             list[tuple[tuple[float, float, float], int]],
             list[tuple[tuple[float, float, float], int]],
-            list[tuple[tuple[float, float, float], tuple[float, float, float], int, int]]] | None:
+            list[tuple[tuple[float, float, float], tuple[float, float, float], int, int]]] | None :
         # determine the appropiate cross section to represent the hex volumes
         cross_section_edge = self.determine_los_cross_section_edge(
             location_a, location_b)
@@ -574,7 +486,7 @@ class Scenario:
         edge_direction_target = direction(edge_target)
         edge_direction_zero = direction(edge_zero)
 
-        def calculate_occluder_mapping(point):
+        def calculate_occluder_mapping(point:tuple[float,float])->tuple[float,float,float]:
             value_at_zero = occluder_target_intersection(
                 (source_vertex_0, point), (target_vertex_0, target_vertex_1))
             value_at_one = occluder_target_intersection(
@@ -586,9 +498,9 @@ class Scenario:
             )
 
         occluder_mappings = [(0.0, 0.0, 0.0), (1.0, 1.0, 0.0)]
-        occluder_mappings_below = []
-        occluder_mappings_above = []
-        occluder_mappings_internal = []
+        occluder_mappings_below:list[tuple[tuple[float,float,float],int]] = []
+        occluder_mappings_above:list[tuple[tuple[float,float,float],int]] = []
+        occluder_mappings_internal:list[tuple[tuple[float, float, float], tuple[float, float, float], int, int]] = []
         for line in self.occluders_in(self.calculate_bounds(location_a, location_b)):
             # self.debug_lines.add( (1, line ) )
 
@@ -860,7 +772,7 @@ class Scenario:
         # translate the occluder mappings (which are stored as the value of y at
         # x = 0 and x = 1) into 2d lines and include the x = 0 and x = 1 vertial
         # lines
-        lines = []
+        lines:list[tuple[tuple[tuple[float, float], tuple[float, float]],tuple[float, float]]] = []
         for occluder in occluder_mappings:
             line = ((0.0, occluder[0]), (1.0, occluder[1]))
             lines.append((line, direction(line)))
@@ -868,7 +780,7 @@ class Scenario:
         lines.append((((1.0, 0.0), (1.0, 1.0)), (0.0, 1.0)))
 
         # loop over every window at every occluder mapping intersection
-        window_polygons = []
+        window_polygons:list[tuple[float, tuple[float, float]]] = []
         polygon_starts = []
         for x in occluder_intersections(occluder_mappings):
             for window in get_visibility_windows_at(x, occluder_mapping_set):
@@ -929,7 +841,7 @@ class Scenario:
 
         return (sightline_start, sightline_end)
 
-    def vertex_at_wall(self, location, vertex):
+    def vertex_at_wall(self, location:int, vertex:int)->bool:
         if self.effective_walls[location][vertex]:
             return True
         if self.effective_walls[location][(vertex + 5) % 6]:
@@ -981,7 +893,7 @@ class Scenario:
             shortest_length = float('inf')
             shortest_line = ((-1.0, -1.0),(-1.0, -1.0))
 
-        def consider_sightline(location_a, vertex_a, location_b, vertex_b):
+        def consider_sightline(location_a:int, vertex_a:int, location_b:int, vertex_b:int):
             length = calculate_distance(vertex_position_a, vertex_position_b)
             if length < v.shortest_length:
                 if self.test_line(bounds, vertex_position_a, vertex_position_b):
@@ -1045,7 +957,7 @@ class Scenario:
         distances = [MAX_VALUE] * self.map_size
         traps = [MAX_VALUE] * self.map_size
 
-        frontier = collections.deque()
+        frontier:collections.deque[int] = collections.deque()
         frontier.append(start)
         distances[start] = 0
         traps[start] = 0
@@ -1062,9 +974,9 @@ class Scenario:
                 if self.walls[current][edge]:
                     continue
                 neighbor_distance = distance + 1 + \
-                    int(not self.FLYING and not self.JUMPING and self.additional_path_cost(
+                    int(not self.flying and not self.jumping and self.additional_path_cost(
                         neighbor))
-                neighbor_trap = int(not self.JUMPING) * \
+                neighbor_trap = int(not self.jumping) * \
                     trap + int(self.is_trap(self, neighbor))
                 if (neighbor_trap, neighbor_distance) < (traps[neighbor], distances[neighbor]):
                     frontier.append(neighbor)
@@ -1072,7 +984,7 @@ class Scenario:
                     traps[neighbor] = neighbor_trap
 
         if self.RULE_DIFFICULT_TERRAIN_JUMP:
-            if self.JUMPING:
+            if self.jumping:
                 for location in range(self.map_size):
                     distances[location] += self.additional_path_cost(location)
                 distances[start] -= self.additional_path_cost(start)
@@ -1093,8 +1005,8 @@ class Scenario:
             destination, traversal_test)
         distances = list(distances)
         traps = list(traps)
-        if not self.FLYING:
-            if not self.JUMPING or self.RULE_DIFFICULT_TERRAIN_JUMP:
+        if not self.flying:
+            if not self.jumping or self.RULE_DIFFICULT_TERRAIN_JUMP:
                 destination_additional_path_cost = self.additional_path_cost(
                     destination)
                 if destination_additional_path_cost > 0:
@@ -1118,7 +1030,7 @@ class Scenario:
 
         distances = [MAX_VALUE] * self.map_size
 
-        frontier = collections.deque()
+        frontier:collections.deque[int] = collections.deque()
         frontier.append(start)
         distances[start] = 0
 
@@ -1173,24 +1085,24 @@ class Scenario:
         dict[tuple[int,int,int],set[tuple[tuple[float,float],tuple[tuple[float,float]]]]],
         dict[tuple[int,int,int],set[int]]]:
         map_debug_tags = [' '] * self.map_size
-        if self.ACTION_RANGE == 0 or self.ACTION_TARGET == 0:
+        if self.action_range == 0 or self.action_target == 0:
             ATTACK_RANGE = 1
             SUSCEPTIBLE_TO_DISADVANTAGE = False
         else:
-            ATTACK_RANGE = self.ACTION_RANGE
-            SUSCEPTIBLE_TO_DISADVANTAGE = not self.MUDDLED
-        PLUS_TARGET = self.ACTION_TARGET - 1
+            ATTACK_RANGE = self.action_range
+            SUSCEPTIBLE_TO_DISADVANTAGE = not self.muddled
+        PLUS_TARGET = self.action_target - 1
         PLUS_TARGET_FOR_MOVEMENT = max(0, PLUS_TARGET)
-        ALL_TARGETS = self.ACTION_TARGET == 6
+        ALL_TARGETS = self.action_target == 6
 
-        AOE_ACTION = self.ACTION_TARGET > 0 and True in self.aoe
-        AOE_MELEE = AOE_ACTION and self.ACTION_RANGE == 0
+        AOE_ACTION = self.action_target > 0 and True in self.aoe
+        AOE_MELEE = AOE_ACTION and self.action_range == 0
 
-        if self.FLYING:
+        if self.flying:
             self.can_end_move_on = Scenario.can_end_move_on_flying
             self.can_travel_through = Scenario.can_travel_through_flying
             self.is_trap = Scenario.is_trap_flying
-        elif self.JUMPING:
+        elif self.jumping:
             self.can_end_move_on = Scenario.can_end_move_on_standard
             self.can_travel_through = Scenario.can_travel_through_flying
             self.is_trap = Scenario.is_trap_standard
@@ -1216,11 +1128,11 @@ class Scenario:
                 out += ', GLOOMHAVEN'
             if self.JOTL_RULES:
                 out += ', JAWS OF THE LION'
-            if self.ACTION_MOVE > 0:
-                out += ', MOVE %i' % self.ACTION_MOVE
-            if self.ACTION_RANGE > 0 and self.ACTION_TARGET > 0:
-                out += ', RANGE %i' % self.ACTION_RANGE
-            if self.ACTION_TARGET > 0:
+            if self.action_move > 0:
+                out += ', MOVE %i' % self.action_move
+            if self.action_range > 0 and self.action_target > 0:
+                out += ', RANGE %i' % self.action_range
+            if self.action_target > 0:
                 out += ', ATTACK'
             if AOE_ACTION:
                 out += ', AOE'
@@ -1229,14 +1141,14 @@ class Scenario:
                     out += ', TARGET ALL'
                 else:
                     out += ', +TARGET %i' % PLUS_TARGET
-            if self.FLYING:
+            if self.flying:
                 out += ', FLYING'
-            elif self.JUMPING:
+            elif self.jumping:
                 out += ', JUMPING'
-            if self.MUDDLED:
+            if self.muddled:
                 out += ', MUDDLED'
             out += ', DEBUG_TOGGLE = %s' % (
-                'TRUE' if self.DEBUG_TOGGLE else 'FALSE')
+                'TRUE' if self.debug_toggle else 'FALSE')
             if out == '':
                 out = 'NO ACTION'
             else:
@@ -1245,10 +1157,10 @@ class Scenario:
             if self.message:
                 print(textwrap.fill(self.message, 82))
 
-        actions = set()
-        aoes = {}
-        destinations = {}
-        focus_map = {}
+        actions:set[tuple[int,int]] = set()
+        aoes:dict[tuple[int,int],list[int]] = {}
+        destinations:dict[tuple[int,int],set[int]] = {}
+        focus_map:dict[tuple[int,int],int] = {}
 
         # find active monster
         active_monster = self.figures.index('A')
@@ -1286,10 +1198,10 @@ class Scenario:
             PRECALC_GRID_SIZE = PRECALC_GRID_HEIGHT * PRECALC_GRID_WIDTH
             PRECALC_GRID_CENTER = (PRECALC_GRID_SIZE - 1) // 2
 
-            aoe_pattern_set = set()
+            aoe_pattern_set:set[tuple[int]] = set()
             for aoe_pin in aoe:
                 for aoe_rotation in range(12):
-                    aoe_hexes = []
+                    aoe_hexes:list[int] = []
                     for aoe_offset in aoe:
                         aoe_offset = pin_offset(aoe_offset, aoe_pin)
                         aoe_offset = rotate_offset(aoe_offset, aoe_rotation)
@@ -1315,11 +1227,11 @@ class Scenario:
         # find monster focuses
         num_focus_ranks=0
         if not len(characters):
-            focuses = set()
+            focuses:set[int] = set()
 
         else:
             class s:
-                focuses = set()
+                focuses:set[int] = set()
                 shortest_path = (
                     MAX_VALUE - 1,  # traps to attack potential focus
                     MAX_VALUE - 1,  # distance to attack potential focus
@@ -1386,7 +1298,7 @@ class Scenario:
             focuses = s.focuses
 
             # rank characters for secondary targeting
-            focus_ranks = {}
+            focus_ranks:dict[int,int] = {}
             sorted_infos = sorted(
                 ((proximity_distances[_], self.initiatives[_]), _)
                 for _ in characters
@@ -1406,7 +1318,7 @@ class Scenario:
             # find the best group of targets based on the following priorities
 
             class t:
-                groups = set()
+                groups:set[tuple[int]] = set()
                 best_group = (
                     MAX_VALUE - 1,  # traps to the attack location
                     0,             # can reach the attack location
@@ -1415,7 +1327,7 @@ class Scenario:
                     MAX_VALUE - 1,  # path length to the attack location
                 ) + tuple([0] * num_focus_ranks)  # target count for each focus rank
 
-            def consider_group(num_targets, preexisting_targets, preexisting_targets_of_rank, preexisting_targets_disadvantage, aoe_hexes):
+            def consider_group(num_targets:int, preexisting_targets:list[int], preexisting_targets_of_rank:list[int], preexisting_targets_disadvantage:int, aoe_hexes:list[int]):
                 available_targets = targetable_characters - \
                     set(preexisting_targets)
                 max_num_targets = min(num_targets, len(
@@ -1453,7 +1365,7 @@ class Scenario:
 
             for location in range(self.map_size):
                 if self.can_end_move_on(self, location):
-                    can_reach_location = travel_distances[location] <= self.ACTION_MOVE
+                    can_reach_location = travel_distances[location] <= self.action_move
 
                     # early test of location using the first two elements of the minimized tuple
                     if trap_counts[location] > t.best_group[0]:
@@ -1481,7 +1393,7 @@ class Scenario:
                     elif AOE_MELEE:
                         # loop over every possible aoe placement
                         for aoe_rotation in range(12):
-                            aoe_targets = []
+                            aoe_targets:list[int] = []
                             aoe_targets_of_rank = [0] * num_focus_ranks
                             aoe_targets_disadvantage = 0
                             aoe_hexes = []
@@ -1539,14 +1451,14 @@ class Scenario:
             # based on the following priorities
 
             class u:
-                destinations = set()
-                aoes = {}
+                destinations:set[tuple[int,int]] = set()
+                aoes:dict[tuple[int],list[int]] = {}
                 best_destination = (
                     MAX_VALUE - 1,  # number of targts with disadvantage
                     MAX_VALUE - 1,  # path length to the destination
                 )
 
-            def consider_destination(num_targets, preexisting_targets, preexisting_targets_of_rank, preexisting_targets_disadvantage, aoe_hexes):
+            def consider_destination(num_targets:int, preexisting_targets:list[int], preexisting_targets_of_rank:list[int], preexisting_targets_disadvantage:int, aoe_hexes:list[int]):
                 available_targets = targetable_characters - \
                     set(preexisting_targets)
                 max_num_targets = min(num_targets, len(
@@ -1595,7 +1507,7 @@ class Scenario:
                     if trap_counts[location] != t.best_group[0]:
                         continue
 
-                    can_reach_location = travel_distances[location] <= self.ACTION_MOVE
+                    can_reach_location = travel_distances[location] <= self.action_move
                     if -can_reach_location != t.best_group[1]:
                         continue
 
@@ -1677,19 +1589,19 @@ class Scenario:
             # determine the best move based on the chosen destinations
 
             can_reach_destinations = t.best_group[1] == -1
+            actions_for_this_focus:set[tuple[int,int]] = []
+            destinations_for_this_focus:dict[tuple[int],tuple[int,int]] = {}
             if can_reach_destinations:
+                
                 if PLUS_TARGET >= 0:
                     actions_for_this_focus = u.destinations
                     aoes_for_this_focus = u.aoes
                 else:
                     actions_for_this_focus = [(_[0], ) for _ in u.destinations]
-                    aoes_for_this_focus = {_: []
+                    aoes_for_this_focus: dict[tuple[int], list[int]] = {_: []
                                            for _ in actions_for_this_focus}
-                destinations_for_this_focus = {
-                    _: {_[0]} for _ in actions_for_this_focus}
-            else:
-                actions_for_this_focus = []
-                destinations_for_this_focus = {}
+                destinations_for_this_focus = {_: {_[0]} for _ in actions_for_this_focus}
+            else:                
                 for destination in u.destinations:
                     actions_for_this_destination = []
                     best_move = (
@@ -1700,7 +1612,7 @@ class Scenario:
                     distance_to_destination, traps_to_destination = self.find_path_distances_reverse(
                         destination[0], self.can_travel_through)
                     for location in range(self.map_size):
-                        if travel_distances[location] <= self.ACTION_MOVE:
+                        if travel_distances[location] <= self.action_move:
                             if self.can_end_move_on(self, location):
                                 this_move = (
                                     traps_to_destination[location] +
@@ -1752,8 +1664,8 @@ class Scenario:
             focus_map[action] = {}
 
         # calculate sightlines for visualization
-        sightlines = {}
-        debug_lines = {}
+        sightlines:dict[tuple[int,int],set[tuple[tuple[float, float], tuple[float, float]]]] = {}
+        debug_lines:dict[tuple[int,int],set[tuple[int, tuple[tuple[float, float], tuple[float, float]]]]] = {}
         for action in actions:
             sightlines[action] = set()
             if action[1:]:
@@ -1790,16 +1702,16 @@ class Scenario:
         return actions, aoes, destinations, focus_map, sightlines, debug_lines
 
     def solve_reach(self, monster: int) -> list[tuple[int, int]]:
-        if self.ACTION_TARGET == 0:
+        if self.action_target == 0:
             return []
-        if self.ACTION_RANGE == 0:
+        if self.action_range == 0:
             ATTACK_RANGE = 1
         else:
-            ATTACK_RANGE = self.ACTION_RANGE
+            ATTACK_RANGE = self.action_range
 
         distances = self.find_proximity_distances(monster)
 
-        reach = []
+        reach:list[tuple[int,int]] = []
         run_begin = None
         for location in range(self.map_size):
             has_reach = False
@@ -1819,7 +1731,7 @@ class Scenario:
         return reach
 
     def solve_sight(self, monster: int) -> list[tuple[int, int]]:
-        sight = []
+        sight:list[tuple[int,int]] = []
         run_begin = None
         for location in range(self.map_size):
             has_sight = False

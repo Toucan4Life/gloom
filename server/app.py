@@ -100,7 +100,13 @@ def solve():
         for _, raw_action in enumerate(raw_actions):
             actions[_]['debug_lines'] = list(debug_lines[raw_action])  
 
-    solution = {
+    solution: dict[str,
+                   list[list[tuple[int, int]]] |
+                   int | 
+                   list[dict[str,
+                            int |
+                            list[int] |
+                            list[tuple[tuple[float, float], tuple[tuple[float, float]]]]]]] = {
         'scenario_id': scenario_id,
         'actions': actions,
     }
@@ -125,16 +131,16 @@ def unpack_scenario(data: bytes) -> tuple['Scenario', bool, bool,int]:
     map_height = packed_scenario['height']
     solve_view = packed_scenario['solve_view']
     s = Scenario(map_width, map_height, 7, 7)
-    s.ACTION_MOVE = int(packed_scenario['move'])
-    s.ACTION_RANGE = int(packed_scenario['range'])
-    s.ACTION_TARGET = int(packed_scenario['target'])
-    s.JUMPING = int(packed_scenario['flying']) == 1
-    s.FLYING = int(packed_scenario['flying']) == 2
-    s.MUDDLED = int(packed_scenario['muddled']) == 1
+    s.action_move = int(packed_scenario['move'])
+    s.action_range = int(packed_scenario['range'])
+    s.action_target = int(packed_scenario['target'])
+    s.jumping = int(packed_scenario['flying']) == 1
+    s.flying = int(packed_scenario['flying']) == 2
+    s.muddled = int(packed_scenario['muddled']) == 1
 
     s.set_rules(int(packed_scenario.get('game_rules', '0')))
 
-    s.DEBUG_TOGGLE = bool(packed_scenario.get('debug_toggle', '0'))
+    s.debug_toggle = bool(packed_scenario.get('debug_toggle', '0'))
 
     def add_elements(grid:list[str], key:str, content:str):
         for _ in packed_scenario['map'][key]:
@@ -160,7 +166,7 @@ def unpack_scenario(data: bytes) -> tuple['Scenario', bool, bool,int]:
                 s.figures[_] = 'C'
 
     for _ in packed_scenario['aoe']:
-        if _ != s.aoe_center or s.ACTION_RANGE > 0:
+        if _ != s.aoe_center or s.action_range > 0:
             s.aoe[_] = True
 
     remap = {
@@ -183,31 +189,54 @@ def unpack_scenario(data: bytes) -> tuple['Scenario', bool, bool,int]:
 
 @app.route('/views', methods=['PUT'])
 def views():
-    packed_scenario = json.loads(request.data)
-    # if IsDebugEnv:
-    #   print packed_scenario
 
-    # todo: validate packed scenario format
-    map_width = packed_scenario['width']
-    map_height = packed_scenario['height']
-    viewpoints = packed_scenario['viewpoints']
-    
+    (s,solve_reach,solve_sight,scenario_id,viewpoints)=unpack_scenario_forviews(request.data)
 
-    s = Scenario(map_width, map_height, 7, 7)
     if IsDebugEnv:
         s.logging = True
         s.debug_visuals = True
-    s.unpack_scenario_forviews(packed_scenario)
-
-    solution = {
-        'scenario_id': packed_scenario['scenario_id'],
+    
+    s.prepare_map()
+    solution: dict[str,
+                   list[list[tuple[int, int]]] |
+                   int] = {
+        'scenario_id': scenario_id,
     }
-    solve_view = packed_scenario['solve_view']
-    if solve_view > 0:
+
+    if solve_reach :
         solution['reach'] = s.solve_reaches(viewpoints)
-    if solve_view > 1:
+    if solve_sight :
         solution['sight'] = s.solve_sights(viewpoints)
 
     # if IsDebugEnv:
         # print solution
     return jsonify(solution)
+
+def unpack_scenario_forviews(data: bytes) ->  tuple['Scenario', bool, bool,int,list[int]]:
+        # if IsDebugEnv:
+        #   print packed_scenario
+
+        # todo: validate packed scenario format
+        packed_scenario = json.loads(data)
+        s = Scenario(packed_scenario['width'], packed_scenario['height'], 7, 7)
+        s.action_range = int(packed_scenario['range'])
+        s.action_target = int(packed_scenario['target'])
+        solve_view = packed_scenario['solve_view']
+        s.set_rules(int(packed_scenario.get('game_rules', '0')))
+
+        def add_elements(grid:list[str], key:str, content:str):
+            for _ in packed_scenario['map'][key]:
+                grid[_] = content
+
+        add_elements(s.contents, 'walls', 'X')
+
+        remap = {
+            1: 0,
+            0: 1,
+            2: 5,
+        }
+        for _ in packed_scenario['map']['thin_walls']:
+            ss = remap[_[1]]
+            s.walls[_[0]][ss] = True
+
+        return (s,solve_view > 0,solve_view > 0,packed_scenario['scenario_id'], packed_scenario['viewpoints'])
