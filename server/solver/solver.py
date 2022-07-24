@@ -353,78 +353,12 @@ class Scenario:
 
             # given the target group, find the best destinations to attack from
             # based on the following priorities
-
             
             udestinations, uaoes = self.find_destination(ATTACK_RANGE, SUSCEPTIBLE_TO_DISADVANTAGE, PLUS_TARGET, PLUS_TARGET_FOR_MOVEMENT, ALL_TARGETS, AOE_ACTION, AOE_MELEE, travel_distances, trap_counts, aoe, aoe_pattern_list, characters, num_focus_ranks, focus_ranks, focus, best_group, groups)
 
             # determine the best move based on the chosen destinations
 
-            can_reach_destinations = best_group[1] == -1
-            actions_for_this_focus:set[tuple[int,int]] = []
-            destinations_for_this_focus:dict[tuple[int],tuple[int,int]] = {}
-            if can_reach_destinations:
-                
-                if PLUS_TARGET >= 0:
-                    actions_for_this_focus = udestinations
-                    aoes_for_this_focus = uaoes
-                else:
-                    actions_for_this_focus = [(_[0], ) for _ in udestinations]
-                    aoes_for_this_focus: dict[tuple[int], list[int]] = {_: []
-                                           for _ in actions_for_this_focus}
-                destinations_for_this_focus = {_: {_[0]} for _ in actions_for_this_focus}
-            else:                
-                for destination in udestinations:
-                    actions_for_this_destination = []
-                    best_move = (
-                        MAX_VALUE - 1,  # traps to destination and along travel
-                        MAX_VALUE - 1,  # distance to destination
-                        MAX_VALUE - 1,  # travel distance
-                    )
-                    distance_to_destination, traps_to_destination = self.find_path_distances_reverse(
-                        destination[0])
-                    for location in range(self.map.map_size):
-                        if travel_distances[location] <= self.action_move:
-                            if self.can_end_move_on(location):
-                                this_move = (
-                                    traps_to_destination[location] +
-                                    trap_counts[location],
-                                    distance_to_destination[location],
-                                    travel_distances[location],
-                                )
-                                if this_move == best_move:
-                                    actions_for_this_destination.append(
-                                        (location, ))
-                                elif this_move < best_move:
-                                    best_move = this_move
-                                    actions_for_this_destination = [
-                                        (location, )]
-                                # print ( location, ), this_move, best_move
-                                # print actions_for_this_destination
-
-                    actions_for_this_focus += actions_for_this_destination
-
-                    for action in actions_for_this_destination:
-                        if action in destinations_for_this_focus:
-                            destinations_for_this_focus[action].add(
-                                destination[0])
-                        else:
-                            destinations_for_this_focus[action] = {
-                                destination[0]}
-
-                aoes_for_this_focus = {_: [] for _ in actions_for_this_focus}
-
-            actions_for_this_focus = set(actions_for_this_focus)
-            actions |= actions_for_this_focus
-            aoes.update(aoes_for_this_focus)
-            for action in actions_for_this_focus:
-                if action in destinations:
-                    destinations[action] |= destinations_for_this_focus[action]
-                else:
-                    destinations[action] = destinations_for_this_focus[action]
-                if action in focus_map:
-                    focus_map[action].add(focus)
-                else:
-                    focus_map[action] = {focus}
+            actions,aoes,focus_map,destinations=self.solve_for_this_focus(PLUS_TARGET, actions, aoes, destinations, focus_map, travel_distances, trap_counts, focus, best_group, udestinations, uaoes)
 
         # if we find no actions, stand still
         if not actions:
@@ -472,6 +406,71 @@ class Scenario:
                     # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( figures, self.contents ) ], [ format_initiative( _ ) for _ in self.initiatives ], action_debug_tags )
 
         return actions, aoes, destinations, focus_map, sightlines, debug_lines
+
+    def solve_for_this_focus(self, PLUS_TARGET, actions, aoes, destinations, focus_map, travel_distances, trap_counts, focus, best_group, udestinations, uaoes):
+        can_reach_destinations = best_group[1] == -1
+        actions_for_this_focus:set[tuple[int,int]] = []
+        destinations_for_this_focus:dict[tuple[int],tuple[int,int]] = {}
+        if can_reach_destinations:
+            if PLUS_TARGET >= 0:
+                actions_for_this_focus = udestinations
+                aoes_for_this_focus = uaoes
+            else:
+                actions_for_this_focus = [(_[0], ) for _ in udestinations]
+                aoes_for_this_focus: dict[tuple[int], list[int]] = {_: []for _ in actions_for_this_focus}
+            destinations_for_this_focus = {_: {_[0]} for _ in actions_for_this_focus}
+        else:                
+            for destination in udestinations:
+                actions_for_this_destination = []
+                best_move = (
+                        MAX_VALUE - 1,  # traps to destination and along travel
+                        MAX_VALUE - 1,  # distance to destination
+                        MAX_VALUE - 1,  # travel distance
+                    )
+                distance_to_destination, traps_to_destination = self.find_path_distances_reverse(
+                        destination[0])
+                for location in range(self.map.map_size):
+                    if travel_distances[location] <= self.action_move:
+                        if self.can_end_move_on(location):
+                            this_move = (
+                                    traps_to_destination[location] +
+                                    trap_counts[location],
+                                    distance_to_destination[location],
+                                    travel_distances[location],
+                                )
+                            if this_move == best_move:
+                                actions_for_this_destination.append(
+                                        (location, ))
+                            elif this_move < best_move:
+                                best_move = this_move
+                                actions_for_this_destination = [
+                                        (location, )]
+                                # print ( location, ), this_move, best_move
+                                # print actions_for_this_destination
+
+                actions_for_this_focus += actions_for_this_destination
+
+                for action in actions_for_this_destination:
+                    if action in destinations_for_this_focus:
+                        destinations_for_this_focus[action].add(destination[0])
+                    else:
+                        destinations_for_this_focus[action] = {destination[0]}
+
+            aoes_for_this_focus = {_: [] for _ in actions_for_this_focus}
+
+        actions_for_this_focus = set(actions_for_this_focus)
+        actions |= actions_for_this_focus
+        aoes.update(aoes_for_this_focus)
+        for action in actions_for_this_focus:
+            if action in destinations:
+                destinations[action] |= destinations_for_this_focus[action]
+            else:
+                destinations[action] = destinations_for_this_focus[action]
+            if action in focus_map:
+                focus_map[action].add(focus)
+            else:
+                focus_map[action] = {focus}
+        return actions,aoes,focus_map,destinations
 
     def find_destination(self, ATTACK_RANGE, SUSCEPTIBLE_TO_DISADVANTAGE, PLUS_TARGET, PLUS_TARGET_FOR_MOVEMENT, ALL_TARGETS, AOE_ACTION, AOE_MELEE, travel_distances, trap_counts, aoe, aoe_pattern_list, characters, num_focus_ranks, focus_ranks, focus, best_group, groups):
         udestinations:set[tuple[int,int]] = set()
