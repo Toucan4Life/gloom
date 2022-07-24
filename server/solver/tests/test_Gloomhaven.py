@@ -1,5 +1,8 @@
 from solver.solver import Scenario
 
+def dereduce_location(location: int) -> int:
+        return location
+
 def init_test():
     scenario = Scenario(16, 7, 7, 7)
     scenario.set_rules(1)
@@ -9,7 +12,7 @@ def assert_answers(scenario:'Scenario', correct_answers:set[tuple[int]]):
     scenario.prepare_map()
     answers, _, _, _, _, _ = scenario.calculate_monster_move()
     answers = set(
-        tuple(scenario.dereduce_location(_) for _ in _)
+        tuple(dereduce_location(_) for _ in _)
         for _ in answers
     )
     assert answers == correct_answers

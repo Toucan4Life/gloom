@@ -8,6 +8,6 @@
     "python.linting.flake8Enabled": false,
     "python.linting.enabled": true,
     "python.linting.mypyEnabled": false,
-    "python.analysis.typeCheckingMode": "strict",
+    "python.analysis.typeCheckingMode": "basic",
     "python.languageServer": "Pylance"
 }

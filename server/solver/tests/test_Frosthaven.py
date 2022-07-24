@@ -5,11 +5,14 @@ def init_test():
     scenario.set_rules(0)
     return scenario
 
+def dereduce_location(location: int) -> int:
+        return location
+
 def assert_answers(scenario:'Scenario', correct_answers:set[tuple[int]]):
     scenario.prepare_map()
     answers, b, c, d, e, f = scenario.calculate_monster_move()
     answers = set(
-        tuple(scenario.dereduce_location(_) for _ in _)
+        tuple(dereduce_location(_) for _ in _)
         for _ in answers
     )
     assert answers == correct_answers
