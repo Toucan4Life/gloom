@@ -63,7 +63,7 @@ def templates(filename:str, params:dict[str,bool]={})->str:
 @app.route('/solve', methods=['PUT'])
 def solve():
 
-    (s,solve_reach,solve_sight,scenario_id)=unpack_scenario(request.data)
+    (s,solve_reach,solve_sight,scenario_id,start_location)=unpack_scenario(request.data)
     if IsDebugEnv:
         s.logging = True
         s.debug_visuals = True
@@ -72,7 +72,6 @@ def solve():
     raw_actions, aoes, destinations, focuses, sightlines, debug_lines = s.calculate_monster_move()
 
     if IsDebugEnv:
-        start_location = s.figures.index('A')
         print(f'{len(raw_actions)} option(s):')
         for raw_action in raw_actions:
             if raw_action[0] == start_location:
@@ -120,7 +119,7 @@ def solve():
     #   print(solution)
     return jsonify(solution)
 
-def unpack_scenario(data: bytes) -> tuple['Scenario', bool, bool,int]:
+def unpack_scenario(data: bytes) -> tuple['Scenario', bool, bool,int,int]:
     
     # if IsDebugEnv:
     #   print packed_scenario
@@ -185,7 +184,7 @@ def unpack_scenario(data: bytes) -> tuple['Scenario', bool, bool,int]:
 
     for i, j in zip(packed_scenario['map']['initiatives'], victims):
         s.initiatives[j] = int(i)
-    return (s,solve_view > 0,solve_view > 0,packed_scenario['scenario_id'])
+    return (s,solve_view > 0,solve_view > 0,packed_scenario['scenario_id'],active_figure_location)
 
 @app.route('/views', methods=['PUT'])
 def views():

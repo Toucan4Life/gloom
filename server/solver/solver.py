@@ -1,7 +1,6 @@
 import collections
 import textwrap
 import itertools
-from solver.scenarios import *
 from solver.utils import *
 from solver.settings import *
 from solver.print_map import *
