@@ -11,8 +11,18 @@ def init_test():
 def assert_answers(scenario:'Scenario', correct_answers:set[tuple[int]]):
     scenario.prepare_map()
     answers = scenario.calculate_monster_move()
-    answers = set((tuple((_[0],))+_[1] )if len(_[1])>0 else (_[0],) for _ in answers)
-    assert answers == correct_answers
+    
+    test= [(
+        (key[0],
+            []if len(key)==0 else key[1:],
+            correct_answers[1][key],
+            correct_answers[3][key],
+            correct_answers[4][key],
+            set(),
+            correct_answers[2][key])
+            ) for key in correct_answers[0]]
+
+    assert sorted(answers)==sorted(test)
 
 # Move towards the character and offer all valid options for the players to choose among
 def test_Scenario1():
@@ -25,7 +35,7 @@ def test_Scenario1():
 
     s.action_move = 1
 
-    assert_answers(s,{(46, ), (47, )})
+    assert_answers(s,({(46,), (47,)}, {(46,): [], (47,): []}, {(46,): {52, 53}, (47,): {53}}, {(46,): {60}, (47,): {60}}, {(46,): set(), (47,): set()}, {(46,): set(), (47,): set()}))
 
 # Online test question #1. Shorten the path to the destinations
 def test_Scenario2():
@@ -38,7 +48,7 @@ def test_Scenario2():
 
     s.action_move = 1
 
-    assert_answers(s,{(45, ), (31, )})
+    assert_answers(s,({(45,), (31,)}, {(45,): [], (31,): []}, {(45,): {43}, (31,): {29}}, {(45,): {35}, (31,): {35}}, {(45,): set(), (31,): set()}, {(45,): set(), (31,): set()}))
 
 # Online test question #2. The monster cannot shorten the path to the destination, so it stays put
 def test_Scenario3():
@@ -51,7 +61,7 @@ def test_Scenario3():
 
     s.action_move = 1
 
-    assert_answers(s,{(39, )})
+    assert_answers(s,({(39,)}, {(39,): []}, {(39,): {36}}, {(39,): {35}}, {(39,): set()}, {(39,): set()}))
 
 # Online test question #6. The monster cannot attack the character from the near edge, so it begins the long trek around to the far edge
 def test_Scenario4():
@@ -79,7 +89,7 @@ def test_Scenario4():
 
     s.action_move = 2
 
-    assert_answers(s,{(34, ), (20, )})
+    assert_answers(s,({(34,), (20,)}, {(34,): [], (20,): []}, {(34,): {35}, (20,): {21}}, {(34,): {29}, (20,): {29}}, {(34,): set(), (20,): set()}, {(34,): set(), (20,): set()}))
 
 # When shortening the path to its destination, the monster will move the minimum amount. Players cannot choose a move that puts the monster equally close to its destination, but uses more movement
 def test_Scenario5():
@@ -94,7 +104,7 @@ def test_Scenario5():
 
     s.action_move = 2
 
-    assert_answers(s,{(45, ), (31, )})
+    assert_answers(s,({(45,), (31,)}, {(45,): [], (31,): []}, {(45,): {43}, (31,): {29}}, {(45,): {35}, (31,): {35}}, {(45,): set(), (31,): set()}, {(45,): set(), (31,): set()}))
 
 # When choosing focus, proximity breaks ties in path delta_length. C20 is in closer proximity
 def test_Scenario6():
@@ -111,7 +121,7 @@ def test_Scenario6():
 
     s.action_move = 2
 
-    assert_answers(s,{(36, 29), (22, 29)})
+    assert_answers(s,({(36, 29), (22, 29)}, {(22, 29): [], (36, 29): []}, {(36, 29): {36}, (22, 29): {22}}, {(36, 29): {29}, (22, 29): {29}}, {(36, 29): {((7.5, 3.4641016151377544), (7.5, 3.4641016151377544))}, (22, 29): {((6.5, 3.4641016151377544), (6.5, 3.4641016151377544))}}, {(36, 29): set(), (22, 29): set()}))
 
 # When choosing focus, proximity breaks ties in path delta_length, but walls must be pathed around when testing proximity. Proximity is equal here, so initiative breaks the tie
 def test_Scenario7():
@@ -128,7 +138,7 @@ def test_Scenario7():
 
     s.action_move = 2
 
-    assert_answers(s,{(44, 50)})
+    assert_answers(s,({(44, 50)}, {(44, 50): []}, {(44, 50): {44}}, {(44, 50): {50}}, {(44, 50): {((11.0, 4.330127018922193), (11.0, 4.330127018922193))}}, {(44, 50): set()}))
 
 # Given equal path distance and proximity, lowest initiative breaks the focus tie
 def test_Scenario8():
@@ -144,7 +154,7 @@ def test_Scenario8():
 
     s.action_move = 2
 
-    assert_answers(s,{(17, 9)})
+    assert_answers(s,({(17, 9)}, {(17, 9): []}, {(17, 9): {17}}, {(17, 9): {9}}, {(17, 9): {((3.0, 6.06217782649107), (3.0, 6.06217782649107))}}, {(17, 9): set()}))
 
 # Given equal path distance, proximity, and initiative; players choose the foc
 def test_Scenario9():
@@ -160,7 +170,7 @@ def test_Scenario9():
 
     s.action_move = 2
 
-    assert_answers(s,{(17, 9), (30, 29)})
+    assert_answers(s,({(17, 9), (30, 29)}, {(17, 9): [], (30, 29): []}, {(17, 9): {17}, (30, 29): {30}}, {(17, 9): {9}, (30, 29): {29}}, {(17, 9): {((3.0, 6.06217782649107), (3.0, 6.06217782649107))}, (30, 29): {((6.5, 3.4641016151377544), (6.5, 3.4641016151377544))}}, {(17, 9): set(), (30, 29): set()}))
 
 # Online test question #4. The monster has a valid path to its destination that does not go through a trap. Even though the monster cannot shorten its path to the destination, it will not go through the trap
 def test_Scenario10():
@@ -196,7 +206,7 @@ def test_Scenario10():
 
     s.action_move = 2
 
-    assert_answers(s,{(79, )})
+    assert_answers(s,({(79,)}, {(79,): []}, {(79,): {100}}, {(79,): {99}}, {(79,): set()}, {(79,): set()}))
 
 # The monster will shorten its distance to focus, even if it means moving off the shortest path
 def test_Scenario11():
@@ -230,7 +240,7 @@ def test_Scenario11():
 
     s.action_move = 2
 
-    assert_answers(s,{(94, )})
+    assert_answers(s,({(94,)}, {(94,): []}, {(94,): {100}}, {(94,): {99}}, {(94,): set()}, {(94,): set()}))
 
 # The monster cannot shorten its path to the destination, so it stays put
 def test_Scenario12():
@@ -264,7 +274,7 @@ def test_Scenario12():
 
     s.action_move = 1
 
-    assert_answers(s,{(79, )})
+    assert_answers(s,({(79,)}, {(79,): []}, {(79,): {100}}, {(79,): {99}}, {(79,): set()}, {(79,): set()}))
 
 # The players choose between the equally close destinations, even thought the monster can make less progress towards one of the two destinations. See this thread (https://boardgamegeek.com/article/28429917#28429917)
 def test_Scenario13():
@@ -281,7 +291,7 @@ def test_Scenario13():
 
     s.action_move = 2
 
-    assert_answers(s,{(32, ), (25, ), (38, )})
+    assert_answers(s,({(25,), (32,), (38,)}, {(38,): [], (25,): [], (32,): []}, {(25,): {22}, (32,): {22}, (38,): {36}}, {(25,): {29}, (32,): {29}, (38,): {29}}, {(25,): set(), (32,): set(), (38,): set()}, {(25,): set(), (32,): set(), (38,): set()}))
 
 # Online test question #5
 def test_Scenario14():
@@ -311,7 +321,7 @@ def test_Scenario14():
 
     s.action_move = 3
 
-    assert_answers(s,{(11, )})
+    assert_answers(s,({(11,)}, {(11,): []}, {(11,): {50}}, {(11,): {44}}, {(11,): set()}, {(11,): set()}))
 
 # The monster moves towards the character to which it has the stortest path, C20
 def test_Scenario15():
@@ -331,7 +341,7 @@ def test_Scenario15():
 
     s.action_move = 2
 
-    assert_answers(s,{(45, 51)})
+    assert_answers(s,({(45, 51)}, {(45, 51): []}, {(45, 51): {45}}, {(45, 51): {51}}, {(45, 51): {((11.0, 6.06217782649107), (11.0, 6.06217782649107))}}, {(45, 51): set()}))
 
 # The monster chooses its focus based on the shortest path to an attack position, not the shortest path to a character's position. The monster moves towards C20
 def test_Scenario16():
@@ -355,7 +365,7 @@ def test_Scenario16():
 
     s.action_move = 2
 
-    assert_answers(s,{(45, )})
+    assert_answers(s,({(45,)}, {(45,): []}, {(45,): {51}}, {(45,): {58}}, {(45,): set()}, {(45,): set()}))
 
 # The monster will choose its destination without consideration for which destination it can most shorten its path to. The destination is chosen based only on which destination is closest. The monster moves as far as it can down the west side of the obstacle
 def test_Scenario17():
@@ -376,7 +386,7 @@ def test_Scenario17():
 
     s.action_move = 3
 
-    assert_answers(s,{(25, )})
+    assert_answers(s,({(25,)}, {(25,): []}, {(25,): {22}}, {(25,): {29}}, {(25,): set()}, {(25,): set()}))
 
 # The monster will path around traps if at all possible
 def test_Scenario18():
@@ -394,7 +404,7 @@ def test_Scenario18():
 
     s.action_move = 2
 
-    assert_answers(s,{(40, ), (26, )})
+    assert_answers(s,({(40,), (26,)}, {(26,): [], (40,): []}, {(40,): {35, 29}, (26,): {21, 29}}, {(40,): {28}, (26,): {28}}, {(40,): set(), (26,): set()}, {(40,): set(), (26,): set()}))
 
 # The monster will move through traps if that is its only option
 def test_Scenario19():
@@ -413,7 +423,7 @@ def test_Scenario19():
 
     s.action_move = 2
 
-    assert_answers(s,{(30, )})
+    assert_answers(s,({(30,)}, {(30,): []}, {(30,): {29}}, {(30,): {28}}, {(30,): set()}, {(30,): set()}))
 
 # The monster will move through the minimium number of traps possible
 def test_Scenario20():
@@ -443,7 +453,7 @@ def test_Scenario20():
 
     s.action_move = 3
 
-    assert_answers(s,{(20, )})
+    assert_answers(s,({(20,)}, {(20,): []}, {(20,): {21, 29}}, {(20,): {28}}, {(20,): set()}, {(20,): set()}))
 
 # Monsters will fly over tra
 def test_Scenario21():
@@ -474,7 +484,7 @@ def test_Scenario21():
     s.action_move = 3
     s.flying = True
 
-    assert_answers(s,{(29, 28)})
+    assert_answers(s,({(29, 28)}, {(29, 28): []}, {(29, 28): {29}}, {(29, 28): {28}}, {(29, 28): {((6.5, 1.7320508075688772), (6.5, 1.7320508075688772))}}, {(29, 28): set()}))
 
 # Monsters will jump over tra
 def test_Scenario22():
@@ -505,7 +515,7 @@ def test_Scenario22():
     s.action_move = 3
     s.jumping = True
 
-    assert_answers(s,{(29, 28)})
+    assert_answers(s,({(29, 28)}, {(29, 28): []}, {(29, 28): {29}}, {(29, 28): {28}}, {(29, 28): {((6.5, 1.7320508075688772), (6.5, 1.7320508075688772))}}, {(29, 28): set()}))
 
 # Monsters will jump over traps, but not land of them if possible
 def test_Scenario23():
@@ -537,7 +547,7 @@ def test_Scenario23():
     s.action_move = 3
     s.jumping = True
 
-    assert_answers(s,{(22, ), (36, )})
+    assert_answers(s,({(36,), (22,)}, {(36,): [], (22,): []}, {(36,): {35}, (22,): {21}}, {(36,): {28}, (22,): {28}}, {(36,): set(), (22,): set()}, {(36,): set(), (22,): set()}))
 
 # The monster will focus on a character that does not require it to move through a trap or hazardous terrain, if possible
 def test_Scenario24():
@@ -575,7 +585,7 @@ def test_Scenario24():
 
     s.action_move = 2
 
-    assert_answers(s,{(38, )})
+    assert_answers(s,({(38,)}, {(38,): []}, {(38,): {73, 74}}, {(38,): {80}}, {(38,): set()}, {(38,): set()}))
 
 # Online test question #13
 def test_Scenario25():
@@ -601,7 +611,7 @@ def test_Scenario25():
 
     s.action_move = 3
 
-    assert_answers(s,{(46, )})
+    assert_answers(s,({(46,)}, {(46,): []}, {(46,): {37}}, {(46,): {30}}, {(46,): set()}, {(46,): set()}))
 
 # Online test question #20
 def test_Scenario26():
@@ -641,7 +651,7 @@ def test_Scenario26():
 
     s.action_move = 2
 
-    assert_answers(s,{(39, )})
+    assert_answers(s,({(39,)}, {(39,): []}, {(39,): {45}}, {(39,): {37}}, {(39,): set()}, {(39,): set()}))
 
 # Thin walls block movement. The monster must go around the wall
 def test_Scenario27():
@@ -670,7 +680,7 @@ def test_Scenario27():
 
     s.action_move = 3
 
-    assert_answers(s,{(16, )})
+    assert_answers(s,({(16,)}, {(16,): []}, {(16,): {29}}, {(16,): {35}}, {(16,): set()}, {(16,): set()}))
 
 # Thin walls block melee. The monster moves through the doorway
 def test_Scenario28():
@@ -699,7 +709,7 @@ def test_Scenario28():
 
     s.action_move = 3
 
-    assert_answers(s,{(36, )})
+    assert_answers(s,({(36,)}, {(36,): []}, {(36,): {29}}, {(36,): {22}}, {(36,): set()}, {(36,): set()}))
 
 # Range follows proximity pathing, even melee attack A melee attack cannot be performed around a thin wall. The monster moves through the door to engage from behind
 def test_Scenario29():
@@ -729,7 +739,7 @@ def test_Scenario29():
 
     s.action_move = 3
 
-    assert_answers(s,{(43, 36)})
+    assert_answers(s,({(43, 36)}, {(43, 36): []}, {(43, 36): {43}}, {(43, 36): {36}}, {(43, 36): {((9.5, 3.4641016151377544), (9.5, 3.4641016151377544))}}, {(43, 36): set()}))
 
 # Range follows proximity pathing, even melee attack A melee attack cannot be performed around a doorway. The monster chooses the focus with the shorter path to an attack location
 def test_Scenario30():
@@ -762,7 +772,7 @@ def test_Scenario30():
 
     s.action_move = 3
 
-    assert_answers(s,{(38, 46)})
+    assert_answers(s,({(38, 46)}, {(38, 46): []}, {(38, 46): {38}}, {(38, 46): {46}}, {(38, 46): {((9.5, 6.928203230275509), (9.5, 6.928203230275509))}}, {(38, 46): set()}))
 
 # The monster will not move if it can attack without disadvantage from its position
 def test_Scenario31():
@@ -773,7 +783,7 @@ def test_Scenario31():
 
     s.action_move = 1
 
-    assert_answers(s,{(30, 36)})
+    assert_answers(s,({(30, 36)}, {(30, 36): []}, {(30, 36): {30}}, {(30, 36): {36}}, {(30, 36): {((8.0, 4.330127018922193), (8.0, 4.330127018922193))}}, {(30, 36): set()}))
 
 # The monster will not move if in range and line of sight of its foc
 def test_Scenario32():
@@ -786,7 +796,7 @@ def test_Scenario32():
     s.action_move = 2
     s.action_range = 4
 
-    assert_answers(s,{(25, 29)})
+    assert_answers(s,({(25, 29)}, {(25, 29): []}, {(25, 29): {25}}, {(25, 29): {29}}, {(25, 29): {((6.0, 7.794228634059947), (6.5, 3.4641016151377544))}}, {(25, 29): set()}))
 
 # The monster will make the minimum move to get within range and line of sight
 def test_Scenario33():
@@ -805,7 +815,7 @@ def test_Scenario33():
     s.action_move = 4
     s.action_range = 5
 
-    assert_answers(s,{(39, 29), (40, 29)})
+    assert_answers(s,({(39, 29), (40, 29)}, {(39, 29): [], (40, 29): []}, {(39, 29): {39}, (40, 29): {40}}, {(39, 29): {29}, (40, 29): {29}}, {(39, 29): {((9.0, 7.794228634059947), (7.5, 3.4641016151377544))}, (40, 29): {((9.0, 9.526279441628825), (7.5, 3.4641016151377544))}}, {(39, 29): set(), (40, 29): set()}))
 
 # Doorway line of sight
 def test_Scenario34():
@@ -835,7 +845,7 @@ def test_Scenario34():
     s.action_move = 6
     s.action_range = 7
 
-    assert_answers(s,{(44, 15)})
+    assert_answers(s,({(44, 15)}, {(44, 15): []}, {(44, 15): {44}}, {(44, 15): {15}}, {(44, 15): {((9.5, 3.4641016151377544), (5.0, 2.598076211353316))}}, {(44, 15): set()}))
 
 # Doorway line of sight
 def test_Scenario35():
@@ -865,7 +875,7 @@ def test_Scenario35():
     s.action_move = 6
     s.action_range = 7
 
-    assert_answers(s,{(44, 21), (45, 21)})
+    assert_answers(s,({(45, 21), (44, 21)}, {(44, 21): [], (45, 21): []}, {(45, 21): {45}, (44, 21): {44}}, {(45, 21): {21}, (44, 21): {21}}, {(45, 21): {((10.5, 5.196152422706632), (6.5, 1.7320508075688772))}, (44, 21): {((9.5, 3.4641016151377544), (6.5, 1.7320508075688772))}}, {(45, 21): set(), (44, 21): set()}))
 
 # Doorway line of sight
 def test_Scenario36():
@@ -895,7 +905,7 @@ def test_Scenario36():
     s.action_move = 6
     s.action_range = 7
 
-    assert_answers(s, {(44, 22)})
+    assert_answers(s,({(44, 22)}, {(44, 22): []}, {(44, 22): {44}}, {(44, 22): {22}}, {(44, 22): {((9.5, 3.4641016151377544), (6.0, 2.598076211353316))}}, {(44, 22): set()}))
 
 # Doorway line of sight
 def test_Scenario37():
@@ -925,7 +935,7 @@ def test_Scenario37():
     s.action_move = 6
     s.action_range = 7
 
-    assert_answers(s,{(37, 28)})
+    assert_answers(s,({(37, 28)}, {(37, 28): []}, {(37, 28): {37}}, {(37, 28): {28}}, {(37, 28): {((9.5, 5.196152422706632), (8.0, 0.8660254037844386))}}, {(37, 28): set()}))
 
 # Doorway line of sight
 def test_Scenario38():
@@ -954,7 +964,7 @@ def test_Scenario38():
 
     s.action_move = 6
     s.action_range = 7
-    assert_answers(s,{(44, 29), (45, 29)})
+    assert_answers(s,({(44, 29), (45, 29)}, {(44, 29): [], (45, 29): []}, {(44, 29): {44}, (45, 29): {45}}, {(44, 29): {29}, (45, 29): {29}}, {(44, 29): {((9.5, 3.4641016151377544), (8.0, 2.598076211353316))}, (45, 29): {((10.5, 5.196152422706632), (8.0, 2.598076211353316))}}, {(44, 29): set(), (45, 29): set()}))
 
 # Doorway line of sight
 def test_Scenario39():
@@ -983,7 +993,7 @@ def test_Scenario39():
     s.action_move = 6
     s.action_range = 7
 
-    assert_answers(s,{(40, 35), (34, 35), (37, 35),(38, 35), (39, 35)})
+    assert_answers(s,({(37, 35), (38, 35), (34, 35), (40, 35), (39, 35)}, {(34, 35): [], (37, 35): [], (38, 35): [], (39, 35): [], (40, 35): []}, {(37, 35): {37}, (38, 35): {38}, (39, 35): {39}, (34, 35): {34}, (40, 35): {40}}, {(37, 35): {35}, (38, 35): {35}, (39, 35): {35}, (34, 35): {35}, (40, 35): {35}}, {(37, 35): {((9.5, 5.196152422706632), (9.0, 2.598076211353316))}, (38, 35): {((9.5, 6.928203230275509), (9.0, 2.598076211353316))}, (39, 35): {((9.5, 8.660254037844386), (9.0, 2.598076211353316))}, (34, 35): {((8.0, 11.258330249197702), (9.5, 1.7320508075688772))}, (40, 35): {((9.5, 10.392304845413264), (9.0, 2.598076211353316))}}, {(37, 35): set(), (38, 35): set(), (39, 35): set(), (34, 35): set(), (40, 35): set()}))
 
 # Doorway line of sight
 def test_Scenario40():
@@ -1013,7 +1023,7 @@ def test_Scenario40():
     s.action_move = 6
     s.action_range = 7
 
-    assert_answers(s,{(32, 36), (33, 36), (26, 36)})
+    assert_answers(s,({(33, 36), (26, 36), (32, 36)}, {(26, 36): [], (32, 36): [], (33, 36): []}, {(33, 36): {33}, (26, 36): {26}, (32, 36): {32}}, {(33, 36): {36}, (26, 36): {36}, (32, 36): {36}}, {(33, 36): {((7.5, 8.660254037844386), (9.5, 3.4641016151377544))}, (26, 36): {((6.5, 10.392304845413264), (9.5, 3.4641016151377544))}, (32, 36): {((8.0, 7.794228634059947), (9.5, 3.4641016151377544))}}, {(33, 36): set(), (26, 36): set(), (32, 36): set()}))
 
 # Doorway line of sight
 def test_Scenario41():
@@ -1043,7 +1053,7 @@ def test_Scenario41():
     s.action_move = 6
     s.action_range = 7
 
-    assert_answers(s,{(32, 42), (33, 42), (26, 42)})
+    assert_answers(s,({(32, 42), (33, 42), (26, 42)}, {(26, 42): [], (32, 42): [], (33, 42): []}, {(32, 42): {32}, (33, 42): {33}, (26, 42): {26}}, {(32, 42): {42}, (33, 42): {42}, (26, 42): {42}}, {(32, 42): {((8.0, 7.794228634059947), (10.5, 1.7320508075688772))}, (33, 42): {((7.5, 8.660254037844386), (10.5, 1.7320508075688772))}, (26, 42): {((6.5, 10.392304845413264), (10.5, 1.7320508075688772))}}, {(32, 42): set(), (33, 42): set(), (26, 42): set()}))
 
 # Doorway line of sight
 def test_Scenario42():
@@ -1073,7 +1083,7 @@ def test_Scenario42():
     s.action_move = 6
     s.action_range = 7
 
-    assert_answers(s,{(18, 43), (11, 43), (5, 43)})
+    assert_answers(s,({(18, 43), (5, 43), (11, 43)}, {(5, 43): [], (11, 43): [], (18, 43): []}, {(18, 43): {18}, (5, 43): {5}, (11, 43): {11}}, {(18, 43): {43}, (5, 43): {43}, (11, 43): {43}}, {(18, 43): {((5.0, 7.794228634059947), (10.5, 3.4641016151377544))}, (5, 43): {((2.0, 9.526279441628825), (10.5, 3.4641016151377544))}, (11, 43): {((3.5, 8.660254037844386), (10.5, 3.4641016151377544))}}, {(18, 43): set(), (5, 43): set(), (11, 43): set()}))
 
 # Doorway line of sight
 def test_Scenario43():
@@ -1100,7 +1110,7 @@ def test_Scenario43():
     s.action_move = 6
     s.action_range = 7
 
-    assert_answers(s,{(3, 44)})
+    assert_answers(s,({(3, 44)}, {(3, 44): []}, {(3, 44): {3}}, {(3, 44): {44}}, {(3, 44): {((2.0, 6.06217782649107), (9.5, 5.196152422706632))}}, {(3, 44): set()}))
 
 # Doorway line of sight
 def test_Scenario44():
@@ -1120,7 +1130,7 @@ def test_Scenario44():
     s.action_move = 6
     s.action_range = 7
 
-    assert_answers(s,{(38, 7), (31, 7)})
+    assert_answers(s,({(38, 7), (31, 7)}, {(31, 7): [], (38, 7): []}, {(38, 7): {38}, (31, 7): {31}}, {(38, 7): {7}, (31, 7): {7}}, {(38, 7): {((9.0, 7.794228634059947), (3.0, 2.598076211353316))}, (31, 7): {((6.0, 6.06217782649107), (3.0, 2.598076211353316))}}, {(38, 7): set(), (31, 7): set()}))
 
 # Doorway line of sight
 def test_Scenario45():
@@ -1140,7 +1150,7 @@ def test_Scenario45():
     s.action_move = 6
     s.action_range = 7
 
-    assert_answers(s, {(38, 15), (31, 15)})
+    assert_answers(s,({(38, 15), (31, 15)}, {(31, 15): [], (38, 15): []}, {(38, 15): {38}, (31, 15): {31}}, {(38, 15): {15}, (31, 15): {15}}, {(38, 15): {((9.0, 7.794228634059947), (4.5, 3.4641016151377544))}, (31, 15): {((6.0, 6.06217782649107), (5.0, 2.598076211353316))}}, {(38, 15): set(), (31, 15): set()}))
 
 # Doorway line of sight
 def test_Scenario46():
@@ -1160,7 +1170,7 @@ def test_Scenario46():
     s.action_move = 6
     s.action_range = 7
 
-    assert_answers(s,{(31, 21)})
+    assert_answers(s,({(31, 21)}, {(31, 21): []}, {(31, 21): {31}}, {(31, 21): {21}}, {(31, 21): {((6.0, 6.06217782649107), (5.0, 2.598076211353316))}}, {(31, 21): set()}))
 
 # Doorway line of sight
 def test_Scenario47():
@@ -1180,7 +1190,7 @@ def test_Scenario47():
     s.action_move = 6
     s.action_range = 7
 
-    assert_answers(s,{(37, 8)})
+    assert_answers(s,({(37, 8)}, {(37, 8): []}, {(37, 8): {37}}, {(37, 8): {8}}, {(37, 8): {((8.0, 6.06217782649107), (3.0, 4.330127018922193))}}, {(37, 8): set()}))
 
 # Doorway line of sight
 def test_Scenario48():
@@ -1200,7 +1210,7 @@ def test_Scenario48():
     s.action_move = 6
     s.action_range = 7
 
-    assert_answers(s,{(37, 16)})
+    assert_answers(s,({(37, 16)}, {(37, 16): []}, {(37, 16): {37}}, {(37, 16): {16}}, {(37, 16): {((8.0, 6.06217782649107), (4.5, 5.196152422706632))}}, {(37, 16): set()}))
 
 # Doorway line of sight
 def test_Scenario49():
@@ -1220,7 +1230,7 @@ def test_Scenario49():
     s.action_move = 6
     s.action_range = 7
 
-    assert_answers(s,{(38, 22), (31, 22)})
+    assert_answers(s,({(31, 22), (38, 22)}, {(31, 22): [], (38, 22): []}, {(31, 22): {31}, (38, 22): {38}}, {(31, 22): {22}, (38, 22): {22}}, {(31, 22): {((6.0, 6.06217782649107), (5.0, 4.330127018922193))}, (38, 22): {((9.0, 7.794228634059947), (5.0, 4.330127018922193))}}, {(31, 22): set(), (38, 22): set()}))
 
 # Doorway line of sight
 def test_Scenario50():
@@ -1240,7 +1250,7 @@ def test_Scenario50():
     s.action_move = 6
     s.action_range = 7
 
-    assert_answers(s,{(44, 9), (37, 9)})
+    assert_answers(s,({(37, 9), (44, 9)}, {(37, 9): [], (44, 9): []}, {(37, 9): {37}, (44, 9): {44}}, {(37, 9): {9}, (44, 9): {9}}, {(37, 9): {((8.0, 6.06217782649107), (3.5, 5.196152422706632))}, (44, 9): {((9.5, 5.196152422706632), (3.0, 6.06217782649107))}}, {(37, 9): set(), (44, 9): set()}))
 
 # Doorway line of sight
 def test_Scenario51():
@@ -1260,7 +1270,7 @@ def test_Scenario51():
     s.action_move = 6
     s.action_range = 7
 
-    assert_answers(s, {(50, 17), (44, 17), (37, 17)})
+    assert_answers(s,({(44, 17), (50, 17), (37, 17)}, {(37, 17): [], (44, 17): [], (50, 17): []}, {(44, 17): {44}, (50, 17): {50}, (37, 17): {37}}, {(44, 17): {17}, (50, 17): {17}, (37, 17): {17}}, {(44, 17): {((9.5, 5.196152422706632), (5.0, 6.06217782649107))}, (50, 17): {((11.0, 4.330127018922193), (5.0, 6.06217782649107))}, (37, 17): {((8.0, 6.06217782649107), (5.0, 6.06217782649107))}}, {(44, 17): set(), (50, 17): set(), (37, 17): set()}))
 
 # Doorway line of sight
 def test_Scenario52():
@@ -1280,7 +1290,7 @@ def test_Scenario52():
     s.action_move = 6
     s.action_range = 7
 
-    assert_answers(s,{(50, 23), (44, 23), (37, 23)})
+    assert_answers(s,({(44, 23), (50, 23), (37, 23)}, {(37, 23): [], (44, 23): [], (50, 23): []}, {(44, 23): {44}, (50, 23): {50}, (37, 23): {37}}, {(44, 23): {23}, (50, 23): {23}, (37, 23): {23}}, {(44, 23): {((9.5, 5.196152422706632), (6.0, 6.06217782649107))}, (50, 23): {((11.0, 4.330127018922193), (6.0, 6.06217782649107))}, (37, 23): {((8.0, 6.06217782649107), (6.0, 6.06217782649107))}}, {(44, 23): set(), (50, 23): set(), (37, 23): set()}))
 
 # Doorway line of sight
 def test_Scenario53():
@@ -1300,7 +1310,7 @@ def test_Scenario53():
     s.action_move = 6
     s.action_range = 7
 
-    assert_answers(s,{(35, 31)})
+    assert_answers(s,({(35, 31)}, {(35, 31): []}, {(35, 31): {35}}, {(35, 31): {31}}, {(35, 31): {((9.0, 2.598076211353316), (8.0, 6.06217782649107))}}, {(35, 31): set()}))
 
 # The "V" terrain piece represents an unintuitive line of sight example. The monster does not have line of sight to the character from its initial position. (https://boardgamegeek.com/image/3932301/codenamegreyfox
 def test_Scenario54():
@@ -1335,7 +1345,7 @@ def test_Scenario54():
     s.action_move = 2
     s.action_range = 7
 
-    assert_answers(s,{(49, 76), (50, 76)})
+    assert_answers(s,({(49, 76), (50, 76)}, {(49, 76): [], (50, 76): []}, {(49, 76): {49}, (50, 76): {50}}, {(49, 76): {76}, (50, 76): {76}}, {(49, 76): {((12.0, 2.598076211353316), (15.5, 10.392304845413264))}, (50, 76): {((12.5, 3.4641016151377544), (15.5, 10.392304845413264))}}, {(49, 76): set(), (50, 76): set()}))
 
 # The monster cannot trace line of sight from the vertex coincident with the tip of the thin wall. The monster must step out to attack. (https://boardgamegeek.com/image/3932321/codenamegreyfox
 def test_Scenario55():
@@ -1369,7 +1379,7 @@ def test_Scenario55():
     s.action_move = 2
     s.action_range = 3
 
-    assert_answers(s,{(43, 65)})
+    assert_answers(s,({(43, 65)}, {(43, 65): []}, {(43, 65): {43}}, {(43, 65): {65}}, {(43, 65): {((10.5, 3.4641016151377544), (13.5, 5.196152422706632))}}, {(43, 65): set()}))
 
 # Range is measured by pathing around walls. The character is not within range of the monster's initial position. The monster steps forward
 def test_Scenario56():
@@ -1387,7 +1397,7 @@ def test_Scenario56():
     s.action_move = 1
     s.action_range = 3
 
-    assert_answers(s,{(38, 36), (46, 36)})
+    assert_answers(s,({(46, 36), (38, 36)}, {(38, 36): [], (46, 36): []}, {(46, 36): {46}, (38, 36): {38}}, {(46, 36): {36}, (38, 36): {36}}, {(46, 36): {((9.5, 6.928203230275509), (9.5, 3.4641016151377544))}, (38, 36): {((9.0, 6.06217782649107), (9.5, 3.4641016151377544))}}, {(46, 36): set(), (38, 36): set()}))
 
 # Online test question #7. The monster's only attack position is over the obstacle north of the character. With no other options, the monster will move through the trap
 def test_Scenario57():
@@ -1425,7 +1435,7 @@ def test_Scenario57():
     s.action_move = 2
     s.action_range = 2
 
-    assert_answers(s,{(94, )})
+    assert_answers(s,({(94,)}, {(94,): []}, {(94,): {101}}, {(94,): {99}}, {(94,): set()}, {(94,): set()}))
 
 # Even if the monster cannot get to within range of its focus, it will get as close to an attack position as possible
 def test_Scenario58():
@@ -1437,7 +1447,7 @@ def test_Scenario58():
     s.action_move = 2
     s.action_range = 2
 
-    assert_answers(s,{(25, ), (10, ), (18, )})
+    assert_answers(s,({(18,), (25,), (10,)}, {(18,): [], (25,): [], (10,): []}, {(18,): {16, 23, 31}, (25,): {23, 31}, (10,): {16, 23}}, {(18,): {29}, (25,): {29}, (10,): {29}}, {(18,): set(), (25,): set(), (10,): set()}, {(18,): set(), (25,): set(), (10,): set()}))
 
 # Even if the monster cannot get to within range of its focus, it will get as close to the nearest attack position as possible
 def test_Scenario59():
@@ -1457,7 +1467,7 @@ def test_Scenario59():
     s.action_move = 3
     s.action_range = 3
 
-    assert_answers(s,{(3, )})
+    assert_answers(s,({(3,)}, {(3,): []}, {(3,): {8}}, {(3,): {30}}, {(3,): set()}, {(3,): set()}))
 
 # When using a ranged attack, the monster will step away from its target to avoid disadvantage
 def test_Scenario60():
@@ -1479,7 +1489,7 @@ def test_Scenario60():
     s.action_move = 3
     s.action_range = 4
 
-    assert_answers(s,{(45, 30)})
+    assert_answers(s,({(45, 30)}, {(45, 30): []}, {(45, 30): {45}}, {(45, 30): {30}}, {(45, 30): {((9.0, 6.06217782649107), (7.5, 5.196152422706632))}}, {(45, 30): set()}))
 
 # When using a ranged attack while muddled, the monster will not step away from its target
 def test_Scenario61():
@@ -1502,7 +1512,7 @@ def test_Scenario61():
     s.action_range = 4
     s.muddled = True
 
-    assert_answers(s,{(37, 30)})
+    assert_answers(s,({(37, 30)}, {(37, 30): []}, {(37, 30): {37}}, {(37, 30): {30}}, {(37, 30): {((7.5, 5.196152422706632), (7.5, 5.196152422706632))}}, {(37, 30): set()}))
 
 # When using a ranged attack, the monster will not step onto a trap to avoid disadvantage
 def test_Scenario62():
@@ -1526,7 +1536,7 @@ def test_Scenario62():
     s.action_move = 3
     s.action_range = 4
 
-    assert_answers(s,{(37, 30)})
+    assert_answers(s,({(37, 30)}, {(37, 30): []}, {(37, 30): {37}}, {(37, 30): {30}}, {(37, 30): {((7.5, 5.196152422706632), (7.5, 5.196152422706632))}}, {(37, 30): set()}))
 
 # The monster will move the additional step to engage both its focus and an extra target
 def test_Scenario63():
@@ -1542,7 +1552,7 @@ def test_Scenario63():
     s.action_move = 2
     s.action_target = 2
 
-    assert_answers(s,{(23, 16, 22)})
+    assert_answers(s,({(23, 16, 22)}, {(23, 16, 22): []}, {(23, 16, 22): {23}}, {(23, 16, 22): {16}}, {(23, 16, 22): {((5.0, 4.330127018922193), (5.0, 4.330127018922193)), ((4.5, 5.196152422706632), (4.5, 5.196152422706632))}}, {(23, 16, 22): set()}))
 
 # Online test question #8
 def test_Scenario64():
@@ -1563,7 +1573,7 @@ def test_Scenario64():
     s.action_range = 2
     s.action_target = 3
 
-    assert_answers(s,{(18, 16, 31)})
+    assert_answers(s,({(18, 16, 31)}, {(18, 16, 31): []}, {(18, 16, 31): {18}}, {(18, 16, 31): {31}}, {(18, 16, 31): {((5.0, 7.794228634059947), (6.5, 6.928203230275509)), ((3.5, 6.928203230275509), (3.5, 5.196152422706632))}}, {(18, 16, 31): set()}))
 
 # Online test question #9
 def test_Scenario65():
@@ -1585,7 +1595,7 @@ def test_Scenario65():
     s.action_target = 3
     s.muddled = True
 
-    assert_answers(s,{(30, 16, 31, 35)})
+    assert_answers(s,({(30, 16, 31, 35)}, {(30, 16, 31, 35): []}, {(30, 16, 31, 35): {30}}, {(30, 16, 31, 35): {31}}, {(30, 16, 31, 35): {((7.5, 3.4641016151377544), (8.0, 2.598076211353316)), ((7.5, 5.196152422706632), (7.5, 5.196152422706632)), ((6.0, 4.330127018922193), (5.0, 4.330127018922193))}}, {(30, 16, 31, 35): set()}))
 
 # Online test question #10
 def test_Scenario66():
@@ -1607,7 +1617,7 @@ def test_Scenario66():
     s.action_target = 3
     s.flying = True
 
-    assert_answers(s,{(22, 16, 31, 35)})
+    assert_answers(s,({(22, 16, 31, 35)}, {(22, 16, 31, 35): []}, {(22, 16, 31, 35): {22}}, {(22, 16, 31, 35): {31}}, {(22, 16, 31, 35): {((6.0, 4.330127018922193), (6.5, 5.196152422706632)), ((5.0, 4.330127018922193), (5.0, 4.330127018922193)), ((6.5, 3.4641016151377544), (8.0, 2.598076211353316))}}, {(22, 16, 31, 35): set()}))
 
 # Online test question #11
 def test_Scenario67():
@@ -1628,7 +1638,7 @@ def test_Scenario67():
     s.action_move = 1
     s.action_range = 2
 
-    assert_answers(s,{(22, 15)})
+    assert_answers(s,({(22, 15)}, {(22, 15): []}, {(22, 15): {22}}, {(22, 15): {15}}, {(22, 15): {((4.5, 3.4641016151377544), (4.5, 3.4641016151377544))}}, {(22, 15): set()}))
 
 # Online test question #12
 def test_Scenario68():
@@ -1649,7 +1659,7 @@ def test_Scenario68():
     s.action_range = 2
     s.action_target = 2
 
-    assert_answers(s,{(9, 23, 24), (10, 23, 24)})
+    assert_answers(s,({(10, 23, 24), (9, 23, 24)}, {(9, 23, 24): [], (10, 23, 24): []}, {(10, 23, 24): {10}, (9, 23, 24): {9}}, {(10, 23, 24): {24}, (9, 23, 24): {24}}, {(10, 23, 24): {((3.5, 6.928203230275509), (4.5, 6.928203230275509)), ((3.5, 6.928203230275509), (5.0, 6.06217782649107))}, (9, 23, 24): {((3.5, 5.196152422706632), (4.5, 5.196152422706632)), ((3.5, 5.196152422706632), (5.0, 6.06217782649107))}}, {(10, 23, 24): set(), (9, 23, 24): set()}))
 
 # Online test question #14
 def test_Scenario69():
@@ -1674,7 +1684,7 @@ def test_Scenario69():
     s.action_range = 2
     s.action_target = 2
 
-    assert_answers(s,{(31, 17, 29)})
+    assert_answers(s,({(31, 17, 29)}, {(31, 17, 29): []}, {(31, 17, 29): {31}}, {(31, 17, 29): {29}}, {(31, 17, 29): {((6.5, 5.196152422706632), (6.5, 3.4641016151377544)), ((6.0, 6.06217782649107), (5.0, 6.06217782649107))}}, {(31, 17, 29): set()}))
 
 # The monster prioritizes additional targets based on their rank as a focus. Here C30 is preferred because it is in closer proximity
 def test_Scenario70():
@@ -1693,7 +1703,7 @@ def test_Scenario70():
     s.action_range = 4
     s.action_target = 2
 
-    assert_answers(s,{(24, 9, 47)})
+    assert_answers(s,({(24, 9, 47)}, {(24, 9, 47): []}, {(24, 9, 47): {24}}, {(24, 9, 47): {9}}, {(24, 9, 47): {((4.5, 6.928203230275509), (3.0, 6.06217782649107)), ((6.5, 6.928203230275509), (9.5, 8.660254037844386))}}, {(24, 9, 47): set()}))
 
 # The monster prioritizes additional targets based on their rank as a focus. Here C20 is preferred because of initiative
 def test_Scenario71():
@@ -1712,7 +1722,7 @@ def test_Scenario71():
     s.action_range = 3
     s.action_target = 2
 
-    assert_answers(s,{(39, 17, 62)})
+    assert_answers(s,({(39, 17, 62)}, {(39, 17, 62): []}, {(39, 17, 62): {39}}, {(39, 17, 62): {17}}, {(39, 17, 62): {((9.0, 9.526279441628825), (12.0, 11.258330249197702)), ((7.5, 8.660254037844386), (4.5, 6.928203230275509))}}, {(39, 17, 62): set()}))
 
 # The monster prioritizes additional targets based on their rank as a focus. Here C30 is preferred because the path to attacking it is shorter
 def test_Scenario72():
@@ -1733,7 +1743,7 @@ def test_Scenario72():
     s.action_range = 3
     s.action_target = 2
 
-    assert_answers(s,{(37, 17, 57)})
+    assert_answers(s,({(37, 17, 57)}, {(37, 17, 57): []}, {(37, 17, 57): {37}}, {(37, 17, 57): {17}}, {(37, 17, 57): {((7.5, 5.196152422706632), (5.0, 6.06217782649107)), ((9.0, 4.330127018922193), (12.0, 2.598076211353316))}}, {(37, 17, 57): set()}))
 
 # The monster prioritizes additional targets based on their rank as a focus. Here it is a tie, so the players pick
 def test_Scenario73():
@@ -1752,7 +1762,7 @@ def test_Scenario73():
     s.action_range = 3
     s.action_target = 2
 
-    assert_answers(s,{(37, 17, 57), (39, 17, 62)})
+    assert_answers(s,({(39, 17, 62), (37, 17, 57)}, {(37, 17, 57): [], (39, 17, 62): []}, {(39, 17, 62): {39}, (37, 17, 57): {37}}, {(39, 17, 62): {17}, (37, 17, 57): {17}}, {(39, 17, 62): {((9.0, 9.526279441628825), (12.0, 11.258330249197702)), ((7.5, 8.660254037844386), (4.5, 6.928203230275509))}, (37, 17, 57): {((7.5, 5.196152422706632), (5.0, 6.06217782649107)), ((9.0, 4.330127018922193), (12.0, 2.598076211353316))}}, {(39, 17, 62): set(), (37, 17, 57): set()}))
 
 # The monster only attacks additional targets if it can do so while still attacking its focus
 def test_Scenario74():
@@ -1769,7 +1779,7 @@ def test_Scenario74():
     s.action_move = 2
     s.action_target = 2
 
-    assert_answers(s,{(17, 9)})
+    assert_answers(s,({(17, 9)}, {(17, 9): []}, {(17, 9): {17}}, {(17, 9): {9}}, {(17, 9): {((3.0, 6.06217782649107), (3.0, 6.06217782649107))}}, {(17, 9): set()}))
 
 # The monster chooses extra targets based on their priority as a focus. On ties, players choose
 def test_Scenario75():
@@ -1793,7 +1803,7 @@ def test_Scenario75():
     s.action_move = 1
     s.action_target = 4
 
-    assert_answers(s,{(23, 16, 22, 24, 31), (23, 16, 17, 24, 31)})
+    assert_answers(s,({(23, 16, 17, 24, 31), (23, 16, 22, 24, 31)}, {(23, 16, 17, 24, 31): [], (23, 16, 22, 24, 31): []}, {(23, 16, 17, 24, 31): {23}, (23, 16, 22, 24, 31): {23}}, {(23, 16, 17, 24, 31): {16, 24}, (23, 16, 22, 24, 31): {16, 24}}, {(23, 16, 17, 24, 31): {((6.5, 5.196152422706632), (6.5, 5.196152422706632)), ((5.0, 6.06217782649107), (5.0, 6.06217782649107)), ((6.0, 6.06217782649107), (6.0, 6.06217782649107)), ((4.5, 5.196152422706632), (4.5, 5.196152422706632))}, (23, 16, 22, 24, 31): {((6.5, 5.196152422706632), (6.5, 5.196152422706632)), ((6.0, 6.06217782649107), (6.0, 6.06217782649107)), ((5.0, 4.330127018922193), (5.0, 4.330127018922193)), ((4.5, 5.196152422706632), (4.5, 5.196152422706632))}}, {(23, 16, 17, 24, 31): set(), (23, 16, 22, 24, 31): set()}))
 
 # The monster cannot reach any focus, so it does not move
 def test_Scenario76():
@@ -1803,7 +1813,7 @@ def test_Scenario76():
 
     s.action_move = 1
 
-    assert_answers(s,{(30, )})
+    assert_answers(s,({(30,)}, {(30,): []}, {(30,): {}}, {(30,): {}}, {(30,): set()}, {(30,): set()}))
 
 # The monster cannot reach any focus, so it does not move
 def test_Scenario77():
@@ -1828,7 +1838,7 @@ def test_Scenario77():
 
     s.action_move = 2
 
-    assert_answers(s,{(37, )})
+    assert_answers(s,({(37,)}, {(37,): []}, {(37,): {}}, {(37,): {}}, {(37,): set()}, {(37,): set()}))
 
 # The monster will not step on a trap to attack its focus if it has a trap-free path to attack on future tur
 def test_Scenario78():
@@ -1842,7 +1852,7 @@ def test_Scenario78():
 
     s.action_move = 3
 
-    assert_answers(s,{(22, ), (36, )})
+    assert_answers(s,({(36,), (22,)}, {(36,): [], (22,): []}, {(36,): {35}, (22,): {21}}, {(36,): {28}, (22,): {28}}, {(36,): set(), (22,): set()}, {(36,): set(), (22,): set()}))
 
 # The monster moves in close to attack additional targets using its AoE
 def test_Scenario79():
@@ -1859,7 +1869,7 @@ def test_Scenario79():
 
     s.action_move = 2
 
-    assert_answers(s,{(23, 16, 22)})
+    assert_answers(s,({(23, 16, 22)}, {(23, 16, 22): [17, 22, 16]}, {(23, 16, 22): {23}}, {(23, 16, 22): {16}}, {(23, 16, 22): {((5.0, 4.330127018922193), (5.0, 4.330127018922193)), ((4.5, 5.196152422706632), (4.5, 5.196152422706632))}}, {(23, 16, 22): set()}))
 
 # The monster moves in close to attack an additional target using its AoE
 def test_Scenario80():
@@ -1875,7 +1885,7 @@ def test_Scenario80():
 
     s.action_move = 2
 
-    assert_answers(s,{(9, 16, 22)})
+    assert_answers(s,({(9, 16, 22)}, {(9, 16, 22): [16, 22]}, {(9, 16, 22): {9}}, {(9, 16, 22): {16}}, {(9, 16, 22): {((3.0, 4.330127018922193), (4.5, 3.4641016151377544)), ((3.5, 5.196152422706632), (3.5, 5.196152422706632))}}, {(9, 16, 22): set()}))
 
 # When deciding how to use its AoE, the monster prioritizes targets based on their ranking as a focus. The monster's first priority is to attack its focus, C30. After that, the next highest priority is C10
 def test_Scenario81():
@@ -1895,7 +1905,7 @@ def test_Scenario81():
 
     s.action_move = 2
 
-    assert_answers(s,{(23, 8, 16)})
+    assert_answers(s,({(23, 8, 16)}, {(23, 8, 16): [16, 8]}, {(23, 8, 16): {23}}, {(23, 8, 16): {16}}, {(23, 8, 16): {((5.0, 4.330127018922193), (3.5, 3.4641016151377544)), ((4.5, 5.196152422706632), (4.5, 5.196152422706632))}}, {(23, 8, 16): set()}))
 
 # The monster favors C10 over C20 as its secondary target. Even with an AoE and an added target, the monster is unable to attack all three characters. From one position the monster can use its AoE to attack two targets. From another, the monster can use its additional attack. The player can choose where the monster moves
 def test_Scenario82():
@@ -1916,7 +1926,7 @@ def test_Scenario82():
     s.action_move = 2
     s.action_target = 2
 
-    assert_answers(s,{(23, 16, 22), (9, 16, 22)})
+    assert_answers(s,({(23, 16, 22), (9, 16, 22)}, {(9, 16, 22): [16, 22], (23, 16, 22): [22, 21]}, {(23, 16, 22): {23}, (9, 16, 22): {9}}, {(23, 16, 22): {16}, (9, 16, 22): {16}}, {(23, 16, 22): {((5.0, 4.330127018922193), (5.0, 4.330127018922193)), ((4.5, 5.196152422706632), (4.5, 5.196152422706632))}, (9, 16, 22): {((3.0, 4.330127018922193), (4.5, 3.4641016151377544)), ((3.5, 5.196152422706632), (3.5, 5.196152422706632))}}, {(23, 16, 22): set(), (9, 16, 22): set()}))
 
 # The monster moves to a position where it can attack all the characters, using both its AoE and its extra attack
 def test_Scenario83():
@@ -1934,7 +1944,7 @@ def test_Scenario83():
     s.action_move = 2
     s.action_target = 2
 
-    assert_answers(s,{(9, 16, 17, 22)})
+    assert_answers(s,({(9, 16, 17, 22)}, {(9, 16, 17, 22): [16, 22]}, {(9, 16, 17, 22): {9}}, {(9, 16, 17, 22): {17}}, {(9, 16, 17, 22): {((3.0, 4.330127018922193), (4.5, 3.4641016151377544)), ((3.5, 5.196152422706632), (3.5, 5.196152422706632))}}, {(9, 16, 17, 22): set()}))
 
 # The path to melee range of C10 is shorter than the path to C20. However, the monster can attack C20 over the obstacle with its melee AoE. Thus, the path to an attack position on C20 is shorter. The monster focuses on C20
 def test_Scenario84():
@@ -1956,7 +1966,7 @@ def test_Scenario84():
 
     s.action_move = 3
 
-    assert_answers(s,{(17, 15)})
+    assert_answers(s,({(17, 15)}, {(17, 15): [16, 15]}, {(17, 15): {17}}, {(17, 15): {15}}, {(17, 15): {((3.5, 5.196152422706632), (3.5, 3.4641016151377544))}}, {(17, 15): set()}))
 
 # AoE melee attacks do not require adjacency, nor do they test range. The monster attacks from outside the room. It does not need to step into the room, as would be required to use a non-AoE melee attack
 def test_Scenario85():
@@ -1990,7 +2000,7 @@ def test_Scenario85():
 
     s.action_move = 3
 
-    assert_answers(s,{(37, 36)})
+    assert_answers(s,({(37, 36)}, {(37, 36): [31, 30, 36]}, {(37, 36): {37}}, {(37, 36): {36}}, {(37, 36): {((9.5, 5.196152422706632), (9.5, 3.4641016151377544))}}, {(37, 36): set()}))
 
 # The mirrored image of an AoE pattern can be used. The players choose which group of characters the monster attacks. If attacking the second group, the monster uses the mirrored version of its AoE pattern
 def test_Scenario86():
@@ -2012,7 +2022,7 @@ def test_Scenario86():
 
     s.action_move = 2
 
-    assert_answers(s,{(22, 18, 23, 24), (50, 51, 52, 60)})
+    assert_answers(s,({(22, 18, 23, 24), (50, 51, 52, 60)}, {(50, 51, 52, 60): [60, 51, 52], (22, 18, 23, 24): [18, 23, 24]}, {(50, 51, 52, 60): {50}, (22, 18, 23, 24): {22}}, {(50, 51, 52, 60): {51}, (22, 18, 23, 24): {23}}, {(22, 18, 23, 24): {((6.0, 4.330127018922193), (6.0, 6.06217782649107)), ((5.0, 4.330127018922193), (4.5, 6.928203230275509)), ((6.0, 4.330127018922193), (6.0, 4.330127018922193))}, (50, 51, 52, 60): {((12.0, 4.330127018922193), (12.5, 6.928203230275509)), ((12.0, 4.330127018922193), (12.0, 6.06217782649107)), ((12.0, 4.330127018922193), (12.0, 4.330127018922193))}}, {(22, 18, 23, 24): set(), (50, 51, 52, 60): set()}))
 
 # The monster rotates its ranged AoE pattern as neccessary to attack the maximum number of charcters
 def test_Scenario87():
@@ -2035,7 +2045,7 @@ def test_Scenario87():
     s.action_move = 2
     s.action_range = 3
 
-    assert_answers(s,{(37, 15, 16, 17), (37, 60, 67, 75)})
+    assert_answers(s,({(37, 15, 16, 17), (37, 60, 67, 75)}, {(37, 15, 16, 17): [15, 16, 17], (37, 60, 67, 75): [60, 67, 75]}, {(37, 15, 16, 17): {37}, (37, 60, 67, 75): {37}}, {(37, 15, 16, 17): {16, 17, 15}, (37, 60, 67, 75): {60}}, {(37, 15, 16, 17): {((7.5, 5.196152422706632), (5.0, 4.330127018922193)), ((7.5, 5.196152422706632), (5.0, 6.06217782649107)), ((8.0, 4.330127018922193), (5.0, 2.598076211353316))}, (37, 60, 67, 75): {((9.5, 5.196152422706632), (12.5, 6.928203230275509)), ((9.5, 5.196152422706632), (15.5, 8.660254037844386)), ((9.5, 5.196152422706632), (14.0, 7.794228634059947))}}, {(37, 15, 16, 17): set(), (37, 60, 67, 75): set()}))
 
 # Traps do not block ranged attacks. The monster stands still and attacks the character
 def test_Scenario88():
@@ -2054,7 +2064,7 @@ def test_Scenario88():
     s.action_move = 3
     s.action_range = 4
 
-    assert_answers(s,{(38, 10)})
+    assert_answers(s,({(38, 10)}, {(38, 10): []}, {(38, 10): {38}}, {(38, 10): {10}}, {(38, 10): {((7.5, 6.928203230275509), (3.5, 6.928203230275509))}}, {(38, 10): set()}))
 
 # The monster focuses on the character it has the shortest path to an attack location for, avoiding traps if possible. The monster moves towards C20
 def test_Scenario89():
@@ -2075,7 +2085,7 @@ def test_Scenario89():
 
     s.action_move = 1
 
-    assert_answers(s,{(38, )})
+    assert_answers(s,({(38,)}, {(38,): []}, {(38,): {46}}, {(38,): {53}}, {(38,): set()}, {(38,): set()}))
 
 # Traps do not block proximity. With both characters at equal pathing distance, the monster focuses on the character in closer proximity, C20
 def test_Scenario90():
@@ -2096,7 +2106,7 @@ def test_Scenario90():
 
     s.action_move = 1
 
-    assert_answers(s,{(30, )})
+    assert_answers(s,({(30,)}, {(30,): []}, {(30,): {16}}, {(30,): {17}}, {(30,): set()}, {(30,): set()}))
 
 # Walls do block proximity. With both characters at equal pathing distance and proximity, the monster focuses on the character with the lower initiative, C10
 def test_Scenario91():
@@ -2117,7 +2127,7 @@ def test_Scenario91():
 
     s.action_move = 1
 
-    assert_answers(s,{(38, )})
+    assert_answers(s,({(38,)}, {(38,): []}, {(38,): {68}}, {(38,): {76}}, {(38,): set()}, {(38,): set()}))
 
 # The range of AoE attacks is not affected by walls. The monster attacks the character without moving by placing its AoE on the other side of the thin wall
 def test_Scenario92():
@@ -2144,7 +2154,7 @@ def test_Scenario92():
     s.action_move = 1
     s.action_range = 2
 
-    assert_answers(s,{(32, 29)})
+    assert_answers(s,({(32, 29)}, {(32, 29): [29, 30, 36, 37]}, {(32, 29): {32}}, {(32, 29): {29}}, {(32, 29): {((8.0, 7.794228634059947), (7.5, 3.4641016151377544))}}, {(32, 29): set()}))
 
 # Online test question #15
 def test_Scenario93():
@@ -2170,7 +2180,7 @@ def test_Scenario93():
     s.action_range = 3
     s.action_target = 3
 
-    assert_answers(s,{(23, 11, 33, 38)})
+    assert_answers(s,({(23, 11, 33, 38)}, {(23, 11, 33, 38): []}, {(23, 11, 33, 38): {23}}, {(23, 11, 33, 38): {11}}, {(23, 11, 33, 38): {((5.0, 6.06217782649107), (3.0, 7.794228634059947)), ((6.5, 5.196152422706632), (8.0, 6.06217782649107)), ((6.0, 6.06217782649107), (6.5, 8.660254037844386))}}, {(23, 11, 33, 38): set()}))
 
 # Online test question #16
 def test_Scenario94():
@@ -2190,7 +2200,7 @@ def test_Scenario94():
     s.action_move = 4
     s.action_target = 3
 
-    assert_answers(s,{(38, 32, 39, 46)})
+    assert_answers(s,({(38, 32, 39, 46)}, {(38, 32, 39, 46): []}, {(38, 32, 39, 46): {38}}, {(38, 32, 39, 46): {32}}, {(38, 32, 39, 46): {((9.0, 7.794228634059947), (9.0, 7.794228634059947)), ((8.0, 7.794228634059947), (8.0, 7.794228634059947)), ((9.5, 6.928203230275509), (9.5, 6.928203230275509))}}, {(38, 32, 39, 46): set()}))
 
 # Online test question #17
 def test_Scenario95():
@@ -2210,7 +2220,7 @@ def test_Scenario95():
     s.action_move = 4
     s.action_target = 3
 
-    assert_answers(s,{(24, 25, 32)})
+    assert_answers(s,({(24, 25, 32)}, {(24, 25, 32): []}, {(24, 25, 32): {24}}, {(24, 25, 32): {25}}, {(24, 25, 32): {((6.0, 7.794228634059947), (6.0, 7.794228634059947)), ((6.5, 6.928203230275509), (6.5, 6.928203230275509))}}, {(24, 25, 32): set()}))
 
 # Online test question #18
 def test_Scenario96():
@@ -2232,7 +2242,7 @@ def test_Scenario96():
 
     s.action_move = 4
 
-    assert_answers(s,{(24, 32, 39)})
+    assert_answers(s,({(24, 32, 39)}, {(24, 32, 39): [39, 32]}, {(24, 32, 39): {24}}, {(24, 32, 39): {32}}, {(24, 32, 39): {((6.5, 6.928203230275509), (8.0, 7.794228634059947)), ((6.5, 6.928203230275509), (6.5, 6.928203230275509))}}, {(24, 32, 39): set()}))
 
 # Online test question #19
 def test_Scenario97():
@@ -2252,7 +2262,7 @@ def test_Scenario97():
     s.action_move = 6
     s.action_target = 3
 
-    assert_answers(s,{(38, 32, 39, 46)})
+    assert_answers(s,({(38, 32, 39, 46)}, {(38, 32, 39, 46): []}, {(38, 32, 39, 46): {38}}, {(38, 32, 39, 46): {32}}, {(38, 32, 39, 46): {((9.0, 7.794228634059947), (9.0, 7.794228634059947)), ((8.0, 7.794228634059947), (8.0, 7.794228634059947)), ((9.5, 6.928203230275509), (9.5, 6.928203230275509))}}, {(38, 32, 39, 46): set()}))
 
 # Difficult terrain requires two movement points to enter. The monster moves only three steps towards the character
 def test_Scenario98():
@@ -2273,7 +2283,7 @@ def test_Scenario98():
 
     s.action_move = 4
 
-    assert_answers(s,{(31, )})
+    assert_answers(s,({(31,)}, {(31,): []}, {(31,): {45, 46}}, {(31,): {52}}, {(31,): set()}, {(31,): set()}))
 
 # Difficult terrain requires two movement points to enter. The monster moves only two steps towards the character
 def test_Scenario99():
@@ -2297,7 +2307,7 @@ def test_Scenario99():
 
     s.action_move = 4
 
-    assert_answers(s,{(23, ), (24, )})
+    assert_answers(s,({(23,), (24,)}, {(23,): [], (24,): []}, {(23,): {45, 46}, (24,): {45, 46}}, {(23,): {52}, (24,): {52}}, {(23,): set(), (24,): set()}, {(23,): set(), (24,): set()}))
 
 # The path through the difficult terrain and the path around the difficult terrain require equal movement. The players choose
 def test_Scenario100():
@@ -2323,7 +2333,7 @@ def test_Scenario100():
 
     s.action_move = 4
 
-    assert_answers(s,{(21, ), (23, ), (24, )})
+    assert_answers(s,({(23,), (24,), (21,)}, {(23,): [], (24,): [], (21,): []}, {(23,): {45, 46}, (24,): {45, 46}, (21,): {51, 45}}, {(23,): {52}, (24,): {52}, (21,): {52}}, {(23,): set(), (24,): set(), (21,): set()}, {(23,): set(), (24,): set(), (21,): set()}))
 
 # The path around the difficult terrain is shorter than the path through the difficult terrain. The moster moves around it
 def test_Scenario101():
@@ -2348,7 +2358,7 @@ def test_Scenario101():
 
     s.action_move = 4
 
-    assert_answers(s,{(29, )})
+    assert_answers(s,({(29,)}, {(29,): []}, {(29,): {51, 45}}, {(29,): {52}}, {(29,): set()}, {(29,): set()}))
 
 # Flying monsters ignore the effects of difficult terrain. The monster moves a full four steps towards the character
 def test_Scenario102():
@@ -2371,7 +2381,7 @@ def test_Scenario102():
     s.action_move = 4
     s.flying = True
 
-    assert_answers(s,{(37, ), (38, )})
+    assert_answers(s,({(37,), (38,)}, {(38,): [], (37,): []}, {(37,): {45}, (38,): {45, 46}}, {(37,): {52}, (38,): {52}}, {(37,): set(), (38,): set()}, {(37,): set(), (38,): set()}))
 
 # Jumping monsters ignore the effects of difficult terrain, except on the last hex of movement. The monster moves a full four steps towards the character
 def test_Scenario103():
@@ -2394,7 +2404,7 @@ def test_Scenario103():
     s.action_move = 4
     s.jumping = True
 
-    assert_answers(s,{(37, ), (38, )})
+    assert_answers(s,({(37,), (38,)}, {(38,): [], (37,): []}, {(37,): {45}, (38,): {45, 46}}, {(37,): {52}, (38,): {52}}, {(37,): set(), (38,): set()}, {(37,): set(), (38,): set()}))
 
 # In Gloomhaven, jumping monsters ignore the effects of difficult terrain, except on the last hex of movement. The monster moves only three steps towards the character
 def test_Scenario104():
@@ -2424,7 +2434,7 @@ def test_Scenario104():
     s.action_move = 4
     s.jumping = True
 
-    assert_answers(s,{(31, )})
+    assert_answers(s,({(31,)}, {(31,): []}, {(31,): {45, 53, 46}}, {(31,): {52}}, {(31,): set()}, {(31,): set()}))
 
 # The monster does not avoid disadvantage when it cannot attack the character. The monster stops adjacent to the character
 def test_Scenario105():
@@ -2444,7 +2454,7 @@ def test_Scenario105():
     s.action_move = 2
     s.action_range = 2
 
-    assert_answers(s,{(45, ), (30, )})
+    assert_answers(s,({(45,), (30,)}, {(45,): [], (30,): []}, {(45,): {51}, (30,): {29}}, {(45,): {37}, (30,): {37}}, {(45,): set(), (30,): set()}, {(45,): set(), (30,): set()}))
 
 # There are two destinations that are equally valid assuming infinite movemnet for the jumping monster. THe players can choose either as the monster's destination. Because a jumping monster cannot end its movement on an obstacle, the monster will path around the obsticles. For one of the two destinations, the monster makes less progress towards the destination because the second step of movemnet does not take the monster closer to the destination
 def test_Scenario106():
@@ -2460,7 +2470,7 @@ def test_Scenario106():
     s.action_move = 2
     s.jumping = True
 
-    assert_answers(s,{(23, ), (32, )})
+    assert_answers(s,({(23,), (32,)}, {(32,): [], (23,): []}, {(23,): {30}, (32,): {45}}, {(23,): {37}, (32,): {37}}, {(23,): set(), (32,): set()}, {(23,): set(), (32,): set()}))
 
 # A monster being on an obstacle does not allow its allies to move through it. The monster is blocked by the wall of obsticles. The monster will not move
 def test_Scenario107():
@@ -2482,7 +2492,7 @@ def test_Scenario107():
 
     s.action_move = 2
 
-    assert_answers(s,{(17, )})
+    assert_answers(s,({(17,)}, {(17,): []}, {(17,): {}}, {(17,): {}}, {(17,): set()}, {(17,): set()}))
 
 # The flying monster will path through characters to reach an optimal attack position
 def test_Scenario108():
@@ -2503,7 +2513,7 @@ def test_Scenario108():
     s.action_target = 4
     s.flying = True
 
-    assert_answers(s,{(31, 23, 24, 30, 32)})
+    assert_answers(s,({(31, 23, 24, 30, 32)}, {(31, 23, 24, 30, 32): []}, {(31, 23, 24, 30, 32): {31}}, {(31, 23, 24, 30, 32): {23}}, {(31, 23, 24, 30, 32): {((7.5, 6.928203230275509), (7.5, 6.928203230275509)), ((6.5, 5.196152422706632), (6.5, 5.196152422706632)), ((6.0, 6.06217782649107), (6.0, 6.06217782649107)), ((6.5, 6.928203230275509), (6.5, 6.928203230275509))}}, {(31, 23, 24, 30, 32): set()}))
 
 # The monster will use its extra attack to target its focus, using its aoe on secondary targets, because that targets the most characters
 def test_Scenario109():
@@ -2525,7 +2535,7 @@ def test_Scenario109():
     s.action_range = 3
     s.action_target = 2
 
-    assert_answers(s,{(17, 15, 39, 46)})
+    assert_answers(s,({(17, 15, 39, 46)}, {(17, 15, 39, 46): [39, 46]}, {(17, 15, 39, 46): {17}}, {(17, 15, 39, 46): {15}}, {(17, 15, 39, 46): {((5.0, 6.06217782649107), (8.0, 7.794228634059947)), ((3.5, 5.196152422706632), (3.5, 3.4641016151377544)), ((5.0, 6.06217782649107), (9.0, 7.794228634059947))}}, {(17, 15, 39, 46): set()}))
 
 # A monster without an attack will move as if it had a melee attack
 def test_Scenario110():
@@ -2539,7 +2549,7 @@ def test_Scenario110():
     s.action_range = 3
     s.action_target = 0
 
-    assert_answers(s,{(16, )})
+    assert_answers(s,({(16,)}, {(16,): []}, {(16,): {16}}, {(16,): {15}}, {(16,): set()}, {(16,): set()}))
 
 # The monster will step away to avoid disadvantage when making a range aoe attack
 def test_Scenario111():
@@ -2555,7 +2565,7 @@ def test_Scenario111():
     s.action_move = 2
     s.action_range = 1
 
-    assert_answers(s,{(17, 15), (23, 15), (9, 15)})
+    assert_answers(s,({(9, 15), (17, 15), (23, 15)}, {(9, 15): [15, 16], (17, 15): [15, 16], (23, 15): [15, 16]}, {(23, 15): {23}, (17, 15): {17}, (9, 15): {9}}, {(23, 15): {15}, (17, 15): {15}, (9, 15): {15}}, {(23, 15): {((5.0, 4.330127018922193), (4.5, 3.4641016151377544))}, (17, 15): {((3.5, 5.196152422706632), (3.5, 3.4641016151377544))}, (9, 15): {((3.0, 4.330127018922193), (3.5, 3.4641016151377544))}}, {(23, 15): set(), (17, 15): set(), (9, 15): set()}))
 
 # The monster will avoid the trap to attack the character
 def test_Scenario112():
@@ -2569,7 +2579,7 @@ def test_Scenario112():
 
     s.action_move = 3
 
-    assert_answers(s,{(22, 15), (8, 15)})
+    assert_answers(s,({(8, 15), (22, 15)}, {(8, 15): [], (22, 15): []}, {(8, 15): {8}, (22, 15): {22}}, {(8, 15): {15}, (22, 15): {15}}, {(8, 15): {((3.5, 3.4641016151377544), (3.5, 3.4641016151377544))}, (22, 15): {((4.5, 3.4641016151377544), (4.5, 3.4641016151377544))}}, {(8, 15): set(), (22, 15): set()}))
 
 # The jumping monster will avoid the trap to attack the character
 def test_Scenario113():
@@ -2584,7 +2594,7 @@ def test_Scenario113():
     s.action_move = 3
     s.jumping = True
 
-    assert_answers(s,{(22, 15), (8, 15)})
+    assert_answers(s,({(8, 15), (22, 15)}, {(8, 15): [], (22, 15): []}, {(8, 15): {8}, (22, 15): {22}}, {(8, 15): {15}, (22, 15): {15}}, {(8, 15): {((3.5, 3.4641016151377544), (3.5, 3.4641016151377544))}, (22, 15): {((4.5, 3.4641016151377544), (4.5, 3.4641016151377544))}}, {(8, 15): set(), (22, 15): set()}))
 
 # The flying monster will ignore the trap to attack the character
 def test_Scenario114():
@@ -2599,7 +2609,7 @@ def test_Scenario114():
     s.action_move = 3
     s.flying = True
 
-    assert_answers(s,{(16, 15)})
+    assert_answers(s,({(16, 15)}, {(16, 15): []}, {(16, 15): {16}}, {(16, 15): {15}}, {(16, 15): {((3.5, 3.4641016151377544), (3.5, 3.4641016151377544))}}, {(16, 15): set()}))
 
 # With no other option, the monster will move onto the trap to attack the character
 def test_Scenario115():
@@ -2618,7 +2628,7 @@ def test_Scenario115():
 
     s.action_move = 3
 
-    assert_answers(s,{(16, 15)})
+    assert_answers(s,({(16, 15)}, {(16, 15): []}, {(16, 15): {16}}, {(16, 15): {15}}, {(16, 15): {((3.5, 3.4641016151377544), (3.5, 3.4641016151377544))}}, {(16, 15): set()}))
 
 # AoE attacks require line of site. The monster will move around the wall
 def test_Scenario116():
@@ -2636,7 +2646,7 @@ def test_Scenario116():
 
     s.action_move = 3
 
-    assert_answers(s,{(17, ), (45, )})
+    assert_answers(s,({(45,), (17,)}, {(45,): [], (17,): []}, {(45,): {37}, (17,): {23}}, {(45,): {31}, (17,): {31}}, {(45,): set(), (17,): set()}, {(45,): set(), (17,): set()}))
 
 # The closest character with the lowest initiative is the monster's focus. The monster will place its AoE to attack its focus
 def test_Scenario117():
@@ -2665,7 +2675,7 @@ def test_Scenario117():
     s.action_move = 2
     s.action_range = 3
 
-    assert_answers(s,{(35, 16, 17, 18)})
+    assert_answers(s,({(35, 16, 17, 18)}, {(35, 16, 17, 18): [16, 17, 18]}, {(35, 16, 17, 18): {35}}, {(35, 16, 17, 18): {16}}, {(35, 16, 17, 18): {((8.0, 2.598076211353316), (5.0, 4.330127018922193)), ((8.0, 2.598076211353316), (4.5, 5.196152422706632)), ((8.0, 2.598076211353316), (4.5, 6.928203230275509))}}, {(35, 16, 17, 18): set()}))
 
 # The closest character with the lowest initiative is the monster's focus. The monster will place its AoE to attack its focus, even if other placements hit more targets
 def test_Scenario118():
@@ -2690,7 +2700,7 @@ def test_Scenario118():
     s.action_move = 2
     s.action_range = 3
 
-    assert_answers(s,{(35, 16)})
+    assert_answers(s,({(35, 16)}, {(35, 16): [16, 23, 31]}, {(35, 16): {35}}, {(35, 16): {16}}, {(35, 16): {((8.0, 2.598076211353316), (5.0, 4.330127018922193))}}, {(35, 16): set()}))
 
 # There are two equally good focuses, so the players can choose which group the monster attacks. This is true even though choosing one of the focuses allows the monster to attack more targets
 def test_Scenario119():
@@ -2715,7 +2725,7 @@ def test_Scenario119():
     s.action_move = 2
     s.action_range = 3
 
-    assert_answers(s,{(35, 16, 17, 18), (35, 58)})
+    assert_answers(s,({(35, 58), (35, 16, 17, 18)}, {(35, 16, 17, 18): [16, 17, 18], (35, 58): [58, 65, 73]}, {(35, 16, 17, 18): {35}, (35, 58): {35}}, {(35, 16, 17, 18): {16}, (35, 58): {58}}, {(35, 58): {((9.5, 1.7320508075688772), (12.5, 3.4641016151377544))}, (35, 16, 17, 18): {((8.0, 2.598076211353316), (5.0, 4.330127018922193)), ((8.0, 2.598076211353316), (4.5, 5.196152422706632)), ((8.0, 2.598076211353316), (4.5, 6.928203230275509))}}, {(35, 58): set(), (35, 16, 17, 18): set()}))
 
 # There are two equally good focuses, so the players can choose which group the monster attacks. This is true even though choosing one of the focuses allows the monster to attack more favorable targets
 def test_Scenario120():
@@ -2744,7 +2754,7 @@ def test_Scenario120():
     s.action_move = 2
     s.action_range = 3
 
-    assert_answers(s,{(35, 16, 17, 18), (35, 58, 59, 60)})
+    assert_answers(s,({(35, 58, 59, 60), (35, 16, 17, 18)}, {(35, 16, 17, 18): [16, 17, 18], (35, 58, 59, 60): [58, 59, 60]}, {(35, 16, 17, 18): {35}, (35, 58, 59, 60): {35}}, {(35, 16, 17, 18): {16}, (35, 58, 59, 60): {58}}, {(35, 58, 59, 60): {((9.0, 2.598076211353316), (12.5, 5.196152422706632)), ((9.0, 2.598076211353316), (12.5, 6.928203230275509)), ((9.5, 1.7320508075688772), (12.5, 3.4641016151377544))}, (35, 16, 17, 18): {((8.0, 2.598076211353316), (5.0, 4.330127018922193)), ((8.0, 2.598076211353316), (4.5, 5.196152422706632)), ((8.0, 2.598076211353316), (4.5, 6.928203230275509))}}, {(35, 58, 59, 60): set(), (35, 16, 17, 18): set()}))
 
 # The monster will place its AoE to hit its focus and the most favorable set of additional targets
 def test_Scenario121():
@@ -2770,7 +2780,7 @@ def test_Scenario121():
     s.action_move = 2
     s.action_range = 3
 
-    assert_answers(s,{(35, 58, 59, 60)})
+    assert_answers(s,({(35, 58, 59, 60)}, {(35, 58, 59, 60): [58, 59, 60]}, {(35, 58, 59, 60): {35}}, {(35, 58, 59, 60): {58}}, {(35, 58, 59, 60): {((9.0, 2.598076211353316), (12.5, 5.196152422706632)), ((9.0, 2.598076211353316), (12.5, 6.928203230275509)), ((9.5, 1.7320508075688772), (12.5, 3.4641016151377544))}}, {(35, 58, 59, 60): set()}))
 
 # A monster with an AoE attack and a target count of zero will move as if it had a melee attack and not attack
 def test_Scenario122():
@@ -2788,7 +2798,7 @@ def test_Scenario122():
     s.action_range = 3
     s.action_target = 0
 
-    assert_answers(s,{(51, )})
+    assert_answers(s,({(51,)}, {(51,): []}, {(51,): {51}}, {(51,): {59}}, {(51,): set()}, {(51,): set()}))
 
 # All of vertices of the monster's starting hex are touching walls, so the monster does not have line of sight to any other hex. It will step forward to gain los and attack the character
 def test_Scenario123():
@@ -2805,7 +2815,7 @@ def test_Scenario123():
     s.action_move = 2
     s.action_range = 4
 
-    assert_answers(s,{(51, 36, )})
+    assert_answers(s,({(51, 36)}, {(51, 36): []}, {(51, 36): {51}}, {(51, 36): {36}}, {(51, 36): {((11.0, 4.330127018922193), (9.5, 3.4641016151377544))}}, {(51, 36): set()}))
 
 # If a monster can attack its focus this turn, it will move to do so. That is true even when there is a more optimal attack location, if it cannot reach that more optimal location this turn
 def test_Scenario124():
@@ -2838,7 +2848,7 @@ def test_Scenario124():
     s.action_move = 2
     s.action_target = 2
 
-    assert_answers(s,{(38, 39, )})
+    assert_answers(s,({(38, 39)}, {(38, 39): []}, {(38, 39): {38}}, {(38, 39): {39}}, {(38, 39): {((9.0, 7.794228634059947), (9.0, 7.794228634059947))}}, {(38, 39): set()}))
 
 # If a monster cannot attack its focus this turn, it will move towards the most optimal attack location. That is true even if there is a closer attack location that is less optimal
 def test_Scenario125():
@@ -2871,7 +2881,7 @@ def test_Scenario125():
     s.action_move = 1
     s.action_target = 2
 
-    assert_answers(s,{(30, )})
+    assert_answers(s,({(30,)}, {(30,): []}, {(30,): {33}}, {(30,): {39}}, {(30,): set()}, {(30,): set()}))
 
 # If the monster has multiple attack options that target its focus plus a maximum number of additional charcters, it will favor additional targets that are closest in proximty first, then it will favor targets that have lower initiative. In this case, C20 is favored over C30 due to initiative. Note that if secondary targets were instead ranked based on their quality as a focus, C30 would have been favored. That is because only two steps are required to attack C30 individually, while three steps are required to attack C20 due to the obstacle. See this ruling (https://boardgamegeek.com/article/29431623#29431623). Still looking for full clarity (https://boardgamegeek.com/article/29455803#29455803)
 def test_Scenario126():
@@ -2893,7 +2903,7 @@ def test_Scenario126():
 
     s.action_move = 3
 
-    assert_answers(s,{(32, 39, 47)})
+    assert_answers(s,({(32, 39, 47)}, {(32, 39, 47): [39, 47]}, {(32, 39, 47): {32}}, {(32, 39, 47): {39}}, {(32, 39, 47): {((8.0, 7.794228634059947), (8.0, 7.794228634059947)), ((8.0, 7.794228634059947), (9.5, 8.660254037844386))}}, {(32, 39, 47): set()}))
 
 # The players can choose either of the monster's two desintations, including the destination on difficult terrain, even though the monster can make less progress towards that destinatino. See ruling here (https://boardgamegeek.com/thread/2014493/monster-movement-question)
 def test_Scenario127():
@@ -2907,7 +2917,7 @@ def test_Scenario127():
 
     s.action_move = 2
 
-    assert_answers(s,{(31, ), (45, ), (37, )})
+    assert_answers(s,({(45,), (31,), (37,)}, {(45,): [], (31,): [], (37,): []}, {(45,): {46}, (31,): {32}, (37,): {38}}, {(45,): {39}, (31,): {39}, (37,): {39}}, {(45,): set(), (31,): set(), (37,): set()}, {(45,): set(), (31,): set(), (37,): set()}))
 
 # The players can choose either of the monster's two desintations, even though the monster can only make progress towards one of them. See ruling here (https://boardgamegeek.com/thread/2014493/monster-movement-question)
 def test_Scenario128():
@@ -2922,7 +2932,7 @@ def test_Scenario128():
 
     s.action_move = 1
 
-    assert_answers(s,{(37, ), (45, )})
+    assert_answers(s,({(45,), (37,)}, {(37,): [], (45,): []}, {(45,): {46}, (37,): {32}}, {(45,): {39}, (37,): {39}}, {(45,): set(), (37,): set()}, {(45,): set(), (37,): set()}))
 
 # The players can choose any of the monster's three desintations, even though the monster can only make progress towards two of them. See ruling here (https://boardgamegeek.com/thread/2014493/monster-movement-question)
 def test_Scenario129():
@@ -2937,7 +2947,7 @@ def test_Scenario129():
 
     s.action_move = 1
 
-    assert_answers(s,{(37, ), (45, )})
+    assert_answers(s,({(45,), (37,)}, {(37,): [], (45,): []}, {(45,): {47, 39}, (37,): {33}}, {(45,): {40}, (37,): {40}}, {(45,): set(), (37,): set()}, {(45,): set(), (37,): set()}))
 
 # With only a single destination, the monster takes the best path to that destination. The players cannot choose to have the monster take the path along which the monster cannot make progress. Compare to scenario #129
 def test_Scenario130():
@@ -2954,7 +2964,7 @@ def test_Scenario130():
 
     s.action_move = 1
 
-    assert_answers(s,{(45, )})
+    assert_answers(s,({(45,)}, {(45,): []}, {(45,): {39}}, {(45,): {40}}, {(45,): set()}, {(45,): set()}))
 
 # Large number of walls and characters, high target attack, large range and move, and a large aoe to use when timing optimizations
 def test_Scenario131():
@@ -3010,7 +3020,7 @@ def test_Scenario131():
     s.aoe[31] = True
     s.aoe[32] = True
 
-    assert_answers(s,{(52, 17, 23, 26, 46, 51, 57, 58),(52, 17, 23, 40, 46, 51, 57, 58),(20, 8, 17, 23, 40, 46, 51, 58),})
+    assert_answers(s,({(52, 17, 23, 26, 46, 51, 57, 58), (20, 8, 17, 23, 40, 46, 51, 58), (52, 17, 23, 40, 46, 51, 57, 58)}, {(20, 8, 17, 23, 40, 46, 51, 58): [8, 9, 15, 16, 17, 22, 23], (52, 17, 23, 40, 46, 51, 57, 58): [43, 44, 49, 50, 51, 57, 58], (52, 17, 23, 26, 46, 51, 57, 58): [43, 44, 49, 50, 51, 57, 58]}, {(20, 8, 17, 23, 40, 46, 51, 58): {20}, (52, 17, 23, 26, 46, 51, 57, 58): {52}, (52, 17, 23, 40, 46, 51, 57, 58): {52}}, {(20, 8, 17, 23, 40, 46, 51, 58): {51, 46}, (52, 17, 23, 26, 46, 51, 57, 58): {23}, (52, 17, 23, 40, 46, 51, 57, 58): {23}}, {(52, 17, 23, 26, 46, 51, 57, 58): {((12.0, 6.06217782649107), (12.5, 5.196152422706632)), ((11.0, 6.06217782649107), (4.5, 5.196152422706632)), ((10.5, 6.928203230275509), (6.5, 10.392304845413264)), ((12.0, 6.06217782649107), (13.5, 1.7320508075688772)), ((10.5, 6.928203230275509), (10.5, 6.928203230275509)), ((11.0, 6.06217782649107), (11.0, 6.06217782649107))}, (20, 8, 17, 23, 40, 46, 51, 58): {((5.0, 11.258330249197702), (7.5, 10.392304845413264)), ((3.5, 10.392304845413264), (3.5, 6.928203230275509)), ((3.5, 10.392304845413264), (5.0, 6.06217782649107)), ((5.0, 11.258330249197702), (12.5, 5.196152422706632)), ((5.0, 11.258330249197702), (12.0, 6.06217782649107)), ((4.5, 10.392304845413264), (3.5, 3.4641016151377544)), ((5.0, 11.258330249197702), (10.5, 6.928203230275509))}, (52, 17, 23, 40, 46, 51, 57, 58): {((12.0, 6.06217782649107), (12.5, 5.196152422706632)), ((11.0, 6.06217782649107), (4.5, 5.196152422706632)), ((12.0, 6.06217782649107), (13.5, 1.7320508075688772)), ((10.5, 6.928203230275509), (10.5, 6.928203230275509)), ((11.0, 6.06217782649107), (11.0, 6.06217782649107)), ((10.5, 6.928203230275509), (8.0, 9.526279441628825))}}, {(52, 17, 23, 26, 46, 51, 57, 58): set(), (20, 8, 17, 23, 40, 46, 51, 58): set(), (52, 17, 23, 40, 46, 51, 57, 58): set()}))
 
 # The monster will take a longer path to avoid traps. That is true even if it means not being able to attack its focus this turn
 def test_Scenario132():
@@ -3042,7 +3052,7 @@ def test_Scenario132():
 
     s.action_move = 2
 
-    assert_answers(s,{(37, )})
+    assert_answers(s,({(37,)}, {(37,): []}, {(37,): {32}}, {(37,): {24}}, {(37,): set()}, {(37,): set()}))
 
 # The monster first uses proximity to rank secondary targets, before initiative. Because of the wall line between the monster and C10, C10 is two proximity steps away. Thus, the monster prefers C30 as its second target
 def test_Scenario133():
@@ -3074,7 +3084,7 @@ def test_Scenario133():
     s.action_range = 2
     s.action_target = 2
 
-    assert_answers(s,{(37, 44, 45)})
+    assert_answers(s,({(37, 44, 45)}, {(37, 44, 45): []}, {(37, 44, 45): {37}}, {(37, 44, 45): {45}}, {(37, 44, 45): {((9.5, 5.196152422706632), (9.5, 5.196152422706632))}}, {(37, 44, 45): set()}))
 
 # Have clarification. Must measure range around thin wall. This answer is wrong. Waiting for clarification. See https://boardgamegeek.com/thread/2020826/question-about-measuring-range-aoe-attacks and https://boardgamegeek.com/thread/2020622/ranged-aoe-and-wall-hexe
 def test_Scenario134():
@@ -3101,7 +3111,7 @@ def test_Scenario134():
     s.action_move = 0
     s.action_range = 2
 
-    assert_answers(s,{(36, )})
+    assert_answers(s,({(36,)}, {(36,): []}, {(36,): {44, 37}}, {(36,): {47}}, {(36,): set()}, {(36,): set()}))
 
 # Have clarification. Cannot use wall as target point for aoe. This answer is wrong. Waiting for clarification. See https://boardgamegeek.com/thread/2020826/question-about-measuring-range-aoe-attacks and https://boardgamegeek.com/thread/2020622/ranged-aoe-and-wall-hexe
 def test_Scenario135():
@@ -3128,7 +3138,7 @@ def test_Scenario135():
     s.action_move = 0
     s.action_range = 2
 
-    assert_answers(s,{(36, )})
+    assert_answers(s,({(36,)}, {(36,): []}, {(36,): {44, 37}}, {(36,): {47}}, {(36,): set()}, {(36,): set()}))
 
 # Have clarification. Cannot use wall as target point for aoe. This answer is wrong. Waiting for clarification. See https://boardgamegeek.com/thread/2020826/question-about-measuring-range-aoe-attacks and https://boardgamegeek.com/thread/2020622/ranged-aoe-and-wall-hexe
 def test_Scenario136():
@@ -3156,7 +3166,7 @@ def test_Scenario136():
     s.action_move = 0
     s.action_range = 2
 
-    assert_answers(s,{(36, )})
+    assert_answers(s,({(36,)}, {(36,): []}, {(36,): {44}}, {(36,): {47}}, {(36,): set()}, {(36,): set()}))
 
 # https://boardgamegeek.com/article/29498431#2949843
 def test_Scenario137():
@@ -3179,7 +3189,7 @@ def test_Scenario137():
     s.action_range = 2
     s.action_target = 3
 
-    assert_answers(s,{(67, 53, 74, 76)})
+    assert_answers(s,({(67, 53, 74, 76)}, {(67, 53, 74, 76): []}, {(67, 53, 74, 76): {67}}, {(67, 53, 74, 76): {53}}, {(67, 53, 74, 76): {((13.5, 8.660254037844386), (12.5, 8.660254037844386)), ((15.0, 9.526279441628825), (15.5, 10.392304845413264)), ((15.5, 8.660254037844386), (15.5, 8.660254037844386))}}, {(67, 53, 74, 76): set()}))
 
 # Monsters are willing to move farther to avoid disadvantage against secondary targets
 def test_Scenario138():
@@ -3198,7 +3208,7 @@ def test_Scenario138():
     s.action_range = 2
     s.action_target = 3
 
-    assert_answers(s,{(40, 26, 38, 53)})
+    assert_answers(s,({(40, 26, 38, 53)}, {(40, 26, 38, 53): []}, {(40, 26, 38, 53): {40}}, {(40, 26, 38, 53): {53}}, {(40, 26, 38, 53): {((9.5, 10.392304845413264), (11.0, 9.526279441628825)), ((7.5, 10.392304845413264), (6.5, 10.392304845413264)), ((8.0, 9.526279441628825), (8.0, 7.794228634059947))}}, {(40, 26, 38, 53): set()}))
 
 # Monsters are willing to move farther to avoid disadvantage against secondary targets; but this one is muddled
 def test_Scenario139():
@@ -3218,7 +3228,7 @@ def test_Scenario139():
     s.action_target = 3
     s.muddled = True
 
-    assert_answers(s,{(39, 26, 38, 53)})
+    assert_answers(s,({(39, 26, 38, 53)}, {(39, 26, 38, 53): []}, {(39, 26, 38, 53): {39}}, {(39, 26, 38, 53): {53}}, {(39, 26, 38, 53): {((9.5, 8.660254037844386), (10.5, 8.660254037844386)), ((8.0, 7.794228634059947), (8.0, 7.794228634059947)), ((8.0, 9.526279441628825), (6.5, 10.392304845413264))}}, {(39, 26, 38, 53): set()}))
 
 # Monsters are willing to move farther to avoid disadvantage against secondary targets; but this one is muddled
 def test_Scenario140():
@@ -3237,7 +3247,7 @@ def test_Scenario140():
     s.action_range = 2
     s.action_target = 3
 
-    assert_answers(s,{(39, 26, 38, 53)})
+    assert_answers(s,({(39, 26, 38, 53)}, {(39, 26, 38, 53): []}, {(39, 26, 38, 53): {39}}, {(39, 26, 38, 53): {53}}, {(39, 26, 38, 53): {((9.5, 8.660254037844386), (10.5, 8.660254037844386)), ((8.0, 7.794228634059947), (8.0, 7.794228634059947)), ((8.0, 9.526279441628825), (6.5, 10.392304845413264))}}, {(39, 26, 38, 53): set()}))
 
 # Monster picks his secondary targets based on how far it must move to attack them, then proximity, then initiative. Here both groups can be attacked in five steps. It picks the left targets due to proximty. It ends up moving six steps to avoid disadvantage, even though it could have attacked the right targets without disadvantage in five moves. That is because targets are picked based on distance to attack. Only after picking targets does the monster adjust its destination based on avoiding disadvantage
 def test_Scenario141():
@@ -3260,7 +3270,7 @@ def test_Scenario141():
     s.action_range = 2
     s.action_target = 3
 
-    assert_answers(s,{(40, 26, 32, 53)})
+    assert_answers(s,({(40, 26, 32, 53)}, {(40, 26, 32, 53): []}, {(40, 26, 32, 53): {40}}, {(40, 26, 32, 53): {53}}, {(40, 26, 32, 53): {((9.5, 10.392304845413264), (11.0, 9.526279441628825)), ((7.5, 10.392304845413264), (6.5, 10.392304845413264)), ((8.0, 9.526279441628825), (7.5, 8.660254037844386))}}, {(40, 26, 32, 53): set()}))
 
 # Tests a bug in the line-line collision detection causing all colinear line segments to report as colliding
 def test_Scenario142():
@@ -3282,7 +3292,7 @@ def test_Scenario142():
     s.action_move = 0
     s.action_range = 3
 
-    assert_answers(s,{(52, 32)})
+    assert_answers(s,({(52, 32)}, {(52, 32): []}, {(52, 32): {52}}, {(52, 32): {32}}, {(52, 32): {((10.5, 6.928203230275509), (7.5, 6.928203230275509))}}, {(52, 32): set()}))
 
 # Monster does not suffer disadvantage against an adjacent target if the range to that target is two
 def test_Scenario143():
@@ -3305,7 +3315,7 @@ def test_Scenario143():
     s.action_move = 2
     s.action_range = 2
 
-    assert_answers(s,{(31, 32)})
+    assert_answers(s,({(31, 32)}, {(31, 32): []}, {(31, 32): {31}}, {(31, 32): {32}}, {(31, 32): {((8.0, 6.06217782649107), (8.0, 7.794228634059947))}}, {(31, 32): set()}))
 
 # trap test
 def test_Scenario144():
@@ -3349,7 +3359,7 @@ def test_Scenario144():
 
     s.action_move = 2
 
-    assert_answers(s,{(22, ), (23, ), (24, )})
+    assert_answers(s,({(23,), (24,), (22,)}, {(22,): [], (23,): [], (24,): []}, {(23,): {30, 31}, (24,): {31}, (22,): {30}}, {(23,): {37}, (24,): {37}, (22,): {37}}, {(23,): set(), (24,): set(), (22,): set()}, {(23,): set(), (24,): set(), (22,): set()}))
 
 # The monster will choose to close the distance to its destination along a path that minimizes the number of traps it will trigger
 def test_Scenario145():
@@ -3385,7 +3395,7 @@ def test_Scenario145():
 
     s.action_move = 3
 
-    assert_answers(s,{(38, )})
+    assert_answers(s,({(38,)}, {(38,): []}, {(38,): {40, 33}}, {(38,): {34}}, {(38,): set()}, {(38,): set()}))
 
 # Monster values traps triggered on later turns equal to those triggered on this turn
 def test_Scenario146():
@@ -3421,7 +3431,7 @@ def test_Scenario146():
 
     s.action_move = 3
 
-    assert_answers(s,{(17, )})
+    assert_answers(s,({(17,)}, {(17,): []}, {(17,): {25}}, {(17,): {32}}, {(17,): set()}, {(17,): set()}))
 
 # Tests los angles from vertices with walls
 def test_Scenario147():
@@ -3437,7 +3447,7 @@ def test_Scenario147():
     s.action_move = 0
     s.action_range = 4
 
-    assert_answers(s,{(12, )})
+    assert_answers(s,({(12,)}, {(12,): []}, {(12,): {13, 20, 5, 6}}, {(12,): {18}}, {(12,): set()}, {(12,): set()}))
 
 # Simple test of Frosthaven hex to hex (not vertex to vertex) line of sight
 def test_Scenario148():
@@ -3453,7 +3463,7 @@ def test_Scenario148():
     s.action_move = 0
     s.action_range = 6
 
-    assert_answers(s,{(33, )})
+    assert_answers(s,({(33,)}, {(33,): []}, {(33,): {40, 34, 32, 39}}, {(33,): {75}}, {(33,): set()}, {(33,): set()}))
 
 # Test Frosthaven hex-to-hex los algorithm for walls that are parallel to the sightline
 def test_Scenario149():
@@ -3470,7 +3480,7 @@ def test_Scenario149():
     s.action_move = 0
     s.action_range = 6
 
-    assert_answers(s,{(53, )})
+    assert_answers(s,({(53,)}, {(53,): []}, {(53,): {46, 52, 54, 47}}, {(53,): {11}}, {(53,): set()}, {(53,): set()}))
 
 # Line-of-sight test that is very close to fully blocked
 def test_Scenario150():
@@ -3489,4 +3499,4 @@ def test_Scenario150():
     s.action_move = 0
     s.action_range = 9
 
-    assert_answers(s,{(89, )})
+    assert_answers(s,({(89,)}, {(89,): []}, {(89,): {80, 94}}, {(89,): {31}}, {(89,): set()}, {(89,): set()}))
