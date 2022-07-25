@@ -340,8 +340,7 @@ class Scenario:
 
         # find monster focuses
         num_focus_ranks, focuses, focus_ranks = self.find_focus(ATTACK_RANGE, PLUS_TARGET, AOE_ACTION, AOE_MELEE, travel_distances, trap_counts, proximity_distances, travel_distance_sorted_map, aoe, aoe_pattern_list, characters)
-        actions:set[tuple[int,int]] = set()
-        aoes:dict[tuple[int,int],list[int]] = {}
+
         destinations:dict[tuple[int,int],set[int]] = {}
         focus_map:dict[tuple[int,int],int] = {}
         info=[]
@@ -357,44 +356,25 @@ class Scenario:
             udestinations, uaoes = self.find_destination(ATTACK_RANGE, SUSCEPTIBLE_TO_DISADVANTAGE, PLUS_TARGET, PLUS_TARGET_FOR_MOVEMENT, ALL_TARGETS, AOE_ACTION, AOE_MELEE, travel_distances, trap_counts, aoe, aoe_pattern_list, characters, num_focus_ranks, focus_ranks, focus, best_group, groups)
 
             # determine the best move based on the chosen destinations
-
             aoes_for_this_focus,actions_for_this_focus,destinations_for_this_focus=self.solve_for_this_focus(PLUS_TARGET,  travel_distances, trap_counts, best_group, udestinations, uaoes)
             
             info.append((aoes_for_this_focus,actions_for_this_focus,focus,destinations_for_this_focus))
 
-        for inf in info:
-            for action in inf[1]:
-                if action in destinations:
-                    destinations[action] |= inf[3][action]
-                else:
-                    destinations[action] =inf[3][action]
-                if action in focus_map:
-                    focus_map[action].add(inf[2])
-                else:
-                    focus_map[action] = {inf[2]}
-        
-        actions = {_ for inf in info for _ in inf[1] }
-        {aoes.update(inf[0]) for inf in info }
         # if we find no actions, stand still
-        if not actions:
-            action = (active_monster, )
-            actions.add(action)
-            aoes[action] = []
-            destinations[action] = {}
-            focus_map[action] = {}
-
-        # calculate sightlines for visualization
-        sightlines:dict[tuple[int,int],set[tuple[tuple[float, float], tuple[float, float]]]] = {}
-        debug_lines:dict[tuple[int,int],set[tuple[int, tuple[tuple[float, float], tuple[float, float]]]]] = {}
-        for action in actions:
-            sightlines[action] = set()
-            if action[1:]:
-                for attack in action[1:]:
-                    sightlines[action].add(
-                        self.map.find_shortest_sightline(action[0], attack,self.RULE_VERTEX_LOS))
-
-            debug_lines[action] = self.debug_lines
-            self.debug_lines = set()
+        solution = []
+        if not info:
+            solution.append((active_monster,(),list(),dict(),self.debug_lines,set(),dict()))
+        else:        
+            for action in {_ for inf in info for _ in inf[1]}:
+                [focus_map.setdefault(action,set()).add(inf[2]) for inf in info for action in inf[1]]
+                solution.append(
+                    (action[0],
+                    action[1:],
+                    {k: v for inf in info for k, v in inf[0].items()}[action],
+                    focus_map[action],
+                    {self.map.find_shortest_sightline(action[0], attack,self.RULE_VERTEX_LOS) for attack in action[1:]} if action[1:] else set(),
+                    self.debug_lines,
+                    {k: v for inf in info for k, v in inf[3].items()}[action]))
 
         # move monster
         if self.logging:
@@ -419,10 +399,6 @@ class Scenario:
                     for target in action[1:]:
                         action_debug_tags[target] = 'a'
                     # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( figures, self.contents ) ], [ format_initiative( _ ) for _ in self.initiatives ], action_debug_tags )
-
-        solution = []            
-        for action in actions:
-            solution.append((action[0],action[1:],aoes[action],focus_map[action],sightlines[action],debug_lines[action],destinations[action]))
 
         return solution
 
