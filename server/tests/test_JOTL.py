@@ -10,11 +10,8 @@ def init_test():
 
 def assert_answers(scenario:'Scenario', correct_answers:set[tuple[int]]):
     scenario.prepare_map()
-    answers, _, _, _, _, _ = scenario.calculate_monster_move()
-    answers = set(
-        tuple(dereduce_location(_) for _ in _)
-        for _ in answers
-    )
+    answers = scenario.calculate_monster_move()
+    answers = set((tuple((_[0],))+_[1] )if len(_[1])>0 else (_[0],) for _ in answers)
     assert answers == correct_answers
 
 # Move towards the character and offer all valid options for the players to choose among

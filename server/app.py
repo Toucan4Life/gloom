@@ -69,7 +69,7 @@ def solve():
         s.debug_visuals = True
     s.prepare_map()
 
-    raw_actions, aoes, destinations, focuses, sightlines, debug_lines = s.calculate_monster_move()
+    raw_actions= s.calculate_monster_move()
 
     if IsDebugEnv:
         print(f'{len(raw_actions)} option(s):')
@@ -78,26 +78,26 @@ def solve():
                 out = '- no movement'
             else:
                 out = f'- move to {raw_action[0]}'
-            if raw_action[1:]:                
-                for attack in raw_action[1:]:
+            if raw_action[1]:                
+                for attack in raw_action[1]:
                     out += f', attack {attack}'
             print(out)
 
     actions = [
         {
             'move': raw_action[0],
-            'attacks': list(raw_action[1:]),
-            'aoe': list(aoes[raw_action]),
-            'destinations': list(destinations[raw_action]),
-            'focuses': list(focuses[raw_action]),
-            'sightlines': list(sightlines[raw_action]),
+            'attacks': list(raw_action[1]),
+            'aoe': list(raw_action[2]),
+            'destinations': list(raw_action[6]),
+            'focuses': list(raw_action[3]),
+            'sightlines': list(raw_action[4]),
         }
         for raw_action in raw_actions
     ]
 
     if IsDebugEnv:
         for _, raw_action in enumerate(raw_actions):
-            actions[_]['debug_lines'] = list(debug_lines[raw_action])  
+            actions[_]['debug_lines'] = list(raw_action[5])
 
     solution: dict[str,
                    list[list[tuple[int, int]]] |
