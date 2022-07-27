@@ -14,12 +14,12 @@ def assert_answers(scenario:'Scenario', correct_answers:set[tuple[int]]):
     
     test= [(
         (key[0],
-            []if len(key)==0 else key[1:],
+            list()if len(key)==1 else list(key[1:]),
             correct_answers[1][key],
-            correct_answers[3][key],
+            set(correct_answers[3][key]),
             correct_answers[4][key],
             set(),
-            correct_answers[2][key])
+            set(correct_answers[2][key]))
             ) for key in correct_answers[0]]
 
     assert sorted(answers)==sorted(test)

@@ -245,13 +245,14 @@ class Scenario:
                     # print action, this_destination, u.best_destination
                     # print u.destinations
                 return best_destination,destinations,aoes
-    def calculate_monster_move(self) -> tuple[
-        set[tuple[int,int,int]],
-        dict[tuple[int,int,int],tuple[int,int,int]],
-        dict[tuple[int,int,int],set[int]],
-        dict[tuple[int,int,int],set[int]],
-        dict[tuple[int,int,int],set[tuple[tuple[float,float],tuple[tuple[float,float]]]]],
-        dict[tuple[int,int,int],set[int]]]:
+    def calculate_monster_move(self) -> list[tuple[
+        int,
+        list[int],
+        list[int],
+        set[int],
+        set[tuple[int, tuple[tuple[float, float], tuple[float, float]]]],
+        set[int],
+        set[int]]]:
 
         if self.action_range == 0 or self.action_target == 0:
             ATTACK_RANGE = 1
@@ -340,9 +341,11 @@ class Scenario:
 
         # find monster focuses
         num_focus_ranks, focuses, focus_ranks = self.find_focus(ATTACK_RANGE, PLUS_TARGET, AOE_ACTION, AOE_MELEE, travel_distances, trap_counts, proximity_distances, travel_distance_sorted_map, aoe, aoe_pattern_list, characters)
+        # if we find no actions, stand still
 
-        destinations:dict[tuple[int,int],set[int]] = {}
-        focus_map:dict[tuple[int,int],int] = {}
+        if not focuses:
+            return [(active_monster,list(),list(),set(),self.debug_lines,set(),set())]
+
         info=[]
         # players choose among focus ties
         for focus in focuses:
@@ -356,25 +359,29 @@ class Scenario:
             udestinations, uaoes = self.find_destination(ATTACK_RANGE, SUSCEPTIBLE_TO_DISADVANTAGE, PLUS_TARGET, PLUS_TARGET_FOR_MOVEMENT, ALL_TARGETS, AOE_ACTION, AOE_MELEE, travel_distances, trap_counts, aoe, aoe_pattern_list, characters, num_focus_ranks, focus_ranks, focus, best_group, groups)
 
             # determine the best move based on the chosen destinations
-            aoes_for_this_focus,actions_for_this_focus,destinations_for_this_focus=self.solve_for_this_focus(PLUS_TARGET,  travel_distances, trap_counts, best_group, udestinations, uaoes)
-            
-            info.append((aoes_for_this_focus,actions_for_this_focus,focus,destinations_for_this_focus))
+            info.append(self.solve_for_this_focus(PLUS_TARGET,  travel_distances, trap_counts, best_group, udestinations, uaoes,focus))
 
-        # if we find no actions, stand still
+
+
+        solution2 = dict()
+        for inf in info:
+            for iinf in inf:
+                if (iinf[0],)+tuple(iinf[1]) in solution2.keys():
+                    solution2[(iinf[0],)+tuple(iinf[1])][4]|=(iinf[4])
+                else:
+                    solution2[(iinf[0],)+tuple(iinf[1])]=list(iinf)
+            
         solution = []
-        if not info:
-            solution.append((active_monster,(),list(),dict(),self.debug_lines,set(),dict()))
-        else:        
-            for action in {_ for inf in info for _ in inf[1]}:
-                [focus_map.setdefault(action,set()).add(inf[2]) for inf in info for action in inf[1]]
-                solution.append(
-                    (action[0],
-                    action[1:],
-                    {k: v for inf in info for k, v in inf[0].items()}[action],
-                    focus_map[action],
-                    {self.map.find_shortest_sightline(action[0], attack,self.RULE_VERTEX_LOS) for attack in action[1:]} if action[1:] else set(),
-                    self.debug_lines,
-                    {k: v for inf in info for k, v in inf[3].items()}[action]))
+        for _, (_, v) in enumerate(solution2.items()):
+            #[focus_map.setdefault(action,set()).add(inf[2]) for inf in info for action in inf[1]]
+            solution.append(
+                (v[0],
+                list(v[1]),
+                v[2],
+                v[4],
+                {self.map.find_shortest_sightline(v[0], attack,self.RULE_VERTEX_LOS) for attack in v[1]} if v[1] else set(),
+                self.debug_lines,
+                v[3]))
 
         # move monster
         if self.logging:
@@ -382,87 +389,81 @@ class Scenario:
             self.figures[active_monster] = ' '
             map_debug_tags[active_monster] = 's'
             if not self.show_each_action_separately:
-                for action in actions:
+                for action in solution:
                     self.figures[action[0]] = 'A'
-                    for destination in destinations[action]:
+                    for destination in action[6]:
                         map_debug_tags[destination] = 'd'
-                    for target in action[1:]:
+                    for target in action[1]:
                         map_debug_tags[target] = 'a'
                 # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_initiative( _ ) for _ in self.initiatives ], map_debug_tags )
             else:
-                for action in actions:
+                for action in solution:
                     figures = list(self.figures)
                     action_debug_tags = list(map_debug_tags)
                     figures[action[0]] = 'A'
-                    for destination in destinations[action]:
+                    for destination in action[6]:
                         action_debug_tags[destination] = 'd'
-                    for target in action[1:]:
+                    for target in action[1]:
                         action_debug_tags[target] = 'a'
                     # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( figures, self.contents ) ], [ format_initiative( _ ) for _ in self.initiatives ], action_debug_tags )
 
         return solution
 
-    def solve_for_this_focus(self, PLUS_TARGET,  travel_distances, trap_counts, best_group, udestinations, uaoes):
-        actioner:list[tuple[int,list[int],list[int]]]=[]
-        for act in udestinations:
-            actioner.append((act[0],list(act[1:]),list(uaoes[act])))
+    def solve_for_this_focus(self, PLUS_TARGET:int,  travel_distances:list[int], trap_counts:list[int], best_group:tuple[int,int], udestinations:set[tuple[int,int]], uaoes:dict[tuple[int,int],list[int]],focus:int):
         can_reach_destinations = best_group[1] == -1
-        actions_for_this_focus:set[tuple[int,int]] = []
+        actions_for_this_focus:set[tuple[int,int]] = set()
         destinations_for_this_focus:dict[tuple[int],tuple[int,int]] = {}
         if can_reach_destinations:
-            if PLUS_TARGET >= 0:
-                actions_for_this_focus = udestinations
-                aoes_for_this_focus = uaoes
-            else:
-                actions_for_this_focus = [(_[0], ) for _ in udestinations]
-                aoes_for_this_focus: dict[tuple[int], list[int]] = {_: []for _ in actions_for_this_focus}
+            actions_for_this_focus = {(_[0], ) for _ in udestinations} if PLUS_TARGET < 0 else udestinations
             destinations_for_this_focus = {_: {_[0]} for _ in actions_for_this_focus}
         else:
-            aoes_for_this_focus, actions_for_this_focus,destinations_for_this_focus =self.move_closer_to_destinations(travel_distances,trap_counts, udestinations)
+            for destination in udestinations:
+                act,dest =self.move_closer_to_destinations(travel_distances,trap_counts, destination)
+                actions_for_this_focus|=set(act)
+                destinations_for_this_focus={k: set(destinations_for_this_focus.get(k, []) )| set(dest.get(k, [])) for k in (set(destinations_for_this_focus) | set(dest))}
 
-        
-        # for action in actions_for_this_focus:
-        #     return_actions.append((action[0], []if len(action)==1 else action[1:],aoes[action],focus_map[action],destinations[action]))
-        return aoes_for_this_focus,actions_for_this_focus,destinations_for_this_focus
+        attacks_for_this_focus = dict() if PLUS_TARGET < 0 and can_reach_destinations else {_:_[1:] for _ in actions_for_this_focus}
+        aoes_for_this_focus = uaoes if can_reach_destinations and PLUS_TARGET >-1 else{_: [] for _ in actions_for_this_focus}
+     
+        return [(action[0], attacks_for_this_focus.setdefault(action,set()), aoes_for_this_focus[action],destinations_for_this_focus[action],{focus}) for action in set(actions_for_this_focus)]
 
-    def move_closer_to_destinations(self, travel_distances, trap_counts, udestinations):
+    def move_closer_to_destinations(self, travel_distances, trap_counts, destination):
+        actions_for_this_focus:set[tuple[int,int]] = []
         actions_for_this_focus:set[tuple[int,int]] = []
         destinations_for_this_focus:dict[tuple[int],tuple[int,int]] = {}
-        for destination in udestinations:
-            actions_for_this_destination = []
-            best_move = (
-                        MAX_VALUE - 1,  # traps to destination and along travel
-                        MAX_VALUE - 1,  # distance to destination
-                        MAX_VALUE - 1,  # travel distance
-                    )
-            distance_to_destination, traps_to_destination = self.find_path_distances_reverse(destination[0])
-            for location in range(self.map.map_size):
-                if travel_distances[location] <= self.action_move:
-                    if self.can_end_move_on(location):
-                        this_move = (
-                                    traps_to_destination[location] +
-                                    trap_counts[location],
-                                    distance_to_destination[location],
-                                    travel_distances[location],
-                                )
-                        if this_move == best_move:
-                            actions_for_this_destination.append((location, ))
-                        elif this_move < best_move:
-                            best_move = this_move
-                            actions_for_this_destination = [(location, )]
-                                # print ( location, ), this_move, best_move
-                                # print actions_for_this_destination
 
-            actions_for_this_focus += actions_for_this_destination
-            for action in actions_for_this_destination:
-                if action in destinations_for_this_focus:
-                    destinations_for_this_focus[action].add( destination[0])
-                else:
-                    destinations_for_this_focus[action] = { destination[0]}
+        actions_for_this_destination = []
+        best_move = (
+                    MAX_VALUE - 1,  # traps to destination and along travel
+                    MAX_VALUE - 1,  # distance to destination
+                    MAX_VALUE - 1,  # travel distance
+                )
+        distance_to_destination, traps_to_destination = self.find_path_distances_reverse(destination[0])
+        for location in range(self.map.map_size):
+            if travel_distances[location] <= self.action_move:
+                if self.can_end_move_on(location):
+                    this_move = (
+                                traps_to_destination[location] +
+                                trap_counts[location],
+                                distance_to_destination[location],
+                                travel_distances[location],
+                            )
+                    if this_move == best_move:
+                        actions_for_this_destination.append((location, ))
+                    elif this_move < best_move:
+                        best_move = this_move
+                        actions_for_this_destination = [(location, )]
+                            # print ( location, ), this_move, best_move
+                            # print actions_for_this_destination
 
-        aoes_for_this_focus = {_: [] for _ in actions_for_this_focus}
+        actions_for_this_focus += actions_for_this_destination
+        for action in actions_for_this_destination:
+            if action in destinations_for_this_focus:
+                destinations_for_this_focus[action].add( destination[0])
+            else:
+                destinations_for_this_focus[action] = { destination[0]}
 
-        return aoes_for_this_focus, actions_for_this_focus,destinations_for_this_focus
+        return actions_for_this_focus,destinations_for_this_focus
 
     def find_destination(self, ATTACK_RANGE, SUSCEPTIBLE_TO_DISADVANTAGE, PLUS_TARGET, PLUS_TARGET_FOR_MOVEMENT, ALL_TARGETS, AOE_ACTION, AOE_MELEE, travel_distances, trap_counts, aoe, aoe_pattern_list, characters, num_focus_ranks, focus_ranks, focus, best_group, groups):
         udestinations:set[tuple[int,int]] = set()
