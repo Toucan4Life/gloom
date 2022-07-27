@@ -368,12 +368,12 @@ class Scenario:
             for iinf in inf:
                 if (iinf[0],)+tuple(iinf[1]) in solution2.keys():
                     solution2[(iinf[0],)+tuple(iinf[1])][4]|=(iinf[4])
+                    solution2[(iinf[0],)+tuple(iinf[1])][3]|=(iinf[3])
                 else:
                     solution2[(iinf[0],)+tuple(iinf[1])]=list(iinf)
             
         solution = []
         for _, (_, v) in enumerate(solution2.items()):
-            #[focus_map.setdefault(action,set()).add(inf[2]) for inf in info for action in inf[1]]
             solution.append(
                 (v[0],
                 list(v[1]),
@@ -411,26 +411,17 @@ class Scenario:
 
     def solve_for_this_focus(self, PLUS_TARGET:int,  travel_distances:list[int], trap_counts:list[int], best_group:tuple[int,int], udestinations:set[tuple[int,int]], uaoes:dict[tuple[int,int],list[int]],focus:int):
         can_reach_destinations = best_group[1] == -1
-        actions_for_this_focus:set[tuple[int,int]] = set()
-        destinations_for_this_focus:dict[tuple[int],tuple[int,int]] = {}
-        if can_reach_destinations:
-            actions_for_this_focus = {(_[0], ) for _ in udestinations} if PLUS_TARGET < 0 else udestinations
-            destinations_for_this_focus = {_: {_[0]} for _ in actions_for_this_focus}
-        else:
-            for destination in udestinations:
-                act,dest =self.move_closer_to_destinations(travel_distances,trap_counts, destination)
-                actions_for_this_focus|=set(act)
-                destinations_for_this_focus={k: set(destinations_for_this_focus.get(k, []) )| set(dest.get(k, [])) for k in (set(destinations_for_this_focus) | set(dest))}
+        return [
+        (action[0],
+        destination[1:] if can_reach_destinations and PLUS_TARGET >-1 else dict(),
+        uaoes[action] if can_reach_destinations and PLUS_TARGET >-1 else dict(),
+        {destination[0]},
+        {focus})
+        for destination in udestinations
+        for action in ([destination] if can_reach_destinations else self.move_closer_to_destinations(travel_distances,trap_counts, destination)) ]                
 
-        attacks_for_this_focus = dict() if PLUS_TARGET < 0 and can_reach_destinations else {_:_[1:] for _ in actions_for_this_focus}
-        aoes_for_this_focus = uaoes if can_reach_destinations and PLUS_TARGET >-1 else{_: [] for _ in actions_for_this_focus}
-     
-        return [(action[0], attacks_for_this_focus.setdefault(action,set()), aoes_for_this_focus[action],destinations_for_this_focus[action],{focus}) for action in set(actions_for_this_focus)]
 
     def move_closer_to_destinations(self, travel_distances, trap_counts, destination):
-        actions_for_this_focus:set[tuple[int,int]] = []
-        actions_for_this_focus:set[tuple[int,int]] = []
-        destinations_for_this_focus:dict[tuple[int],tuple[int,int]] = {}
 
         actions_for_this_destination = []
         best_move = (
@@ -456,14 +447,7 @@ class Scenario:
                             # print ( location, ), this_move, best_move
                             # print actions_for_this_destination
 
-        actions_for_this_focus += actions_for_this_destination
-        for action in actions_for_this_destination:
-            if action in destinations_for_this_focus:
-                destinations_for_this_focus[action].add( destination[0])
-            else:
-                destinations_for_this_focus[action] = { destination[0]}
-
-        return actions_for_this_focus,destinations_for_this_focus
+        return actions_for_this_destination
 
     def find_destination(self, ATTACK_RANGE, SUSCEPTIBLE_TO_DISADVANTAGE, PLUS_TARGET, PLUS_TARGET_FOR_MOVEMENT, ALL_TARGETS, AOE_ACTION, AOE_MELEE, travel_distances, trap_counts, aoe, aoe_pattern_list, characters, num_focus_ranks, focus_ranks, focus, best_group, groups):
         udestinations:set[tuple[int,int]] = set()
