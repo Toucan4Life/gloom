@@ -12,9 +12,8 @@ class hexagonal_grid:
         self.effective_walls:list[list[bool]]
         self.extra_walls:list[list[bool]]
         self.vertices:list[tuple[float, float]]
-        self.visibility_cache = {}
-        self.path_cache = [{}, {}, {}, {}]
-
+        self.visibility_cache :dict[tuple[int,int],bool]={}
+        self.path_cache : dict[int,list[int]]=[{}]
     #Gloomhaven logic below
     def prepare_map(self,walls: list[list[bool]], contents: list[str]) -> None:
         self.walls = walls
@@ -541,8 +540,8 @@ class hexagonal_grid:
 
     def find_proximity_distances(self, start: int) -> list[int]:
         cache_key = (start)
-        if cache_key in self.path_cache[2]:
-            return self.path_cache[2][cache_key]
+        if cache_key in self.path_cache[0]:
+            return self.path_cache[0][cache_key]
 
         distances = [MAX_VALUE] * self.map_size
 
@@ -565,7 +564,7 @@ class hexagonal_grid:
                     frontier.append(neighbor)
                     distances[neighbor] = neighbor_distance
 
-        self.path_cache[2][cache_key] = distances
+        self.path_cache[0][cache_key] = distances
         return distances
 
     # def find_distances(self, start: int) -> list[int]:
