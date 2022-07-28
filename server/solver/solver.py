@@ -593,80 +593,13 @@ class Scenario:
                     if range_to_location[_] <= ATTACK_RANGE and self.map.test_los_between_locations(_, location, self.RULE_VERTEX_LOS)
                 }
 
-                aoe_targetss = self.find_target_for_attack(ATTACK_RANGE, SUSCEPTIBLE_TO_DISADVANTAGE, PLUS_TARGET, PLUS_TARGET_FOR_MOVEMENT, AOE_ACTION, AOE_MELEE, aoe, location,
+                aoe_targetss = self.find_destination_for_attack(ATTACK_RANGE, SUSCEPTIBLE_TO_DISADVANTAGE, PLUS_TARGET, PLUS_TARGET_FOR_MOVEMENT, AOE_ACTION, AOE_MELEE, aoe, location,
                                                            aoe_pattern_list, characters, num_focus_ranks, focus_ranks)
                 for aoess in aoe_targetss:
                     (groupsss, best_groupss) = self.consider_group_aoe(aoess[0], aoess[1], aoess[2], groupsss, best_groupss, targetable_characters,
                                                                        ALL_TARGETS, focus, focus_ranks, trap_counts, location, can_reach_location, has_disadvantage_against_focus, travel_distances)
 
         return best_groupss, groupsss
-
-    def find_target_for_attack(self, ATTACK_RANGE: int, SUSCEPTIBLE_TO_DISADVANTAGE: bool, PLUS_TARGET: int, PLUS_TARGET_FOR_MOVEMENT: int,
-                               AOE_ACTION: bool, AOE_MELEE: bool, aoe: list[tuple[int, int, int]], location: int, aoe_pattern_list: list[list[tuple[int, int, int]]], characters: list[int],
-                               num_focus_ranks: int, focus_ranks: dict[int, int]):
-        aoe_targetss: list[tuple[int, list[int], list[int]]] = []
-        if not AOE_ACTION:
-            # add non-AoE targets and consider resulting actions
-            aoe_targetss.append(
-                (1 + PLUS_TARGET_FOR_MOVEMENT, [], [0] * num_focus_ranks))
-
-        elif AOE_MELEE:
-            # loop over every possible aoe placement
-            for aoe_rotation in range(12):
-                aoe_targets: list[int] = []
-                aoe_targets_of_rank = [0] * num_focus_ranks
-                aoe_targets_disadvantage = 0
-                aoe_hexes: list[int] = []
-
-                # loop over each hex in the aoe, adding targets
-                for aoe_offset in aoe:
-                    target = self.map.apply_rotated_aoe_offset(
-                        location, aoe_offset, aoe_rotation)
-                    aoe_hexes.append(target)
-                    if target in characters:
-                        if self.map.test_los_between_locations(target, location, self.RULE_VERTEX_LOS):
-                            aoe_targets.append(target)
-                            aoe_targets_of_rank[focus_ranks[target]] += 1
-                            aoe_targets_disadvantage += int(
-                                SUSCEPTIBLE_TO_DISADVANTAGE and self.map.is_adjacent(location, target))
-
-                            # add non-AoE targets and consider result
-                if aoe_targets:
-                    aoe_targetss.append(
-                        (PLUS_TARGET, aoe_targets, aoe_targets_of_rank))
-
-        else:
-            # loop over all aoe placements that hit characters
-            distances = self.map.find_proximity_distances(location)
-            for aoe_location in characters:
-                for aoe_pattern in aoe_pattern_list:
-                    aoe_targets = []
-                    aoe_targets_of_rank = [0] * num_focus_ranks
-                    aoe_targets_disadvantage = 0
-                    aoe_hexes = []
-
-                    # loop over each hex in the aoe, adding targets
-                    in_range = False
-                    for aoe_offset in aoe_pattern:
-                        target = self.map.apply_aoe_offset(
-                            aoe_location, aoe_offset)
-                        if target:
-                            if distances[target] <= ATTACK_RANGE:
-                                in_range = True
-                            aoe_hexes.append(target)
-                            if target in characters:
-                                if self.map.test_los_between_locations(target, location, self.RULE_VERTEX_LOS):
-                                    aoe_targets.append(target)
-                                    aoe_targets_of_rank[focus_ranks[target]] += 1
-                                    aoe_targets_disadvantage += int(
-                                        SUSCEPTIBLE_TO_DISADVANTAGE and self.map.is_adjacent(location, target))
-
-                                # add non-AoE targets and consider result
-                    if in_range:
-                        if aoe_targets:
-                            aoe_targetss.append(
-                                (PLUS_TARGET, aoe_targets, aoe_targets_of_rank))
-        return aoe_targetss
 
     def can_attack_from_location(self, character: int, location: int, AOE_ACTION: bool, AOE_MELEE: bool, aoe: list[tuple[int, int, int]], aoe_pattern_list: list[list[tuple[int, int, int]]], ATTACK_RANGE: int, PLUS_TARGET: int,
                                  range_to_character: int) -> bool:
