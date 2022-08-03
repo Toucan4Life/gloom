@@ -165,37 +165,32 @@ class Scenario:
 
         return distances, traps
 
-    def consider_group_aoe(self,groupsss: tuple[int, int, int, int, int, int], best_groupss: tuple[int, int, int, int, int, int],target_set,this_group,dest,destsss):
+    def consider_group_aoe(self,groupsss: list[set[int]], best_groupss: tuple[int, int, int, int, int, int],target_set:set[int],this_group,dest,destsss):
 
 
         if this_group == best_groupss:
-            groupsss.add(target_set)
+            groupsss.append(target_set)
         elif this_group < best_groupss:
             if this_group[:4] < best_groupss[:4]:
                 destsss= [dest]
             best_groupss = this_group
-            groupsss = {target_set}
+            groupsss = [target_set]
         if this_group[:4] == best_groupss[:4] :
             destsss.append(dest)
 
         return groupsss, best_groupss,destsss
 
-    def consider_destination(self,  aoe_hexes: list[int], best_destination: tuple[int, int],
-                             destinations: set[tuple[int, int]], aoes: dict[tuple[int, int], int],
-                             location: int, target_set,this_destination):
+    def consider_destination(self,  aoe_hexes: list[int], best_destination: tuple[int, int],destination_properties: list[tuple[int, tuple[int],list[int]]],
+                             location: int, target_set,this_destination)-> tuple[tuple[int,int],list[tuple[int,tuple[int],list[int]]]]:
 
         if this_destination == best_destination:
-            action = (location, ) + target_set
-            destinations.add(action)
-            aoes[action] = aoe_hexes
+            destination_properties.append((location,target_set, aoe_hexes))
         elif this_destination < best_destination:
-            action = (location, ) + target_set
             best_destination = this_destination
-            destinations = {action}
-            aoes = {action: aoe_hexes}
+            destination_properties = [(location,target_set, aoe_hexes)]
         # print action, this_destination, u.best_destination
         # print u.destinations
-        return best_destination, destinations, aoes
+        return best_destination, destination_properties
 
     def calculate_monster_move(self) -> list[tuple[
             int,
@@ -299,44 +294,36 @@ class Scenario:
 
         # find monster focuses
         num_focus_ranks, focuses, focus_ranks = self.find_focus(
-            ATTACK_RANGE, PLUS_TARGET, AOE_ACTION, AOE_MELEE, travel_distances, trap_counts, proximity_distances, travel_distance_sorted_map, aoe, aoe_pattern_list, characters)
+            ATTACK_RANGE, PLUS_TARGET, AOE_ACTION, AOE_MELEE, travel_distances, trap_counts, proximity_distances,
+             travel_distance_sorted_map, aoe, aoe_pattern_list, characters)
         # if we find no actions, stand still
 
         if not focuses:
             return [(active_monster, list(), list(), set(), self.debug_lines, set(), set())]
 
-        info: list[list[tuple[int, tuple[int, int],
-                              dict[tuple[int, int], list[int]], set[int], set[int]]]] = []
+        info: list[tuple[list[int],tuple[int] | tuple[()],list[int],set[int],set[int]]] = []
         # players choose among focus ties
         for focus in focuses:
             destinationsss = self.calculate_location_properties(ATTACK_RANGE, SUSCEPTIBLE_TO_DISADVANTAGE, PLUS_TARGET, PLUS_TARGET_FOR_MOVEMENT,
                                 AOE_ACTION, AOE_MELEE, aoe, aoe_pattern_list, characters, num_focus_ranks, focus_ranks,ALL_TARGETS,focus)
 
             # find the best group of targets based on the following priorities
-            best_group, groups,destss = self.find_best_aoe_group(SUSCEPTIBLE_TO_DISADVANTAGE,  travel_distances, trap_counts,
+            can_reach_destinations, groups,destss = self.find_best_aoe_group(SUSCEPTIBLE_TO_DISADVANTAGE,  travel_distances, trap_counts,
                                                           num_focus_ranks, focus, destinationsss)
 
             # given the target group, find the best destinations to attack from
             # based on the following priorities
 
-            udestinations, uaoes = self.find_destination(SUSCEPTIBLE_TO_DISADVANTAGE, travel_distances, groups, destss)
+            udestinations = self.find_destination(SUSCEPTIBLE_TO_DISADVANTAGE, travel_distances, groups, destss)
 
             # determine the best move based on the chosen destinations
-            can_reach_destinations = best_group[1] == -1
-            if can_reach_destinations:
-                info += [([destination[0]],
-                          destination[1:] if PLUS_TARGET > -1 else tuple(),
-                          uaoes[destination] if PLUS_TARGET > -1 else dict(),
-                          {destination[0]},
-                          {focus})
-                         for destination in udestinations]
-            else:
-                info += [(self.move_closer_to_destinations(travel_distances, trap_counts, destination[0]),
-                          tuple(),
-                          dict(),
-                          {destination[0]},
-                          {focus})
-                         for destination in udestinations]
+            info.extend([(
+                [destination[0]] if can_reach_destinations else self.move_closer_to_destinations(travel_distances, trap_counts, destination[0]),
+                destination[1] if can_reach_destinations and PLUS_TARGET > -1 else tuple(),
+                destination[2] if can_reach_destinations and PLUS_TARGET > -1 else list(),
+                {destination[0]},
+                {focus}
+                ) for destination in udestinations])
 
         focusdict = dict()
         destdict = dict()
@@ -345,7 +332,7 @@ class Scenario:
         [focusdict.setdefault(((act,)+iinf[1]), set()).update(iinf[3])
          for iinf in info for act in iinf[0]]
 
-        solution2 = {((act,)+iinf[1]): (list((act,)+iinf[1:]))
+        solution2 = {((act,)+iinf[1]): ((act,)+iinf[1:])
                      for iinf in info for act in iinf[0]}
 
         solution = []
@@ -354,11 +341,11 @@ class Scenario:
                 (v[0],
                  list(v[1]),
                  list(v[2]),
-                 destdict[k],
+                 destdict[(v[0],)+v[1]],
                  {self.map.find_shortest_sightline(
                      v[0], attack, self.RULE_VERTEX_LOS) for attack in v[1]} if v[1] else set(),
                  self.debug_lines,
-                 focusdict[k]))
+                 focusdict[(v[0],)+v[1]]))
 
         # move monster
         if self.logging:
@@ -415,35 +402,33 @@ class Scenario:
 
         return actions_for_this_destination
 
-    def find_destination(self, SUSCEPTIBLE_TO_DISADVANTAGE: bool, travel_distances: list[int],groups: list[int], destinationsss):
-        udestinations: set[tuple[int, int]] = set()
-        uaoes: dict[tuple[int], list[int]] = {}
-        ubest_destination = (
+    def find_destination(self, SUSCEPTIBLE_TO_DISADVANTAGE: bool, travel_distances: list[int],groups: list[set[int]], destinationsss) -> list[tuple[int, tuple[int], list[int]]]:
+        udestinations: list[tuple[int,tuple[int],list[int]]] = []
+        ubest_destination: tuple[int,int] = (
             MAX_VALUE - 1,  # number of targts with disadvantage
             MAX_VALUE - 1,  # path length to the destination
         )
 
 
         for dest in destinationsss:
-                if dest[4] not in groups:
-                    continue
-                this_destination = (
-                    dest[2] +
-                    sum([SUSCEPTIBLE_TO_DISADVANTAGE and self.map.is_adjacent(
-                        dest[5], target) for target in dest[4]]),
-                    travel_distances[dest[5]],
-                )
-                (ubest_destination, udestinations, uaoes) = self.consider_destination( dest[3],
-                                ubest_destination, udestinations, uaoes,dest[5], dest[4],this_destination)
+            if dest[4] not in groups:
+                continue
+            this_destination = (
+                dest[2] +
+                sum([SUSCEPTIBLE_TO_DISADVANTAGE and self.map.is_adjacent(
+                    dest[5], target) for target in dest[4]]),
+                travel_distances[dest[5]],
+            )
+            (ubest_destination, udestinations) = self.consider_destination( dest[3],
+                            ubest_destination, udestinations, dest[5], dest[4],this_destination)
 
-        return udestinations, uaoes
+        return udestinations
 
     def maximize_aoe_pattern_hits(self, ATTACK_RANGE: int, SUSCEPTIBLE_TO_DISADVANTAGE: bool,AOE_MELEE: bool, aoe: list[tuple[int, int, int]],
      location: int, aoe_pattern_list: list[list[tuple[int, int, int]]], characters: list[int], num_focus_ranks: int,
-                                  focus_ranks: dict[int, int]) -> list[tuple[int, list[int],
-                                                                             list[int], int, list[int],set[int],int]]:
-        destinationsss: list[tuple[int, list[int],
-                                   list[int], int, list[int],set[int],int]] = []
+                                  focus_ranks: dict[int, int]) -> list[tuple[list[int],list[int],int,list[int]]]:
+
+        destinationsss = []
 
         if AOE_MELEE:
             # loop over every possible aoe placement
@@ -531,11 +516,11 @@ class Scenario:
                                     targets_of_rank[focus_ranks[target]] += 1
                                 tup=tuple(sorted(set(y[0]).union(tup)))
                                 location_properties.append((y[0], targets_of_rank, y[2], y[3],tup,location))
-
+    
         return location_properties
     def find_best_aoe_group(self, SUSCEPTIBLE_TO_DISADVANTAGE: bool, travel_distances: list[int], trap_counts: list[int],
                             num_focus_ranks: int, focus: int, destinationsss):
-        groupsss: tuple[int, int, int, int, int, int] = ()
+        groupsss: list[set[int]] = []
         destsss = []
         best_groupss = (
             MAX_VALUE - 1,  # traps to the attack location
@@ -555,7 +540,7 @@ class Scenario:
                     ) + tuple(-_ for _ in dest[1])
                 (groupsss, best_groupss,destsss) = self.consider_group_aoe(  groupsss, best_groupss,dest[4],this_group, dest,destsss)
 
-        return best_groupss, groupsss, destsss
+        return best_groupss[1] == -1, groupsss, destsss
 
     def can_attack_from_location(self, character: int, location: int, AOE_ACTION: bool, AOE_MELEE: bool, aoe: list[tuple[int, int, int]], aoe_pattern_list: list[list[tuple[int, int, int]]], ATTACK_RANGE: int, PLUS_TARGET: int,
                                  range_to_character: int) -> bool:
@@ -579,7 +564,7 @@ class Scenario:
         return False
 
     def find_focus(self, ATTACK_RANGE: int, PLUS_TARGET: int, AOE_ACTION: bool, AOE_MELEE: bool, travel_distances: list[int], trap_counts: list[int], proximity_distances: list[int],
-                   travel_distance_sorted_map: list[int], aoe: list[int], aoe_pattern_list: list[int], characters: list[int]) -> tuple[int, set[int], dict[int, int]]:
+                   travel_distance_sorted_map: list[int], aoe: list[tuple[int, int, int]], aoe_pattern_list: list[list[tuple[int, int, int]]], characters: list[int]) -> tuple[int, set[int], dict[int, int]]:
 
         focuses: set[int] = set()
         best_focus: tuple[int, int, int, int] = (
