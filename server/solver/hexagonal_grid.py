@@ -566,6 +566,26 @@ class hexagonal_grid:
 
         self.path_cache[0][cache_key] = distances
         return distances
+    
+    def solve_sight(self, monster: int,upper_bound:int, RULE_VERTEX_LOS:bool) -> list[tuple[int, int]]:
+
+        distances = self.find_proximity_distances(monster)
+
+        reach: list[tuple[int, int]] = []
+        has_run_begun = False
+        run = 0
+        for location in range(self.map_size):
+            if distances[location] <= upper_bound and not self.blocks_los(location) and location != monster and self.test_los_between_locations(monster, location, RULE_VERTEX_LOS):
+                if not has_run_begun :
+                    run = location
+                    has_run_begun = True
+            elif has_run_begun :
+                reach.append((run, location))
+                has_run_begun = False
+
+        if has_run_begun :
+            reach.append((run, self.map_size))
+        return reach
 
     # def find_distances(self, start: int) -> list[int]:
     #     cache_key = (start)
