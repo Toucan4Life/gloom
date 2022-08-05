@@ -1,11 +1,14 @@
 import collections
 import textwrap
 import itertools
+from typing import Callable
 from solver.hexagonal_grid import hexagonal_grid
 from solver.settings import MAX_VALUE
 from solver.utils import get_offset, pin_offset, rotate_offset, apply_offset
-
+from typing import Any,TypeVar
 class Scenario:
+    T = TypeVar('T')
+    C = TypeVar('C', bound="Comparable")
     logging: bool
     debug_visuals: bool
     show_each_action_separately: bool
@@ -75,7 +78,7 @@ class Scenario:
         # RULE_PROXIMITY_FOCUS:           proximity is ignored when determining monster focus
 
         self.RULE_VERTEX_LOS = self.GLOOM_RULES
-        self.RULE_DIFFICULT_TERRAIN_JUMP = self.GLOOM_RULES 
+        self.RULE_DIFFICULT_TERRAIN_JUMP = self.GLOOM_RULES
         self.RULE_PROXIMITY_FOCUS = self.JOTL_RULES
 
     def can_end_move_on(self, location: int) -> bool:
@@ -195,9 +198,9 @@ class Scenario:
             if self.JOTL_RULES:
                 out += ', JAWS OF THE LION'
             if self.action_move > 0:
-                out += ', MOVE %i' % self.action_move
+                out += f', MOVE {self.action_move}'
             if self.action_range > 0 and self.action_target > 0:
-                out += ', RANGE %i' % self.action_range
+                out += f', RANGE {self.action_range}'
             if self.action_target > 0:
                 out += ', ATTACK'
             if AOE_ACTION:
@@ -206,15 +209,14 @@ class Scenario:
                 if ALL_TARGETS:
                     out += ', TARGET ALL'
                 else:
-                    out += ', +TARGET %i' % PLUS_TARGET
+                    out += f', +TARGET {PLUS_TARGET}'
             if self.flying:
                 out += ', FLYING'
             elif self.jumping:
                 out += ', JUMPING'
             if self.muddled:
                 out += ', MUDDLED'
-            out += ', DEBUG_TOGGLE = %s' % (
-                'TRUE' if self.debug_toggle else 'FALSE')
+            out += f', DEBUG_TOGGLE = {self.debug_toggle}'
             if out == '':
                 out = 'NO ACTION'
             else:
@@ -241,14 +243,14 @@ class Scenario:
         # doesn't speed things up but makes los testing order more intuitive for debugging
         travel_distance_sorted_map = sorted(list(range(self.map.map_size)), key=lambda x: travel_distances[x])
         # process aoe
-        
+
         aoe, aoe_pattern_list = self.process_aoe(AOE_MELEE) if AOE_ACTION else ([],[])
 
         # find characters
         characters = [_ for _, figure in enumerate(self.figures) if figure == 'C']
 
-        if not len(characters):
-            return [(active_monster, list(), list(), set(), set(), self.debug_lines, set())]
+        if not characters:
+            return [(active_monster, [], [], set(), set(), self.debug_lines, set())]
 
         # find monster focuses
         focuses, focus_ranks = self.find_focus(
@@ -257,17 +259,20 @@ class Scenario:
         # if we find no actions, stand still
 
         if not focuses:
-            return [(active_monster, list(), list(), set(), set(), self.debug_lines, set())]
+            return [(active_monster, [], [], set(), set(), self.debug_lines, set())]
 
         info: list[tuple[list[int],tuple[int] | tuple[()],list[int],set[int],set[int]]] = []
         # players choose among focus ties
         for focus in focuses:
-            destinationsss = self.calculate_location_properties(ATTACK_RANGE, PLUS_TARGET, PLUS_TARGET_FOR_MOVEMENT,
-                                AOE_ACTION, AOE_MELEE, aoe, aoe_pattern_list, characters,focus)
+            destinationsss = [y for y in [self.compute_location_property(PLUS_TARGET if AOE_ACTION else 1 + PLUS_TARGET_FOR_MOVEMENT, focus, location, aoe_hexes, aoe_targets, non_aoe_targets)
+                                for location in range(self.map.map_size)
+                                if self.can_end_move_on(location)
+                                for aoe_targets, aoe_hexes, non_aoe_targets in self.get_targets(ATTACK_RANGE, AOE_MELEE, aoe, location, aoe_pattern_list, characters, AOE_ACTION)]
+                            if y is not None]
 
             # find best location on board, disregarding ennemies other than focus
-            destinationsss = self.find_minimums_values(destinationsss,lambda x: self.calculate_location_score(SUSCEPTIBLE_TO_DISADVANTAGE,
-                travel_distances, trap_counts, focus, x))
+            destinationsss = self.find_minimums_values(destinationsss,lambda x, fc=focus: self.calculate_location_score(SUSCEPTIBLE_TO_DISADVANTAGE,
+                travel_distances, trap_counts, fc, x))
 
             # for the remaining considered location calculate potential target
             destinationsss = [(dest[0], dest[1], dest[2], dest[3], tuple(sorted(dest[2].union(tup)))if focus in dest[2].union(tup) else (), dest[5])
@@ -284,7 +289,7 @@ class Scenario:
 
             destinationsss = self.find_minimums_values(destinationsss,lambda x: self.calculate_destination_score(SUSCEPTIBLE_TO_DISADVANTAGE,
                 travel_distances,x))
-                
+
             # determine the best move based on the chosen destinations
             can_reach_destinations = travel_distances[destinationsss[0][5]] <= self.action_move
             info.extend([(
@@ -297,8 +302,11 @@ class Scenario:
 
         focusdict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)
         destdict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)
-        [destdict[(act,)+iinf[1]].update(iinf[4]) for iinf in info for act in iinf[0]]
-        [focusdict[(act,)+iinf[1]].update(iinf[3]) for iinf in info for act in iinf[0]]
+        
+        for iinf in info:
+            for act in iinf[0]:
+                destdict[(act,)+iinf[1]].update(iinf[4])
+                focusdict[(act,)+iinf[1]].update(iinf[3])
 
         solution = list({((act,)+iinf[1]):
             (act,
@@ -336,11 +344,11 @@ class Scenario:
 
         return solution
 
-    def find_minimums_values(self,collections,key):
-        score=[key(col) for col in collections]
+    def find_minimums_values(self,iterable:list[T],key:Callable[[T],C]):
+        score=[key(col) for col in iterable]
         best_score=min(score)
-        return [collections[i] for i,x in enumerate(score) if x == best_score]
-    
+        return [iterable[i] for i,x in enumerate(score) if x == best_score]
+
     def move_closer_to_destinations(self, travel_distances: list[int], trap_counts: list[int], destination: int):
 
         distance_to_destination, traps_to_destination = self.find_path_distances_reverse(destination)
@@ -351,7 +359,7 @@ class Scenario:
 
         return self.find_minimums_values(valid_locations,lambda x: self.calculate_location_score_for_movement(travel_distances, trap_counts, distance_to_destination, traps_to_destination, x))
 
-    def calculate_location_score_for_movement(self, travel_distances, trap_counts, distance_to_destination, traps_to_destination, location):
+    def calculate_location_score_for_movement(self, travel_distances:list[int], trap_counts:list[int], distance_to_destination:list[int], traps_to_destination:list[int], location:int):
         # traps to destination and along travel
         # distance to destination
         # travel distance
@@ -359,7 +367,7 @@ class Scenario:
                 distance_to_destination[location],
                 travel_distances[location])
 
-    def calculate_location_score(self, SUSCEPTIBLE_TO_DISADVANTAGE, travel_distances,trap_counts, focus, dest):
+    def calculate_location_score(self, SUSCEPTIBLE_TO_DISADVANTAGE:bool, travel_distances:list[int],trap_counts:list[int], focus:int, dest:tuple[set[int],int,set[int],list[int],tuple[int,int],int]):
         # best_groupss = (
         #     MAX_VALUE - 1,  # traps to the attack location
         #     0,             # can reach the attack location
@@ -373,66 +381,53 @@ class Scenario:
                 int(SUSCEPTIBLE_TO_DISADVANTAGE and self.map.is_adjacent(dest[5], focus)),
                 -(len(dest[2])+min(dest[1],len(dest[0])))
             )
-        
+
         return this_destination
 
-    def calculate_destination_score(self, SUSCEPTIBLE_TO_DISADVANTAGE, travel_distances, dest):
+    def calculate_destination_score(self, SUSCEPTIBLE_TO_DISADVANTAGE:bool, travel_distances:list[int], dest:tuple[set[int],int,set[int],list[int],tuple[int,int],int]):
 
         this_destination = (
                 sum([SUSCEPTIBLE_TO_DISADVANTAGE and self.map.is_adjacent(dest[5], target) for target in dest[4]]),
                 travel_distances[dest[5]],
             )
-        
+
         return this_destination
 
-    def maximize_aoe_pattern_hits(self, ATTACK_RANGE: int,AOE_MELEE: bool, aoe: list[tuple[int, int, int]],
-     location: int, aoe_pattern_list: list[list[tuple[int, int, int]]], characters: list[int]) -> list[list[int]]:
-
+    def get_targets(self, ATTACK_RANGE: int,AOE_MELEE: bool, aoe: list[tuple[int, int, int]],
+     location: int, aoe_pattern_list: list[list[tuple[int, int, int]]], characters: list[int],AOE_ACTION:bool) -> list[tuple[set[int], list[int], set[int]]]:
+        targetable_character={_ for _ in characters if self.map.find_proximity_distances(location)[_] <= ATTACK_RANGE and self.map.test_los_between_locations(_, location, self.RULE_VERTEX_LOS)}
+        if not AOE_ACTION:
+            return [self.get_attacks_targets([],characters,location,targetable_character)]
         if AOE_MELEE:
             # add non-AoE targets and consider result
-            return [
-                        [aoe_hex for aoe_hex in (self.map.apply_rotated_aoe_offset(location, aoe_offset, aoe_rotation)
+            aoe_hexess = [self.get_attacks_targets([self.map.apply_rotated_aoe_offset(location, aoe_offset, aoe_rotation)
                         # loop over each hex in the aoe, adding targets
-                        for aoe_offset in aoe)
-                        if aoe_hex >-1]
+                                                    for aoe_offset in aoe],
+                                                    characters,location,targetable_character)
                     # loop over every possible aoe placement
-                    for aoe_rotation in range(12)]
+                    for aoe_rotation in range(12) ]
         else:
             distances = self.map.find_proximity_distances(location)
-            return [aoe_hexes for aoe_hexes in
+            aoe_hexess =  [self.get_attacks_targets(aoe_hexes,characters,location,targetable_character)
+                                 for aoe_hexes in
                                 [# loop over each hex in the aoe, adding targets
-                                    [aoe_hex for aoe_hex in (self.map.apply_aoe_offset(aoe_location, aoe_offset) for aoe_offset in aoe_pattern)
-                                    if aoe_hex > -1]
+                                    [self.map.apply_aoe_offset(aoe_location, aoe_offset) for aoe_offset in aoe_pattern]
                                 # loop over all aoe placements that hit characters
                                 for aoe_pattern in aoe_pattern_list
                                 for aoe_location in characters]
                     if any(distances[target] <= ATTACK_RANGE for target in aoe_hexes)]
 
-    def calculate_location_properties(self, ATTACK_RANGE: int, PLUS_TARGET: int, PLUS_TARGET_FOR_MOVEMENT: int,
-                                               AOE_ACTION: bool, AOE_MELEE: bool, aoe: list[tuple[int, int, int]], aoe_pattern_list: list[list[tuple[int, int, int]]],
-                                               characters: list[int], focus):
-        location_properties=[]
+        return aoe_hexess
 
-        for location in range(self.map.map_size):
-            if self.can_end_move_on(location):
-                targetable_character={_ for _ in characters
-                    if self.map.find_proximity_distances(location)[_] <= ATTACK_RANGE and self.map.test_los_between_locations(_, location, self.RULE_VERTEX_LOS)}
+    def get_attacks_targets(self,aoe_hexes:list[int],characters:list[int],location:int,targetable_character:set[int]):
+        aoe_targets = { target for target in aoe_hexes if target in characters and self.map.test_los_between_locations(target, location, self.RULE_VERTEX_LOS)}
+        non_aoe_targets = targetable_character - aoe_targets
+        return aoe_targets, aoe_hexes, non_aoe_targets
 
-                if not AOE_ACTION:
-                    location_properties.extend(self.compute_location_property(1 + PLUS_TARGET_FOR_MOVEMENT, focus, location, [], set(), targetable_character))
-                else :
-                    for aoe_hexes in self.maximize_aoe_pattern_hits(ATTACK_RANGE, AOE_MELEE, aoe,
-                     location, aoe_pattern_list, characters):
-                        aoe_targets={ target for target in aoe_hexes if target in characters and self.map.test_los_between_locations(target, location, self.RULE_VERTEX_LOS)}
+    def compute_location_property(self, PLUS_TARGET:bool, focus:int, location:int, aoe_hexes:list[int], aoe_targets:set[int], non_aoe_targets:set[int]):
+        return (non_aoe_targets, PLUS_TARGET, aoe_targets, aoe_hexes,(),location) if (PLUS_TARGET != 0 and focus in non_aoe_targets) or focus in aoe_targets else None
 
-                        location_properties.extend(self.compute_location_property(PLUS_TARGET, focus, location, aoe_hexes, aoe_targets, targetable_character-aoe_targets))
-
-        return location_properties
-
-    def compute_location_property(self, PLUS_TARGET, focus, location, aoe_hexes, aoe_targets:set[int], targets):
-        return [(targets, PLUS_TARGET, aoe_targets, aoe_hexes,(),location)] if (PLUS_TARGET != 0 and focus in targets) or focus in aoe_targets else []
-
-    def calculate_aoe_score(self, travel_distances, dest, focus_ranks):
+    def calculate_aoe_score(self, travel_distances:list[int], dest:tuple[set[int],int,set[int],list[int],tuple[int,int],int], focus_ranks:dict[int,int]):
         targets_of_rank = [0] * (max(focus_ranks.values()) + 1)
         for target in dest[4]:
             targets_of_rank[focus_ranks[target]] -= 1
@@ -442,39 +437,18 @@ class Scenario:
         this_group = (
                 travel_distances[dest[5]],
                 ) + tuple(targets_of_rank)
-            
+
         return this_group
-
-    def can_attack_from_location(self, character: int, location: int, AOE_ACTION: bool, AOE_MELEE: bool, aoe: list[tuple[int, int, int]], aoe_pattern_list: list[list[tuple[int, int, int]]], ATTACK_RANGE: int,
-                                 range_to_character: int) -> bool:
-        if not self.map.test_los_between_locations(character, location, self.RULE_VERTEX_LOS):
-            return False
-
-        if not AOE_ACTION:
-            return range_to_character <= ATTACK_RANGE
-
-        if AOE_MELEE:
-            return any(character == self.map.apply_rotated_aoe_offset(location, aoe_offset, aoe_rotation) for aoe_offset in aoe for aoe_rotation in range(12))                            
-        
-        distances = self.map.find_proximity_distances(location)
-        return any(self.get_aoe_offsetted_target(character, aoe_offset,distances,ATTACK_RANGE) for aoe_pattern in aoe_pattern_list for aoe_offset in aoe_pattern )            
-
-    def get_aoe_offsetted_target(self, character, aoe_offset,distances,ATTACK_RANGE):
-        target = self.map.apply_aoe_offset(character, aoe_offset)
-        if target > -1 and (distances[target] <= ATTACK_RANGE):
-            return target
 
     def find_focus(self, ATTACK_RANGE: int, AOE_ACTION: bool, AOE_MELEE: bool, travel_distances: list[int], trap_counts: list[int], proximity_distances: list[int],
                    travel_distance_sorted_map: list[int], aoe: list[tuple[int, int, int]], aoe_pattern_list: list[list[tuple[int, int, int]]], characters: list[int]) -> tuple[set[int], dict[int, int]]:
- 
-        range_to_character = {character:self.map.find_proximity_distances(character) for character in characters}
 
         characterss = [(character,location)
                         for location in travel_distance_sorted_map
                         for character in characters
                         if travel_distances[location] != MAX_VALUE and
                             self.can_end_move_on(location) and
-                            self.can_attack_from_location(character, location, AOE_ACTION, AOE_MELEE, aoe, aoe_pattern_list, ATTACK_RANGE, range_to_character[character][location])]
+                            any(len(y[0]) >0 or len(y[2]) >0 for y in self.get_targets(ATTACK_RANGE, AOE_MELEE, aoe, location, aoe_pattern_list, [character], AOE_ACTION))]
 
         focuses={focus[0]
                 for focus in self.find_minimums_values(characterss,lambda x: self.calculate_focus_score(travel_distances, trap_counts, proximity_distances, x[0], x[1]))} if len(characterss)>0 else set()
@@ -487,10 +461,10 @@ class Scenario:
 
         return focuses, focus_ranks
 
-    def calculate_secondary_focus_score(self,proximity_distances, character):
+    def calculate_secondary_focus_score(self,proximity_distances:list[int], character:int):
         return (proximity_distances[character], self.initiatives[character]),character
 
-    def calculate_focus_score(self, travel_distances, trap_counts, proximity_distances, character, location):
+    def calculate_focus_score(self, travel_distances:list[int], trap_counts:list[int], proximity_distances:list[int], character:int, location:int):
         return (trap_counts[location],
                 travel_distances[location],
                 0 if self.RULE_PROXIMITY_FOCUS else proximity_distances[character],
@@ -503,10 +477,10 @@ class Scenario:
         if AOE_MELEE:
             return [get_offset(self.aoe_center, location, self.aoe_height) for location in range(self.aoe_size) if self.aoe[location]], []
 
-        # precalculate aoe patterns to remove degenerate cases        
+        # precalculate aoe patterns to remove degenerate cases
         aoe = [get_offset(self.aoe.index(True), location, self.aoe_height)
             for location in range(self.aoe_size) if self.aoe[location]]
-            
+
         PRECALC_GRID_HEIGHT = 21
         PRECALC_GRID_WIDTH = 21
         PRECALC_GRID_SIZE = PRECALC_GRID_HEIGHT * PRECALC_GRID_WIDTH
@@ -536,10 +510,10 @@ class Scenario:
         has_run_begun = False
         run = 0
         for location in range(self.map.map_size):
-            if distances[location] <= attack_range and not self.map.blocks_los(location) and location != monster and self.map.test_los_between_locations(monster, location, self.RULE_VERTEX_LOS):                        
+            if distances[location] <= attack_range and not self.map.blocks_los(location) and location != monster and self.map.test_los_between_locations(monster, location, self.RULE_VERTEX_LOS):
                 if not has_run_begun :
                     run = location
-                    has_run_begun = True         
+                    has_run_begun = True
             elif has_run_begun :
                 reach.append((run, location))
                 has_run_begun = False
@@ -552,323 +526,4 @@ class Scenario:
         return [self.solve_sight(_,1 if self.action_range == 0 else self.action_range) for _ in viewpoints]
 
     def solve_sights(self, viewpoints: list[int]) -> list[list[tuple[int, int]]]:
-        return [self.solve_sight(_,MAX_VALUE) for _ in viewpoints]
-
-    # def debug_plot_line(self, color, line):
-    #     self.debug_lines.add((color, (scale_vector(
-    #         DEBUG_PLOT_SCALE, line[0]), scale_vector(DEBUG_PLOT_SCALE, line[1]))))
-
-    # def debug_plot_point(self, color, point):
-    #     self.debug_lines.add(
-    #         (color, (scale_vector(DEBUG_PLOT_SCALE, point), )))
-
-    # def reduce_map(self):
-        #self.reduced = True
-        # print self.effective_walls
-        # if hasattr( self, 'effective_walls' ):
-        #   exit(-1)
-
-        # TODO: currently not used
-        #assert False
-
-        # # TODO: make sure we don't prepare twice
-
-        # old_height = self.MAP_HEIGHT
-        # old_width = self.MAP_WIDTH
-        # old_walls = self.walls
-        # old_contents = self.contents
-        # old_figures = self.figures
-        # old_initiatives = self.initiatives
-
-        # min_row = 9999
-        # min_column = 9999
-        # max_row = 0
-        # max_column = 0
-        # targets_min_row = 9999
-        # targets_min_column = 9999
-        # targets_max_row = 0
-        # targets_max_column = 0
-
-        # # TODO: don't need to prepare_map first map
-
-        # figures = [ _ for _, figure in enumerate( self.figures ) if figure != ' ' ]
-        # contents = [ _ for _, content in enumerate( self.contents ) if content != ' ' ]
-        # walls = [
-        #   [ _ for _, wall in enumerate( self.walls ) if wall[a] ]
-        #   for a in range( 6 )
-        # ]
-
-        # # TODO
-        # # only need ACTION_RANGE to potential targets
-        # # handle AOE based range extensions (need test cases)
-        # # time
-
-        # for location in figures:
-        #   column = old_div(location , old_height)
-        #   min_column = min( min_column, column )
-        #   max_column = max( max_column, column )
-        #   row = location % old_height
-        #   min_row = min( min_row, row )
-        #   max_row = max( max_row, row )
-        #   if old_figures[location] == 'C':
-        #     targets_min_column = min( targets_min_column, column )
-        #     targets_max_column = max( targets_max_column, column )
-        #     targets_min_row = min( targets_min_row, row )
-        #     targets_max_row = max( targets_max_row, row )
-        # for location in contents:
-        #   column = location / old_height
-        #   min_column = min( min_column, column )
-        #   max_column = max( max_column, column )
-        #   row = location % old_height
-        #   min_row = min( min_row, row )
-        #   max_row = max( max_row, row )
-        # for i in range( 6 ):
-        #   for location in walls[i]:
-        #     column = location / old_height
-        #     min_column = min( min_column, column )
-        #     max_column = max( max_column, column )
-        #     row = location % old_height
-        #     min_row = min( min_row, row )
-        #     max_row = max( max_row, row )
-
-        # edge = 1
-        # # edge = max( 1, self.ACTION_RANGE )
-        # min_row = max( min_row - edge, 0 )
-        # min_column = max( min_column - edge, 0 )
-        # max_row = min( max_row + edge, old_height - 1 )
-        # max_column = min( max_column + edge, old_width - 1 )
-
-        # attack_range = self.ACTION_RANGE
-        # # TODO - account for AOE here
-        # edge = max( 1, attack_range )
-        # targets_min_row = max( targets_min_row - edge, 0 )
-        # targets_min_column = max( targets_min_column - edge, 0 )
-        # targets_max_row = min( targets_max_row + edge, old_height - 1 )
-        # targets_max_column = min( targets_max_column + edge, old_width - 1 )
-
-        # min_row = min( min_row, targets_min_row )
-        # min_column = min( min_column, targets_min_column )
-        # max_row = max( max_row, targets_max_row )
-        # max_column = max( max_column, targets_max_column )
-
-        # reduce_column = min_column / 2 * 2
-        # reduce_row = min_row
-
-        # self.REDUCE_COLUMN = reduce_column
-        # self.REDUCE_ROW = reduce_row
-        # self.ORIGINAL_MAP_HEIGHT = old_height
-
-        # width = max_column - reduce_column + 1
-        # height = max_row - reduce_row + 1
-
-        # # init( scenario, width, height, s.AOE_WIDTH, s.AOE_HEIGHT )
-        # self.MAP_WIDTH = width
-        # self.MAP_HEIGHT = height
-        # self.MAP_SIZE = self.MAP_WIDTH * self.MAP_HEIGHT
-        # self.MAP_VERTEX_COUNT = 6 * self.MAP_SIZE
-        # # s.MAP_CENTER = ( s.MAP_SIZE - 1 ) / 2;
-
-        # self.walls = [ [ False ] * 6 for _ in range( self.MAP_SIZE ) ]
-        # self.contents = [ ' ' ] * self.MAP_SIZE
-        # self.figures = [ ' ' ] * self.MAP_SIZE
-        # self.initiatives = [ 0 ] * self.MAP_SIZE
-
-        # for location in figures:
-        #   column = location / old_height
-        #   row = location % old_height
-        #   column -= reduce_column
-        #   row -= reduce_row
-        #   new_location = row + column * self.MAP_HEIGHT
-        #   self.figures[new_location] = old_figures[location]
-        #   self.initiatives[new_location] = old_initiatives[location]
-        # for location in contents:
-        #   column = location / old_height
-        #   row = location % old_height
-        #   column -= reduce_column
-        #   row -= reduce_row
-        #   new_location = row + column * self.MAP_HEIGHT
-        #   self.contents[new_location] = old_contents[location]
-        # for i in range( 6 ):
-        #   for location in walls[i]:
-        #     column = location / old_height
-        #     row = location % old_height
-        #     column -= reduce_column
-        #     row -= reduce_row
-        #     new_location = row + column * self.MAP_HEIGHT
-        #     self.walls[new_location][i] = True
-
-        # self.prepare_map()
-
-        # def plot_debug_visibility_graph(self, occluder_mapping_set):
-    #     (
-    #         occluder_mappings,
-    #         occluder_mappings_below,
-    #         occluder_mappings_above,
-    #         occluder_mappings_internal
-    #     ) = occluder_mapping_set
-
-    #     # the visibility windows are:
-    #     # - below all blue lines
-    #     # - above all purple lines
-    #     # - below green and above red line pairs
-
-    #     # upper bounds - blue
-    #     self.debug_plot_line(3, ((0.0, 1.0), (1.0, 1.0)))
-    #     for mapping, _ in occluder_mappings_above:
-    #         self.debug_plot_line(3, ((0.0, mapping[0]), (1.0, mapping[1])))
-
-    #     # lower bounds - purple
-    #     self.debug_plot_line(0, ((0.0, 0.0), (1.0, 0.0)))
-    #     for mapping, _ in occluder_mappings_below:
-    #         self.debug_plot_line(0, ((0.0, mapping[0]), (1.0, mapping[1])))
-
-    #     # top of internal occluder - red
-    #     # bottom of internal occluder - green
-    #     for mapping in occluder_mappings_internal:
-    #         half_point = (lerp(mapping[0][0], mapping[0][1], 0.5), lerp(
-    #             mapping[1][0], mapping[1][1], 0.5))
-
-    #         value_0 = get_occluder_value_at(mapping[0], 0.0)
-    #         value_1 = get_occluder_value_at(mapping[1], 0.0)
-    #         color = (1, 2) if occluder_greater_than(
-    #             value_0, value_1) else (2, 1)
-    #         self.debug_plot_line(
-    #             color[0], ((0.0, mapping[0][0]), (0.5, half_point[0])))
-    #         self.debug_plot_line(
-    #             color[1], ((0.0, mapping[1][0]), (0.5, half_point[1])))
-
-    #         value_0 = get_occluder_value_at(mapping[0], 1.0)
-    #         value_1 = get_occluder_value_at(mapping[1], 1.0)
-    #         color = (1, 2) if occluder_greater_than(
-    #             value_0, value_1) else (2, 1)
-    #         self.debug_plot_line(
-    #             color[0], ((0.5, half_point[0]), (1.0, mapping[0][1])))
-    #         self.debug_plot_line(
-    #             color[1], ((0.5, half_point[1]), (1.0, mapping[1][1])))
-
-    #     # shade the graph to indicate visibility windows
-    #     POINT_DENSITY = 40
-    #     for nx in range(POINT_DENSITY):
-    #         x = old_div(nx, float(POINT_DENSITY - 1))
-    #         windows = get_visibility_windows_at(x, occluder_mapping_set, False)
-    #         for ny in range(POINT_DENSITY):
-    #             y = old_div(ny, float(POINT_DENSITY - 1))
-    #             for window in windows:
-    #                 if y >= window[1] and y <= window[2]:
-    #                     color = 7
-    #                     break
-    #             else:
-    #                 color = 6
-    #             self.debug_plot_point(color, (x, y))
-
-    # def calculate_symmetric_coordinates(self, origin, location):
-    #     column_a = old_div(origin, self.MAP_HEIGHT)
-    #     row_a = origin % self.MAP_HEIGHT
-    #     column_b = old_div(location, self.MAP_HEIGHT)
-    #     row_b = location % self.MAP_HEIGHT
-
-    #     c = column_b - column_a
-    #     r = row_b - row_a
-    #     q = column_a % 2
-
-    #     if c == 0:
-    #         if r > 0:
-    #             t = 0
-    #         else:
-    #             t = 3
-    #     elif c < 0:
-    #         if r < old_div((q + c), 2):
-    #             t = 3
-    #         elif r < old_div((q - c), 2):
-    #             t = 2
-    #         else:
-    #             t = 1
-    #     else:
-    #         if r <= old_div((q - c), 2):
-    #             t = 4
-    #         elif r <= old_div((q + c), 2):
-    #             t = 5
-    #         else:
-    #             t = 0
-
-    #     if t == 0:
-    #         u = r - old_div((q - c), 2)
-    #         v = c
-    #     elif t == 1:
-    #         u = r - old_div((q + c), 2)
-    #         v = r - old_div((q - c), 2)
-    #     elif t == 2:
-    #         u = -c
-    #         v = r - old_div((q + c), 2)
-    #     elif t == 3:
-    #         u = -r + old_div((q - c), 2)
-    #         v = -c
-    #     elif t == 4:
-    #         u = -r + old_div((q + c), 2)
-    #         v = -r + old_div((q - c), 2)
-    #     else:
-    #         u = c
-    #         v = -r + old_div((q + c), 2)
-
-    #     return t, u, v
-
-    # can be used to implement a long-term collision cache
-    # that is, a server-wide cache not cleared between scenarios
-    # to do so, use FileSystemCache of flask_caching
-    # tested, but not in use do to size concerns
-    # cache quickly grows to be many MB and has relatively unbounded size
-    # gives ~24% speed up on standard (simple) senarios with long, blocking walls
-    # gives ~10% speed up on 131 (complex unit test)
-    # gives no speed up on many unit tests (as they have very few occluders)
-    # the savings was measured with an in-memory cache (dictionary), not a file system, which may be slower
-    # def calculate_occluder_cache_key(self, location_a, location_b):
-    #     # does not take advantage of reflection symetry
-    #     t, u, v = self.calculate_symmetric_coordinates(location_a, location_b)
-    #     orientation = 6 - t
-    #     cache_key = [(u, v)]
-
-    #     for location, encoded_wall in self.walls_in(self.calculate_bounds(location_a, location_b)):
-    #         t, u, v = self.calculate_symmetric_coordinates(
-    #             location_a, location)
-    #         t = (t + orientation) % 6
-    #         cache_key.append((t, u, v, encoded_wall))
-
-    #     if len(cache_key) == 1:
-    #         # no occluders; use None to short circuit los test in calling function
-    #         return None
-
-    #     cache_key.sort()
-    #     return tuple(cache_key)
-
-    # def pack_point(self, location:int, vertex:int):
-        #     if vertex == 2:
-        #         if self.neighbors[location][2] != -1:
-        #             location = self.neighbors[location][2]
-        #             vertex = 0
-        #     elif vertex == 3:
-        #         if self.neighbors[location][3] != -1:
-        #             location = self.neighbors[location][3]
-        #             vertex = 1
-        #         elif self.neighbors[location][2] != -1:
-        #             location = self.neighbors[location][2]
-        #             vertex = 5
-        #     elif vertex == 4:
-        #         if self.neighbors[location][3] != -1:
-        #             location = self.neighbors[location][3]
-        #             vertex = 0
-        #         elif self.neighbors[location][4] != -1:
-        #             location = self.neighbors[location][4]
-        #             vertex = 2
-        #     elif vertex == 5:
-        #         if self.neighbors[location][4] != -1:
-        #             location = self.neighbors[location][4]
-        #             vertex = 1
-        #     return self.dereduce_location(location) * 6 + vertex
-
-        # def pack_line(self, location_a, vertex_a, location_b, vertex_b):
-        #     point_a = self.pack_point(location_a, vertex_a)
-        #     point_b = self.pack_point(location_b, vertex_b)
-        #     return point_a * self.MAP_VERTEX_COUNT + point_b
-
-        # def dereduce_location(self, location: int) -> int:
-        #     return location
+        return [self.solve_sight(_,MAX_VALUE) for _ in viewpoints]    
