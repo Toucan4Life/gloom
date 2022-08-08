@@ -1,15 +1,28 @@
 from dataclasses import dataclass, field
-
+import sys
 
 @dataclass
 class Monster:
+    aoe_width = 7
+    aoe_height = 7
+    aoe_size = aoe_width * aoe_height
     action_move: int = 0
     action_range: int = 0
-    action_target: int = 0
+    action_target: int = 1
     flying: bool = False
     jumping: bool = False
     muddled: bool = False
-    aoe: list[bool] = field(default_factory=[False])
+    aoe: list[bool] = field(default_factory=lambda: [False]*49)
+
+
+
+    def aoe_center(self) -> int:
+        center = (self.aoe_size - 1) // 2
+
+        if int(center) - center != 0:
+            sys.exit('aoe has no center')
+
+        return center
 
     def attack_range(self) -> int:
         return 1 if self.action_range == 0 or self.action_target == 0 else self.action_range

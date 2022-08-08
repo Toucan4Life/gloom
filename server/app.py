@@ -1,6 +1,7 @@
 import time
 import os
 import json
+from solver.monster import Monster
 from solver.solver import Scenario
 from flask import Flask, jsonify, request, render_template
 
@@ -129,13 +130,23 @@ def unpack_scenario(data: bytes) -> tuple['Scenario', bool, bool,int,int]:
     map_width = packed_scenario['width']
     map_height = packed_scenario['height']
     solve_view = packed_scenario['solve_view']
-    s = Scenario(map_width, map_height, 7, 7)
-    s.action_move = int(packed_scenario['move'])
-    s.action_range = int(packed_scenario['range'])
-    s.action_target = int(packed_scenario['target'])
-    s.jumping = int(packed_scenario['flying']) == 1
-    s.flying = int(packed_scenario['flying']) == 2
-    s.muddled = int(packed_scenario['muddled']) == 1
+
+    aoe=[False]*49
+    action_move = int(packed_scenario['move'])
+    action_range = int(packed_scenario['range'])
+    action_target = int(packed_scenario['target'])
+    jumping = int(packed_scenario['flying']) == 1
+    flying = int(packed_scenario['flying']) == 2
+    muddled = int(packed_scenario['muddled']) == 1
+
+    for _ in packed_scenario['aoe']:
+        if _ != (7*7 - 1) // 2 or action_range > 0:
+            aoe[_] = True
+
+    monster = Monster(action_move,action_range,action_target,flying,jumping,muddled,aoe)
+
+    s = Scenario(map_width, map_height, monster)
+
 
     s.set_rules(int(packed_scenario.get('game_rules', '0')))
 
@@ -164,9 +175,6 @@ def unpack_scenario(data: bytes) -> tuple['Scenario', bool, bool,int,int]:
             elif s.figures[_] == 'M':
                 s.figures[_] = 'C'
 
-    for _ in packed_scenario['aoe']:
-        if _ != s.aoe_center or s.action_range > 0:
-            s.aoe[_] = True
 
     remap = {
         1: 0,
@@ -217,9 +225,12 @@ def unpack_scenario_forviews(data: bytes) ->  tuple['Scenario', bool, bool,int,l
 
     # todo: validate packed scenario format
     packed_scenario = json.loads(data)
-    s = Scenario(packed_scenario['width'], packed_scenario['height'], 7, 7)
-    s.action_range = int(packed_scenario['range'])
-    s.action_target = int(packed_scenario['target'])
+    action_rang = int(packed_scenario['range'])
+    action_targe = int(packed_scenario['target'])
+    monster = Monster(action_range=action_rang, action_target=action_targe)
+
+    s = Scenario(packed_scenario['width'], packed_scenario['height'], monster)
+
     solve_view = packed_scenario['solve_view']
     s.set_rules(int(packed_scenario.get('game_rules', '0')))
 

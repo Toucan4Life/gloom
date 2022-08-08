@@ -14,27 +14,17 @@ class Scenario:
     debug_visuals: bool
     show_each_action_separately: bool
     debug_lines: set[tuple[int, tuple[tuple[float, float], tuple[float, float]]]]
-    action_move: int
-    action_range: int
-    action_target: int
-    flying: bool
-    jumping: bool
-    muddled: bool
     debug_toggle: bool
     message: str
 
     figures: list[str]
     initiatives: list[int]
-    aoe_width: int
-    aoe_height: int
-    aoe_size: int
-    aoe: list[bool]
-    aoe_center: int
     walls: list[list[bool]]
     contents: list[str]
-    monster: Monster 
+    monster: Monster
 
-    def __init__(self, width: int, height: int, aoe_width: int, aoe_height: int):
+    def __init__(self, width: int, height: int, monster:Monster):
+        self.monster = monster
         self.map = hexagonal_grid(width, height)
         self.logging = False
         self.debug_visuals = False
@@ -44,29 +34,12 @@ class Scenario:
         self.figures = [' '] * self.map.map_size
         self.initiatives = [0] * self.map.map_size
 
-        self.aoe_width = aoe_width
-        self.aoe_height = aoe_height
-        self.aoe_size = self.aoe_width * self.aoe_height
-        self.aoe_center = (self.aoe_size - 1) // 2
-        self.aoe = [False] * self.aoe_size
         self.walls = [[False] * 6 for _ in range(self.map.map_size)]
         self.contents = [' '] * self.map.map_size
         self.message = ''
-        self.action_move = 0
-        self.action_range = 0
-        self.action_target = 1
-        self.flying = False
-        self.jumping = False
-        self.muddled = False
         self.debug_toggle = False
 
-        if self.aoe_width != 7 or self.aoe_height != 7:
-            exit()
-        if int(self.aoe_center) - self.aoe_center != 0:
-            exit('aoe has no center')
-
     def prepare_map(self) -> None:
-        self.monster = Monster(self.action_move,self.action_range,self.action_target,self.flying,self.jumping,self.muddled,self.aoe)
         self.map.prepare_map(self.walls, self.contents)
 
     def set_rules(self, rules: int) -> None:
@@ -180,10 +153,10 @@ class Scenario:
 
             # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in range( self.MAP_SIZE ) ] )
             if self.monster.is_aoe():
-                false_contents = ['   '] * self.aoe_size
+                false_contents = ['   '] * self.monster.aoe_size
                 if self.monster.is_melee_aoe():
-                    false_contents[self.aoe_center] = ' A '
-                # print_map( self, self.AOE_WIDTH, self.AOE_HEIGHT, [ [ False ] * 6 ] * self.AOE_SIZE, false_contents, [ format_aoe( _ ) for _ in self.aoe ] )
+                    false_contents[self.monster.aoe_center()] = ' A '
+                # print_map( self, self.AOE_WIDTH, self.AOE_HEIGHT, [ [ False ] * 6 ] * self.AOE_SIZE, false_contents, [ format_aoe( _ ) for _ in self.monster.aoe ] )
             # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_initiative( _ ) for _ in self.initiatives ] )
 
             out = ''
@@ -468,11 +441,11 @@ class Scenario:
         aoe: list[tuple[int, int, int]] = []
 
         if self.monster.is_melee_aoe():
-            return [get_offset(self.aoe_center, location, self.aoe_height) for location in range(self.aoe_size) if self.aoe[location]], []
+            return [get_offset(self.monster.aoe_center(), location, self.monster.aoe_height) for location in range(self.monster.aoe_size) if self.monster.aoe[location]], []
 
         # precalculate aoe patterns to remove degenerate cases
-        aoe = [get_offset(self.aoe.index(True), location, self.aoe_height)
-            for location in range(self.aoe_size) if self.aoe[location]]
+        aoe = [get_offset(self.monster.aoe.index(True), location, self.monster.aoe_height)
+            for location in range(self.monster.aoe_size) if self.monster.aoe[location]]
 
         PRECALC_GRID_HEIGHT = 21
         PRECALC_GRID_WIDTH = 21
