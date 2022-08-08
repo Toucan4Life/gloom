@@ -1,10 +1,9 @@
 from solver.monster import Monster
-from solver.solver import Scenario
+from solver.solver import Rule, Scenario
 import cProfile
 from pstats import Stats
 def init_test(monster:Monster):
-    scenario = Scenario(16, 7, monster)
-    scenario.set_rules(2)
+    scenario = Scenario(16, 7, monster, Rule(2))
     return scenario
 
 def dereduce_location(location: int) -> int:

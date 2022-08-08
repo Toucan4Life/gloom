@@ -2,7 +2,7 @@ import time
 import os
 import json
 from solver.monster import Monster
-from solver.solver import Scenario
+from solver.solver import Rule, Scenario
 from flask import Flask, jsonify, request, render_template
 
 app = Flask(__name__, static_folder='../static/dist',
@@ -144,11 +144,9 @@ def unpack_scenario(data: bytes) -> tuple['Scenario', bool, bool,int,int]:
             aoe[_] = True
 
     monster = Monster(action_move,action_range,action_target,flying,jumping,muddled,aoe)
+    rule = int(packed_scenario.get('game_rules', '0'))
+    s = Scenario(map_width, map_height, monster, Rule(rule))
 
-    s = Scenario(map_width, map_height, monster)
-
-
-    s.set_rules(int(packed_scenario.get('game_rules', '0')))
 
     s.debug_toggle = bool(packed_scenario.get('debug_toggle', '0'))
 
@@ -228,11 +226,11 @@ def unpack_scenario_forviews(data: bytes) ->  tuple['Scenario', bool, bool,int,l
     action_rang = int(packed_scenario['range'])
     action_targe = int(packed_scenario['target'])
     monster = Monster(action_range=action_rang, action_target=action_targe)
+    rule = int(packed_scenario.get('game_rules', '0'))
 
-    s = Scenario(packed_scenario['width'], packed_scenario['height'], monster)
+    s = Scenario(packed_scenario['width'], packed_scenario['height'], monster, Rule(rule))
 
     solve_view = packed_scenario['solve_view']
-    s.set_rules(int(packed_scenario.get('game_rules', '0')))
 
     def add_elements(grid:list[str], key:str, content:str):
         for _ in packed_scenario['map'][key]:

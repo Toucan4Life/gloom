@@ -8,6 +8,13 @@ from solver.settings import MAX_VALUE
 from solver.utils import get_offset, pin_offset, rotate_offset, apply_offset
 from typing import Any
 from solver.monster import Monster
+from enum import Enum
+
+class Rule(Enum):
+    Frost = 0
+    Gloom = 1
+    Jotl = 2
+
 class Scenario:
 
     logging: bool
@@ -22,8 +29,8 @@ class Scenario:
     walls: list[list[bool]]
     contents: list[str]
     monster: Monster
-
-    def __init__(self, width: int, height: int, monster:Monster):
+    rule:Rule
+    def __init__(self, width: int, height: int, monster:Monster, rule:Rule):
         self.monster = monster
         self.map = hexagonal_grid(width, height)
         self.logging = False
@@ -38,24 +45,19 @@ class Scenario:
         self.contents = [' '] * self.map.map_size
         self.message = ''
         self.debug_toggle = False
+        self.rule=rule
+        #LOS is only checked between vertices
+        self.RULE_VERTEX_LOS = rule == Rule.Gloom
+        #difficult terrain effects the last hex of a jump move
+        self.RULE_DIFFICULT_TERRAIN_JUMP = rule == Rule.Gloom
+        #proximity is ignored when determining monster focus
+        self.RULE_PROXIMITY_FOCUS = rule == Rule.Jotl
 
     def prepare_map(self) -> None:
         self.map.prepare_map(self.walls, self.contents)
 
-    def set_rules(self, rules: int) -> None:
-        self.FROST_RULES = rules == 0
-        self.GLOOM_RULES = rules == 1
-        self.JOTL_RULES = rules == 2
-        self.set_rules_flags()
+       
 
-    def set_rules_flags(self) -> None:
-        # RULE_VERTEX_LOS:                LOS is only checked between vertices
-        # RULE_JUMP_DIFFICULT_TERRAIN:    difficult terrain effects the last hex of a jump move
-        # RULE_PROXIMITY_FOCUS:           proximity is ignored when determining monster focus
-
-        self.RULE_VERTEX_LOS = self.GLOOM_RULES
-        self.RULE_DIFFICULT_TERRAIN_JUMP = self.GLOOM_RULES
-        self.RULE_PROXIMITY_FOCUS = self.JOTL_RULES
 
     def can_end_move_on(self, location: int) -> bool:
         if self.monster.flying:
@@ -160,11 +162,11 @@ class Scenario:
             # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_initiative( _ ) for _ in self.initiatives ] )
 
             out = ''
-            if self.FROST_RULES:
+            if self.rule == Rule.Frost:
                 out += ', FROSTHAVEN'
-            if self.GLOOM_RULES:
+            if self.rule == Rule.Gloom:
                 out += ', GLOOMHAVEN'
-            if self.JOTL_RULES:
+            if self.rule == Rule.Jotl:
                 out += ', JAWS OF THE LION'
             if self.monster.action_move > 0:
                 out += f', MOVE {self.monster.action_move}'
