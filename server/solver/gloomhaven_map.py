@@ -1,10 +1,9 @@
 import collections
+from solver.rule import Rule
 from solver.hexagonal_grid import hexagonal_grid
 from solver.monster import Monster
 from solver.settings import MAX_VALUE
-from solver.solver import Rule
 from solver.utils import apply_offset, get_offset, pin_offset, rotate_offset
-
 
 class GloomhavenMap(hexagonal_grid):
     figures: list[str] 
