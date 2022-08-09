@@ -4,12 +4,14 @@ from solver.hexagonal_grid import hexagonal_grid
 from solver.monster import Monster
 from solver.settings import MAX_VALUE
 from solver.utils import apply_offset, get_offset, pin_offset, rotate_offset
+from solver.print_map import format_aoe, format_content, format_initiative, format_numerical_label, print_map
 
 class GloomhavenMap(hexagonal_grid):
     figures: list[str] 
     contents: list[str] 
     initiatives: list[int] 
     walls: list[list[bool]]
+    rule: Rule
     #difficult terrain effects the last hex of a jump move
     Does_difficult_Terrain_Affect_Last_Hex_On_Jump:bool
     def __init__(self, width: int, height: int, monster:Monster,figures: list[str],contents: list[str], initiatives: list[int],walls:list[list[bool]],rule:Rule):
@@ -18,6 +20,7 @@ class GloomhavenMap(hexagonal_grid):
         self.contents = contents
         self.initiatives = initiatives
         self.walls=walls
+        self.rule = rule
         self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump = rule == Rule.Gloom
         super().__init__(width, height)
         self.prepare_map(self.walls, self.contents)
@@ -145,4 +148,61 @@ class GloomhavenMap(hexagonal_grid):
                             for aoe in aoe_pattern_set]
 
         return aoe, aoe_pattern_list
+
+    def print(self):
+        print_map(self.map_width, self.map_height, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in range( self.map_size ) ] )
+
+    def print_initiative_map(self):
+        print_map(self.map_width, self.map_height, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_initiative( _ ) for _ in self.initiatives ] )
+    
+    def print_custom_map(self, top_label:list[str]=[], bottom_label:list[str]=[]):
+        print_map(self.map_width,
+                self.map_height,
+                self.effective_walls,
+                [ format_numerical_label( _ ) for _ in top_label ] if top_label else [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ],
+                [ format_numerical_label( _ ) for _ in bottom_label ] if bottom_label else [ format_numerical_label( _ ) for _ in range( self.map_size ) ]  )
+
+    def print_solution_map(self, debug_tag:list[str]):
+        print_map(self.map_width, self.map_height, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_initiative( _ ) for _ in self.initiatives ], debug_tag )
+    
+    def print_aoe_map(self):
+        false_contents = ['   '] * self.monster.aoe_size
+        if self.monster.is_melee_aoe():
+            false_contents[self.monster.aoe_center()] = ' A '
+        print_map(self.monster.aoe_width, self.monster.aoe_height, [ [ False ] * 6 ] * self.monster.aoe_size, false_contents, [ format_aoe( _ ) for _ in self.monster.aoe ] )
+
+    def print_summary(self, debug_toggle:bool):
+        out = ''
+        if self.rule == Rule.Frost:
+            out += ', FROSTHAVEN'
+        if self.rule == Rule.Gloom:
+            out += ', GLOOMHAVEN'
+        if self.rule == Rule.Jotl:
+            out += ', JAWS OF THE LION'
+        if self.monster.action_move > 0:
+            out += f', MOVE {self.monster.action_move}'
+        if self.monster.action_range > 0 and self.monster.action_target > 0:
+            out += f', RANGE {self.monster.action_range}'
+        if self.monster.action_target > 0:
+            out += ', ATTACK'
+        if self.monster.is_aoe():
+            out += ', AOE'
+        if self.monster.plus_target() > 0:
+            if self.monster.is_max_targets():
+                out += ', TARGET ALL'
+            else:
+                out += f', +TARGET {self.monster.plus_target()}'
+        if self.monster.flying:
+            out += ', FLYING'
+        elif self.monster.jumping:
+            out += ', JUMPING'
+        if self.monster.muddled:
+            out += ', MUDDLED'
+        out += f', DEBUG_TOGGLE = {debug_toggle}'
+        if out == '':
+            out = 'NO ACTION'
+        else:
+            out = out[2:]
+        print(out)
+
  

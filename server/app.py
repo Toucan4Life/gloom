@@ -11,7 +11,7 @@ app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
 
 # Configuration
-IsDebugEnv = os.environ.get('FLASK_DEBUG') == "True"
+IsDebugEnv = os.environ.get('FLASK_DEBUG') == "1"
 
 title = 'Gloomhaven Monster Mover'
 version_major = 2
