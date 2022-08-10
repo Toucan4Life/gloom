@@ -231,7 +231,10 @@ class Solver:
 
     def get_targets(self,aoe: list[tuple[int, int, int]],location: int, aoe_pattern_list: list[list[tuple[int, int, int]]],
      characters: list[int], monster : Monster) ->Generator[tuple[set[int], list[int], set[int]], None, None]:
-        targetable_character={_ for _ in characters if self.map.find_proximity_distances(location)[_] <= monster.attack_range() and self.map.test_los_between_locations(_, location, self.RULE_VERTEX_LOS)}
+     
+        distances = self.map.find_proximity_distances(location)
+        targetable_character={_ for _ in characters if distances[_] <= monster.attack_range() and self.map.test_los_between_locations(_, location, self.RULE_VERTEX_LOS)}
+        
         if not monster.is_aoe():
             return (self.get_attacks_targets([],characters,location,targetable_character) for _ in [1])
         if monster.is_melee_aoe():
@@ -243,7 +246,7 @@ class Solver:
                     # loop over every possible aoe placement
                     for aoe_rotation in range(12))
         else:
-            distances = self.map.find_proximity_distances(location)
+
             aoe_hexess =  (self.get_attacks_targets(aoe_hexes,characters,location,targetable_character)
                                  for aoe_hexes in
                                 [# loop over each hex in the aoe, adding targets
@@ -311,4 +314,15 @@ class Solver:
         return [self.map.solve_sight(_,1 if monster.action_range == 0 else monster.action_range, self.RULE_VERTEX_LOS) for _ in viewpoints] if  monster.action_target != 0 else []
 
     def solve_sights(self, viewpoints: list[int]) -> list[list[tuple[int, int]]]:
-        return [self.map.solve_sight(_,MAX_VALUE, self.RULE_VERTEX_LOS) for _ in viewpoints]
+        sights = [self.map.solve_sight(_,MAX_VALUE, self.RULE_VERTEX_LOS) for _ in viewpoints]
+
+        if self.logging:
+            for sight in sights:
+                visible_locations = [False] * self.map.map_size
+                visible_locations[self.map.get_active_monster_location()] = True
+                for visible_range in sight:
+                    for location in range(*visible_range):
+                        visible_locations[location] = True
+                self.map.print_los_map(visible_locations)
+
+        return sights

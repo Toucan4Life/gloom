@@ -1,7 +1,5 @@
 from solver.monster import Monster
 from solver.solver import GloomhavenMap, Rule, Solver
-import cProfile
-from pstats import Stats
 
 def init_test():
     figures:list[str] = [' '] * 16 * 7
@@ -2882,63 +2880,57 @@ def test_Scenario130():
 
 # Large number of walls and characters, high target attack, large range and move, and a large aoe to use when timing optimizations
 def test_Scenario131():
-    with cProfile.Profile() as pr:
-        m=Monster(action_move=7,action_range=7, action_target=5)
-        m.aoe[17] = True
-        m.aoe[18] = True
-        m.aoe[23] = True
-        m.aoe[24] = True
-        m.aoe[25] = True
-        m.aoe[31] = True
-        m.aoe[32] = True
-        figures,contents,initiatives,walls = init_test()
+    m=Monster(action_move=7,action_range=7, action_target=5)
+    m.aoe[17] = True
+    m.aoe[18] = True
+    m.aoe[23] = True
+    m.aoe[24] = True
+    m.aoe[25] = True
+    m.aoe[31] = True
+    m.aoe[32] = True
+    figures,contents,initiatives,walls = init_test()
 
-        figures[8] = 'C'
-        figures[17] = 'C'
-        figures[23] = 'C'
-        figures[26] = 'C'
-        figures[40] = 'C'
-        figures[46] = 'C'
-        figures[51] = 'C'
-        figures[54] = 'C'
-        figures[57] = 'C'
-        figures[58] = 'C'
-        figures[68] = 'C'
-        figures[80] = 'C'
-        figures[90] = 'C'
-        figures[92] = 'C'
-        figures[94] = 'C'
-        figures[102] = 'C'
+    figures[8] = 'C'
+    figures[17] = 'C'
+    figures[23] = 'C'
+    figures[26] = 'C'
+    figures[40] = 'C'
+    figures[46] = 'C'
+    figures[51] = 'C'
+    figures[54] = 'C'
+    figures[57] = 'C'
+    figures[58] = 'C'
+    figures[68] = 'C'
+    figures[80] = 'C'
+    figures[90] = 'C'
+    figures[92] = 'C'
+    figures[94] = 'C'
+    figures[102] = 'C'
 
-        contents[9] = 'X'
-        contents[25] = 'X'
-        contents[30] = 'X'
-        contents[38] = 'X'
-        contents[44] = 'X'
-        contents[47] = 'X'
-        contents[50] = 'X'
-        contents[53] = 'X'
-        contents[64] = 'X'
-        contents[65] = 'X'
-        contents[75] = 'X'
-        contents[76] = 'X'
-        contents[78] = 'X'
-        contents[88] = 'X'
-        contents[89] = 'X'
-        contents[93] = 'X'
-        contents[99] = 'X'
-        contents[104] = 'X'
+    contents[9] = 'X'
+    contents[25] = 'X'
+    contents[30] = 'X'
+    contents[38] = 'X'
+    contents[44] = 'X'
+    contents[47] = 'X'
+    contents[50] = 'X'
+    contents[53] = 'X'
+    contents[64] = 'X'
+    contents[65] = 'X'
+    contents[75] = 'X'
+    contents[76] = 'X'
+    contents[78] = 'X'
+    contents[88] = 'X'
+    contents[89] = 'X'
+    contents[93] = 'X'
+    contents[99] = 'X'
+    contents[104] = 'X'
 
-        figures[37] = 'A'
+    figures[37] = 'A'
 
 
-        assert_answers(m, figures,contents,initiatives,walls,({(37, 8, 17, 23, 26, 46, 51, 58)}, {(37, 8, 17, 23, 26, 46, 51, 58): [8, 9, 15, 16, 17, 22, 23]}, {(37, 8, 17, 23, 26, 46, 51, 58): {37}}, {(37, 8, 17, 23, 26, 46, 51, 58): {51, 46, 23}}, {(37, 8, 17, 23, 26, 46, 51, 58): {((9.291666666666583, 5.556996340950292), (10.708333333333417, 5.556996340950292)), ((7.869565217391065, 5.836258155938193), (3.166666666666833, 4.041451884327091)), ((9.217391304347892, 5.685645042236853), (12.366666666666433, 4.965212315030377)), ((7.7083333333334165, 5.556996340950292), (6.2916666666665835, 5.556996340950292)), ((9.208333333333417, 5.70133390824741), (9.916666666666833, 6.928203230275509)), ((7.805555555555444, 5.725390169463597), (6.194444444444555, 9.863067098656298)), ((7.738596491228092, 5.60941366802135), (4.947807017543464, 5.971776929077798))}}, {(37, 8, 17, 23, 26, 46, 51, 58): set()}))
-        # with open('profiling_stats.txt', 'w') as stream:
-        #     stats = Stats(pr, stream=stream)
-        #     stats.strip_dirs()
-        #     stats.sort_stats('time')
-        #     stats.dump_stats('.prof_stats')
-        #     stats.print_stats()
+    assert_answers(m, figures,contents,initiatives,walls,({(37, 8, 17, 23, 26, 46, 51, 58)}, {(37, 8, 17, 23, 26, 46, 51, 58): [8, 9, 15, 16, 17, 22, 23]}, {(37, 8, 17, 23, 26, 46, 51, 58): {37}}, {(37, 8, 17, 23, 26, 46, 51, 58): {51, 46, 23}}, {(37, 8, 17, 23, 26, 46, 51, 58): {((9.291666666666583, 5.556996340950292), (10.708333333333417, 5.556996340950292)), ((7.869565217391065, 5.836258155938193), (3.166666666666833, 4.041451884327091)), ((9.217391304347892, 5.685645042236853), (12.366666666666433, 4.965212315030377)), ((7.7083333333334165, 5.556996340950292), (6.2916666666665835, 5.556996340950292)), ((9.208333333333417, 5.70133390824741), (9.916666666666833, 6.928203230275509)), ((7.805555555555444, 5.725390169463597), (6.194444444444555, 9.863067098656298)), ((7.738596491228092, 5.60941366802135), (4.947807017543464, 5.971776929077798))}}, {(37, 8, 17, 23, 26, 46, 51, 58): set()}))
+
 
 # The monster will take a longer path to avoid traps. That is true even if it means not being able to attack its focus this turn
 def test_Scenario132():

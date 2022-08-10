@@ -7,6 +7,8 @@ RUN pip install pytest
 RUN pip install pytest-xdist
 RUN pip install pylint
 RUN pip install autopep8
+RUN pip install snakeviz
+RUN pip install pytest-profiling
 
 COPY . .
 

@@ -4,7 +4,7 @@ from solver.hexagonal_grid import hexagonal_grid
 from solver.monster import Monster
 from solver.settings import MAX_VALUE
 from solver.utils import apply_offset, get_offset, pin_offset, rotate_offset
-from solver.print_map import format_aoe, format_content, format_initiative, format_numerical_label, print_map
+from solver.print_map import format_aoe, format_content, format_initiative, format_numerical_label, print_map, format_los
 
 class GloomhavenMap(hexagonal_grid):
     figures: list[str] 
@@ -155,13 +155,16 @@ class GloomhavenMap(hexagonal_grid):
     def print_initiative_map(self):
         print_map(self.map_width, self.map_height, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_initiative( _ ) for _ in self.initiatives ] )
     
-    def print_custom_map(self, top_label:list[str]=[], bottom_label:list[str]=[]):
+    def print_custom_map(self, top_label:list[int]=[], bottom_label:list[int]=[]):
         print_map(self.map_width,
                 self.map_height,
                 self.effective_walls,
                 [ format_numerical_label( _ ) for _ in top_label ] if top_label else [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ],
                 [ format_numerical_label( _ ) for _ in bottom_label ] if bottom_label else [ format_numerical_label( _ ) for _ in range( self.map_size ) ]  )
 
+    def print_los_map(self, visible_locations:list[bool]):
+        print_map(self.map_width, self.map_height, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_los(_) for _ in visible_locations])
+    
     def print_solution_map(self, debug_tag:list[str]):
         print_map(self.map_width, self.map_height, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_initiative( _ ) for _ in self.initiatives ], debug_tag )
     

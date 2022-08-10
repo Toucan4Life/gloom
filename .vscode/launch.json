@@ -2,6 +2,14 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Run Profiling",
+            "preLaunchTask": "run_profiling_task", // The name of the task defined above
+            "request": "launch",
+            "type": "python",
+            "module": "snakeviz",
+            "args": ["prof/combined.prof"]
+        },
+        {
             "name": "Python: Flask",
             "type": "python",
             "request": "launch",
