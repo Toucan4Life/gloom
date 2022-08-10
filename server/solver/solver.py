@@ -9,7 +9,7 @@ from solver.gloomhaven_map import GloomhavenMap
 from solver.settings import MAX_VALUE
 from solver.monster import Monster
 
-class Scenario:
+class Solver:
     logging: bool
     debug_visuals: bool
     show_each_action_separately: bool
@@ -21,7 +21,7 @@ class Scenario:
         self.map = gmap
         self.logging = False
         self.debug_visuals = False
-        self.show_each_action_separately = False
+        self.show_each_action_separately = True
         self.debug_lines = set()
         self.message = ''
         self.debug_toggle = False
@@ -142,29 +142,44 @@ class Scenario:
 
          # move monster
         if self.logging:
-            map_debug_tags = [' '] * self.map.map_size
-            self.map.figures[active_monster] = ' '
-            map_debug_tags[active_monster] = 's'
-            if not self.show_each_action_separately:
-                for action in solution:
-                    self.map.figures[action[0]] = 'A'
-                    for destination in action[6]:
-                        map_debug_tags[destination] = 'd'
-                    for target in action[1]:
-                        map_debug_tags[target] = 'a'
-                self.map.print_solution_map( map_debug_tags )
-            else:
-                for action in solution:
-                    figures = list(self.map.figures)
-                    action_debug_tags = list(map_debug_tags)
-                    figures[action[0]] = 'A'
-                    for destination in action[6]:
-                        action_debug_tags[destination] = 'd'
-                    for target in action[1]:
-                        action_debug_tags[target] = 'a'
-                    self.map.print_solution_map( map_debug_tags )
+            self.print_solution(active_monster, solution)
 
         return solution
+
+    def print_solution(self, active_monster:int, solution:list[tuple[int, list[int], list[int], set[int], set[tuple[tuple[float, float], tuple[float, float]]], set[tuple[int, tuple[tuple[float, float], tuple[float, float]]]], set[int]]]):
+        map_debug_tags = [' '] * self.map.map_size
+        self.map.figures[active_monster] = ' '
+        map_debug_tags[active_monster] = 's'
+        if not self.show_each_action_separately:
+            for action in solution:
+                self.print_single_solution_summary(active_monster, action[0], action[1])
+                self.map.figures[action[0]] = 'A'
+                for destination in action[6]:
+                    map_debug_tags[destination] = 'd'
+                for target in action[1]:
+                    map_debug_tags[target] = 'a'
+            self.map.print_solution_map( map_debug_tags )
+        else:
+            for action in solution:
+                self.print_single_solution_summary(active_monster, action[0], action[1])
+                action_debug_tags = list(map_debug_tags)
+                self.map.figures[action[0]] = 'A'
+                for destination in action[6]:
+                    action_debug_tags[destination] = 'd'
+                for target in action[1]:
+                    action_debug_tags[target] = 'a'
+                self.map.print_solution_map( action_debug_tags )
+                self.map.figures[action[0]] = ' '
+
+    def print_single_solution_summary(self, active_monster:int, move:int, target:list[int]):
+        if move == active_monster:
+            out = '- no movement'
+        else:
+            out = f'- move to {move}'
+        if target:
+            for attack in target:
+                out += f', attack {attack}'
+        print(out)
 
     def find_minimums_values(self,iterable:list[Any],key:Callable[[Any],Any]):
         score=[key(col) for col in iterable]

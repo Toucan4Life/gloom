@@ -38,18 +38,16 @@ def format_aoe_content(value:str):
 def format_numerical_label(value:int):
     if value == MAX_VALUE:
         return '   '
-    elif value < 10:
-        return ' %1i ' % value
-    else:
-        return '%3i' % value
+    if value < 10:
+        return f' {value} '
+    return f'{value}'
 
 def format_initiative(value:int):
     if value == 0:
         return '   '
-    elif value < 10:
-        return '%s %1i %s' % (Colors.blue, value, Colors.end)
-    else:
-        return '%s%3i%s' % (Colors.blue, value, Colors.end)
+    if value < 10:
+        return f'{Colors.blue} {value} {Colors.end}'
+    return f'{Colors.blue}{value}{Colors.end}'
 
 def format_los(value:int):
     return '   ' if value else ' # '

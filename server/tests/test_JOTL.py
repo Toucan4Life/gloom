@@ -1,5 +1,5 @@
 from solver.monster import Monster
-from solver.solver import GloomhavenMap, Rule, Scenario
+from solver.solver import GloomhavenMap, Rule, Solver
 import cProfile
 from pstats import Stats
 
@@ -14,7 +14,8 @@ def init_test():
 def assert_answers(monster:Monster,figures:list[str],contents:list[str],initiatives:list[int],walls:list[list[bool]], correct_answers:set[tuple[int]]):
 
     gmap = GloomhavenMap(16, 7, monster,figures,contents, initiatives,walls, Rule(2))
-    scenario = Scenario(Rule(2),gmap)
+    scenario = Solver(Rule(2),gmap)
+    scenario.logging=False
     answers = scenario.calculate_monster_move()
     
     test= [(

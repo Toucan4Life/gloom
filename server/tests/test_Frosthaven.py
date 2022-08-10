@@ -1,5 +1,5 @@
 from solver.monster import Monster
-from solver.solver import GloomhavenMap, Rule, Scenario
+from solver.solver import GloomhavenMap, Rule, Solver
 import cProfile
 from pstats import Stats
 
@@ -15,7 +15,7 @@ def dereduce_location(location: int) -> int:
 
 def assert_answers(monster:Monster,figures:list[str],contents:list[str],initiatives:list[int],walls:list[list[bool]], correct_answers:set[tuple[int]]):
     gmap = GloomhavenMap(16, 7, monster,figures,contents, initiatives,walls, Rule(0))
-    scenario = Scenario(Rule(0), gmap)
+    scenario = Solver(Rule(0), gmap)
     answers = scenario.calculate_monster_move()
     
     test= [(

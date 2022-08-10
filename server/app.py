@@ -2,7 +2,7 @@ import time
 import os
 import json
 from solver.monster import Monster
-from solver.solver import GloomhavenMap, Rule, Scenario
+from solver.solver import GloomhavenMap, Rule, Solver
 from flask import Flask, jsonify, request, render_template
 
 app = Flask(__name__, static_folder='../static/dist',
@@ -71,17 +71,6 @@ def solve():
 
     raw_actions= s.calculate_monster_move()
 
-    if IsDebugEnv:
-        print(f'{len(raw_actions)} option(s):')
-        for raw_action in raw_actions:
-            if raw_action[0] == start_location:
-                out = '- no movement'
-            else:
-                out = f'- move to {raw_action[0]}'
-            if raw_action[1]:                
-                for attack in raw_action[1]:
-                    out += f', attack {attack}'
-            print(out)
 
     actions = [
         {
@@ -119,7 +108,7 @@ def solve():
     #   print(solution)
     return jsonify(solution)
 
-def unpack_scenario(data: bytes) -> tuple['Scenario', bool, bool,int,int]:
+def unpack_scenario(data: bytes) -> tuple['Solver', bool, bool,int,int]:
     
     # if IsDebugEnv:
     #   print packed_scenario
@@ -194,7 +183,7 @@ def unpack_scenario(data: bytes) -> tuple['Scenario', bool, bool,int,int]:
         initiatives[j] = int(i)
 
     gmap = GloomhavenMap(packed_scenario['width'], packed_scenario['height'], monster,figures,contents, initiatives,walls,  Rule(rule)) 
-    s = Scenario(Rule(rule),gmap)
+    s = Solver(Rule(rule),gmap)
     s.debug_toggle = bool(packed_scenario.get('debug_toggle', '0'))
     return (s,solve_view > 0,solve_view > 0,packed_scenario['scenario_id'],active_figure_location)
 
@@ -222,7 +211,7 @@ def views():
         # print solution
     return jsonify(solution)
 
-def unpack_scenario_forviews(data: bytes) ->  tuple['Scenario', bool, bool,int,list[int]]:
+def unpack_scenario_forviews(data: bytes) ->  tuple['Solver', bool, bool,int,list[int]]:
     # if IsDebugEnv:
     #   print packed_scenario
 
@@ -249,5 +238,5 @@ def unpack_scenario_forviews(data: bytes) ->  tuple['Scenario', bool, bool,int,l
     for _ in packed_scenario['map']['thin_walls']:
         walls[_[0]][remap[_[1]]] = True
     gmap = GloomhavenMap(packed_scenario['width'], packed_scenario['height'], monster,[],contents, [],walls,  Rule(rule)) 
-    s = Scenario(Rule(rule),gmap)
+    s = Solver(Rule(rule),gmap)
     return (s,solve_view > 0,solve_view > 0,packed_scenario['scenario_id'], packed_scenario['viewpoints'])
