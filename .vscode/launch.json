@@ -3,7 +3,7 @@
     "configurations": [
         {
             "name": "Run Profiling",
-            "preLaunchTask": "run_profiling_task", // The name of the task defined above
+            "preLaunchTask": "run_profiling_test", // The name of the task defined above
             "request": "launch",
             "type": "python",
             "module": "snakeviz",

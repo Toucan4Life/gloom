@@ -53,9 +53,8 @@ class Solver:
         # find active monster
         active_monster = self.map.get_active_monster_location()
         travel_distances, trap_counts = self.map.find_path_distances(active_monster)
-        proximity_distances = self.map.find_proximity_distances(active_monster)
+
         #self.map.print_custom_map(bottom_label=trap_counts)
-        #self.map.print_custom_map(bottom_label=proximity_distances)
         
         # doesn't speed things up but makes los testing order more intuitive for debugging
         travel_distance_sorted_map = sorted(list(range(self.map.map_size)), key=lambda x: travel_distances[x])
@@ -70,7 +69,7 @@ class Solver:
             return [(active_monster, [], [], set(), set(), self.debug_lines, set())]
 
         # find monster focuses
-        focuses, focus_ranks = self.find_focus(travel_distances, trap_counts, proximity_distances,travel_distance_sorted_map, aoe, aoe_pattern_list, characters,monster)
+        focuses, focus_ranks = self.find_focus(travel_distances, trap_counts,travel_distance_sorted_map, aoe, aoe_pattern_list, characters,monster, active_monster)
         # if we find no actions, stand still
 
         if not focuses:
@@ -87,7 +86,7 @@ class Solver:
                                 location)
                                 for location in range(self.map.map_size)
                                 if self.map.can_end_move_on(location)
-                                for aoe_targets, aoe_hexes, non_aoe_targets in self.get_targets(aoe, location, aoe_pattern_list, characters,monster)
+                                for aoe_targets, aoe_hexes, non_aoe_targets in self.get_targets_for_a_location(aoe, location, aoe_pattern_list, characters,monster)
                                 if ((monster.plus_target() if monster.is_aoe() else 1 + monster.plus_target_for_movement()) != 0 and
                                             focus in non_aoe_targets)
                                             or focus in aoe_targets]
@@ -229,12 +228,11 @@ class Solver:
 
         return this_destination
 
-    def get_targets(self,aoe: list[tuple[int, int, int]],location: int, aoe_pattern_list: list[list[tuple[int, int, int]]],
+    def get_targets_for_a_location(self,aoe: list[tuple[int, int, int]],location: int, aoe_pattern_list: list[list[tuple[int, int, int]]],
      characters: list[int], monster : Monster) ->Generator[tuple[set[int], list[int], set[int]], None, None]:
-     
-        distances = self.map.find_proximity_distances(location)
+        distances = self.map.find_proximity_distances_within_range(location,monster.attack_range())
         targetable_character={_ for _ in characters if distances[_] <= monster.attack_range() and self.map.test_los_between_locations(_, location, self.RULE_VERTEX_LOS)}
-        
+
         if not monster.is_aoe():
             return (self.get_attacks_targets([],characters,location,targetable_character) for _ in [1])
         if monster.is_melee_aoe():
@@ -279,16 +277,18 @@ class Solver:
 
         return this_group
 
-    def find_focus(self,travel_distances: list[int], trap_counts: list[int], proximity_distances: list[int],
-                   travel_distance_sorted_map: list[int], aoe: list[tuple[int, int, int]], aoe_pattern_list: list[list[tuple[int, int, int]]], characters: list[int],monster:Monster) -> tuple[set[int], dict[int, int]]:
+    def find_focus(self,travel_distances: list[int], trap_counts: list[int],
+                   travel_distance_sorted_map: list[int], aoe: list[tuple[int, int, int]], aoe_pattern_list: list[list[tuple[int, int, int]]], characters: list[int],monster:Monster, active_monster:int) -> tuple[set[int], dict[int, int]]:
 
         characterss = [(character,location)
                         for location in travel_distance_sorted_map
                         for character in characters
                         if travel_distances[location] != MAX_VALUE and
                             self.map.can_end_move_on(location) and
-                            any(len(y[0]) >0 or len(y[2]) >0 for y in self.get_targets(aoe, location, aoe_pattern_list, [character],monster))]
-
+                            any(len(y[0]) >0 or len(y[2]) >0 for y in self.get_targets_for_a_location(aoe, location, aoe_pattern_list, [character],monster))]
+        
+        proximity_distances = self.map.find_proximity_distances(active_monster)
+        #self.map.print_custom_map(bottom_label=proximity_distances)
         focuses:set[int]={focus[0]
                 for focus in self.find_minimums_values(characterss,lambda x: self.calculate_focus_score(travel_distances, trap_counts, proximity_distances, x[0], x[1]))} if len(characterss)>0 else set()
 

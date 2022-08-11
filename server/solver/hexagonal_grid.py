@@ -14,6 +14,7 @@ class hexagonal_grid:
         self.vertices:list[tuple[float, float]]
         self.visibility_cache :dict[tuple[int,int],bool]={}
         self.path_cache : dict[int,list[int]]=[{}]
+        self.path_cache_with_range : dict[int,list[int]]=[{}]
     #Gloomhaven logic below
     def prepare_map(self,walls: list[list[bool]], contents: list[str]) -> None:
         self.walls = walls
@@ -566,7 +567,39 @@ class hexagonal_grid:
 
         self.path_cache[0][cache_key] = distances
         return distances
-    
+
+    def find_proximity_distances_within_range(self, start: int, range:int) -> list[int]:
+        cache_key = (start,range)
+        if cache_key in self.path_cache_with_range[0]:
+          return self.path_cache_with_range[0][cache_key]
+
+        distances = [MAX_VALUE] * self.map_size
+
+        frontier:collections.deque[int] = collections.deque()
+        frontier.append(start)
+        distances[start] = 0
+        neighbor_distance =0
+        while len(frontier) != 0:
+            current = frontier.popleft()
+            distance = distances[current]
+            for edge, neighbor in enumerate(self.neighbors[current]):
+                if neighbor_distance -1 > range :
+                    return distances
+                if neighbor == -1:
+                    continue
+                if not self.measure_proximity_through(neighbor):
+                    continue
+                if self.walls[current][edge]:
+                    continue
+
+                neighbor_distance = distance + 1
+
+                if neighbor_distance < distances[neighbor]:
+                    frontier.append(neighbor)
+                    distances[neighbor] = neighbor_distance
+
+        self.path_cache_with_range[0][cache_key] = distances
+        return distances
     def solve_sight(self, monster: int,upper_bound:int, RULE_VERTEX_LOS:bool) -> list[tuple[int, int]]:
 
         distances = self.find_proximity_distances(monster)
