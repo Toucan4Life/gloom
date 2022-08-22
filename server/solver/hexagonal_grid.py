@@ -583,23 +583,40 @@ class hexagonal_grid:
             current = frontier.popleft()
             distance = distances[current]
             for edge, neighbor in enumerate(self.neighbors[current]):
-                if neighbor_distance -1 > range :
-                    return distances
+
                 if neighbor == -1:
                     continue
-                if not self.measure_proximity_through(neighbor):
+                if self.blocks_los(neighbor):
                     continue
                 if self.walls[current][edge]:
                     continue
 
                 neighbor_distance = distance + 1
-
-                if neighbor_distance < distances[neighbor]:
+                if neighbor_distance -1 > range :                    
+                    self.path_cache_with_range[0][cache_key] = distances
+                    return distances
+                elif neighbor_distance < distances[neighbor]:
                     frontier.append(neighbor)
                     distances[neighbor] = neighbor_distance
 
         self.path_cache_with_range[0][cache_key] = distances
         return distances
+
+    def to_axial_coordinate(self, location:int, height:int, width:int) -> tuple[int,int]:
+        column = location % height
+        row = location // height
+        return (column - row // 2, row)
+        
+    def from_axial_coordinate(self, coordinate:tuple[int,int], height:int, width:int)->int:
+       
+        column = coordinate[1]
+        if not (0 <= column < width):
+            return -1
+        row = coordinate[0]
+        if not (0 - column // 2 <= row < height - column // 2):
+            return -1
+        return row + column // 2 + column * height
+
     def solve_sight(self, monster: int,upper_bound:int, RULE_VERTEX_LOS:bool) -> list[tuple[int, int]]:
 
         distances = self.find_proximity_distances(monster)

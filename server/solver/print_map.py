@@ -42,6 +42,9 @@ def format_numerical_label(value:int):
         return f' {value} '
     return f'{value}'
 
+def format_axial_coordinate(value:tuple[int,int]):
+    return f'{value[0]}{value[1]}'
+
 def format_initiative(value:int):
     if value == 0:
         return '   '
