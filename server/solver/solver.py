@@ -50,26 +50,23 @@ class Solver:
             if self.message:
                 print(textwrap.fill(self.message, 82))
 
+        #self.map.print_custom_map(bottom_label=trap_counts)
+
         # find active monster
         active_monster = self.map.get_active_monster_location()
-        travel_distances, trap_counts = self.map.find_path_distances(active_monster)
 
-        #self.map.print_custom_map(bottom_label=trap_counts)
-        
-        # doesn't speed things up but makes los testing order more intuitive for debugging
-        travel_distance_sorted_map = sorted(list(range(self.map.map_size)), key=lambda x: travel_distances[x])
-
-        # process aoe
-        aoe, aoe_pattern_list = self.map.process_aoe() if monster.is_aoe() else ([],[])
-
-        # find characters
+        # find characters        
         characters = self.map.get_characters()
 
         if not characters:
             return [(active_monster, [], [], set(), set(), self.debug_lines, set())]
 
+        # process aoe
+        aoe, aoe_pattern_list = self.map.process_aoe() if monster.is_aoe() else ([],[])
+
         # find monster focuses
-        focuses, focus_ranks = self.find_focus(travel_distances, trap_counts,travel_distance_sorted_map, aoe, aoe_pattern_list, characters,monster, active_monster)
+        travel_distances, trap_counts = self.map.find_path_distances(active_monster)
+        focuses, focus_ranks = self.find_focus(travel_distances, trap_counts, aoe, aoe_pattern_list, characters,monster, active_monster)
         # if we find no actions, stand still
 
         if not focuses:
@@ -89,8 +86,7 @@ class Solver:
                                 for aoe_targets, aoe_hexes, non_aoe_targets in self.get_targets_for_a_location(aoe, location, aoe_pattern_list, characters,monster)
                                 if ((monster.plus_target() if monster.is_aoe() else 1 + monster.plus_target_for_movement()) != 0 and
                                             focus in non_aoe_targets)
-                                            or focus in aoe_targets]
-                            
+                                            or focus in aoe_targets]                            
 
             # find best location on board, disregarding ennemies other than focus
             destinationsss = self.find_minimums_values(destinationsss, partial(self.calculate_location_score,
@@ -228,6 +224,11 @@ class Solver:
 
         return this_destination
 
+    def get_attacks_targets(self,aoe_hexes:list[int],characters:list[int],location:int,targetable_character:set[int]):
+        aoe_targets = { target for target in aoe_hexes if target in characters and self.map.test_los_between_locations(target, location, self.RULE_VERTEX_LOS)}
+        non_aoe_targets = targetable_character - aoe_targets
+        return aoe_targets, aoe_hexes, non_aoe_targets
+
     def get_targets_for_a_location(self,aoe: list[tuple[int, int, int]],location: int, aoe_pattern_list: list[list[tuple[int, int, int]]],
      characters: list[int], monster : Monster) ->Generator[tuple[set[int], list[int], set[int]], None, None]:
         distances = self.map.find_proximity_distances_within_range(location,monster.attack_range())
@@ -244,7 +245,6 @@ class Solver:
                     # loop over every possible aoe placement
                     for aoe_rotation in range(12))
         else:
-
             aoe_hexess =  (self.get_attacks_targets(aoe_hexes,characters,location,targetable_character)
                                  for aoe_hexes in
                                 [# loop over each hex in the aoe, adding targets
@@ -255,14 +255,6 @@ class Solver:
                     if any(distances[target] <= monster.attack_range() for target in aoe_hexes))
 
         return aoe_hexess
-
-    def get_attacks_targets(self,aoe_hexes:list[int],characters:list[int],location:int,targetable_character:set[int]):
-        aoe_targets = { target for target in aoe_hexes if target in characters and self.map.test_los_between_locations(target, location, self.RULE_VERTEX_LOS)}
-        non_aoe_targets = targetable_character - aoe_targets
-        return aoe_targets, aoe_hexes, non_aoe_targets
-
-    def compute_location_property(self, plus_target:int, focus:int, location:int, aoe_hexes:list[int], aoe_targets:set[int], non_aoe_targets:set[int]):
-        return (non_aoe_targets, plus_target, aoe_targets, aoe_hexes,(),location) if (plus_target != 0 and focus in non_aoe_targets) or focus in aoe_targets else None
 
     def calculate_aoe_score(self, travel_distances:list[int], dest:tuple[set[int],int,set[int],list[int],tuple[int,int],int], focus_ranks:dict[int,int]):
         targets_of_rank = [0] * (max(focus_ranks.values()) + 1)
@@ -278,17 +270,18 @@ class Solver:
         return this_group
 
     def find_focus(self,travel_distances: list[int], trap_counts: list[int],
-                   travel_distance_sorted_map: list[int], aoe: list[tuple[int, int, int]], aoe_pattern_list: list[list[tuple[int, int, int]]], characters: list[int],monster:Monster, active_monster:int) -> tuple[set[int], dict[int, int]]:
+                   aoe: list[tuple[int, int, int]], aoe_pattern_list: list[list[tuple[int, int, int]]], characters: list[int],monster:Monster, active_monster:int) -> tuple[set[int], dict[int, int]]:
 
         characterss = [(character,location)
-                        for location in travel_distance_sorted_map
                         for character in characters
-                        if travel_distances[location] != MAX_VALUE and
+                        for location,distance in enumerate(self.map.find_proximity_distances_within_range(character,monster.attack_range() + monster.aoe_reach()))
+                        if distance != MAX_VALUE and
+                            travel_distances[location] != MAX_VALUE and
                             self.map.can_end_move_on(location) and
                             any(len(y[0]) >0 or len(y[2]) >0 for y in self.get_targets_for_a_location(aoe, location, aoe_pattern_list, [character],monster))]
-        
+
         proximity_distances = self.map.find_proximity_distances(active_monster)
-        #self.map.print_custom_map(bottom_label=proximity_distances)
+        
         focuses:set[int]={focus[0]
                 for focus in self.find_minimums_values(characterss,lambda x: self.calculate_focus_score(travel_distances, trap_counts, proximity_distances, x[0], x[1]))} if len(characterss)>0 else set()
 

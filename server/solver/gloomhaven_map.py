@@ -196,7 +196,7 @@ class GloomhavenMap(hexagonal_grid):
         if self.monster.action_target > 0:
             out += ', ATTACK'
         if self.monster.is_aoe():
-            out += ', AOE'
+            out += f', AOE REACH {self.monster.aoe_reach()}'
         if self.monster.plus_target() > 0:
             if self.monster.is_max_targets():
                 out += ', TARGET ALL'
