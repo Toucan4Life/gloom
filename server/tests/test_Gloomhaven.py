@@ -1,3 +1,4 @@
+import collections
 from solver.monster import Monster
 from solver.solver import GloomhavenMap, Rule, Solver
 
@@ -7,7 +8,29 @@ def init_test():
     initiatives:list[int] = [0] * 16 * 7
     walls:list[list[bool]] = [[False] * 6 for _ in range(16*7)]
     return figures,contents,initiatives,walls
-
+def map_solution(info: list[tuple[int,int,list[int],tuple[int] | tuple[()],list[int],set[tuple[tuple[float, float], tuple[float, float]]]]])->list[tuple[int, list[int], list[int], set[int], set[tuple[tuple[float, float], tuple[float, float]]], set[int], set[int]]]:
+        debug_lines:set[int] = set()
+        if info[0][1] ==-1:
+            return list({((info[0][0],)):(info[0][0],[],[],set(),set(),set(),set())}.values())
+        focusdict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)
+        destdict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)        
+        
+        for iinf in info:
+            for act in iinf[2]:
+                destdict[(act,)+iinf[3]].update({iinf[0]})
+                focusdict[(act,)+iinf[3]].update({iinf[1]})
+   
+        solution = list({((act,)+iinf[3]):
+            (act,
+            list(iinf[3]),
+            iinf[4],
+            destdict[(act,)+iinf[3]],
+            iinf[5],
+            debug_lines,
+            focusdict[(act,)+iinf[3]])
+            for iinf in info for act in iinf[2]}.values())
+            
+        return solution
 def dereduce_location(location: int) -> int:
         return location
 
@@ -15,7 +38,7 @@ def assert_answers(monster:Monster,figures:list[str],contents:list[str],initiati
 
     gmap = GloomhavenMap(16, 7, monster,figures,contents, initiatives,walls, Rule(1))
     scenario = Solver(Rule(1), gmap)
-    answers = scenario.calculate_monster_move()
+    answers = map_solution(scenario.calculate_monster_move())
     
     test= [(
         (key[0],

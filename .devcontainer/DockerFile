@@ -9,6 +9,7 @@ RUN pip install pylint
 RUN pip install autopep8
 RUN pip install snakeviz
 RUN pip install pytest-profiling
+RUN pip install colorama
 
 COPY . .
 

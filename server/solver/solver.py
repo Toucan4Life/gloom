@@ -1,4 +1,4 @@
-import collections
+
 import textwrap
 import itertools
 from functools import partial
@@ -33,12 +33,11 @@ class Solver:
 
     def calculate_monster_move(self) -> list[tuple[
         int,
+        int,
+         list[int],
+        tuple[int] | tuple[()],
         list[int],
-        list[int],
-        set[int],
-        set[tuple[tuple[float, float], tuple[float, float]]],
-        set[tuple[int, tuple[tuple[float, float], tuple[float, float]]]],
-        set[int]]]:
+        set[tuple[tuple[float, float], tuple[float, float]]]]]:
 
         monster = self.map.get_active_monster()
         if self.logging:
@@ -59,7 +58,7 @@ class Solver:
         characters = self.map.get_characters()
 
         if not characters:
-            return [(active_monster, [], [], set(), set(), self.debug_lines, set())]
+            return [(active_monster, -1, [], tuple(), [], set())]
 
         # process aoe
         aoe, aoe_pattern_list = self.map.process_aoe() if monster.is_aoe() else ([],[])
@@ -70,12 +69,12 @@ class Solver:
         # if we find no actions, stand still
 
         if not focuses:
-            return [(active_monster, [], [], set(), set(), self.debug_lines, set())]
+            return [(active_monster, -1, [], tuple(), [], set())]
 
-        info: list[tuple[list[int],tuple[int] | tuple[()],list[int],set[int],set[int]]] = []
+        info: list[tuple[int, int,list[int], tuple[int] | tuple[()], list[int],  set[tuple[tuple[float, float], tuple[float, float]]]]] = []
         # players choose among focus ties
         for focus in focuses:
-            destinationsss = [(non_aoe_targets,
+            locations_properties = [(non_aoe_targets,
                                 monster.plus_target() if monster.is_aoe() else 1 + monster.plus_target_for_movement(),
                                 aoe_targets,
                                 aoe_hexes,
@@ -89,82 +88,68 @@ class Solver:
                                             or focus in aoe_targets]                            
 
             # find best location on board, disregarding ennemies other than focus
-            destinationsss = self.find_minimums_values(destinationsss, partial(self.calculate_location_score,
+            locations_properties = self.find_minimums_values(locations_properties, partial(self.calculate_location_score,
                 travel_distances, trap_counts, focus,monster))
 
             # for the remaining considered location calculate potential target
-            destinationsss = [((), (), (), dest[3], tuple(sorted(dest[2].union(tup)))if focus in dest[2].union(tup) else (), dest[5])
-                              for dest in destinationsss
-                              for tup in itertools.combinations(dest[0], min(dest[1], len(dest[0]))if not monster.is_max_targets() else len(dest[0]))]
+            targets_properties = [(loc_properties[3], tuple(sorted(loc_properties[2].union(tup)))if focus in loc_properties[2].union(tup) else (), loc_properties[5])
+                              for loc_properties in locations_properties
+                              for tup in itertools.combinations(loc_properties[0], min(loc_properties[1], len(loc_properties[0]))if not monster.is_max_targets() else len(loc_properties[0]))]
 
             # find the best group of targets based on the following priorities
-            groups = self.find_minimums_values(destinationsss,lambda x: self.calculate_aoe_score(travel_distances, x, focus_ranks))
+            best_groups = {grp[1] for grp in self.find_minimums_values(targets_properties,lambda x: self.calculate_aoe_score(travel_distances, x, focus_ranks))}
 
-            destinationsss= [dest for dest in destinationsss if dest[4] in {grp[4] for grp in groups}]
+            # given the target group, find all the location we can attack this group
+            targets_properties= [dest for dest in targets_properties if dest[1] in best_groups]
 
             # given the target group, find the best destinations to attack from
             # based on the following priorities
 
-            destinationsss = self.find_minimums_values(destinationsss,lambda x: self.calculate_destination_score(travel_distances,x,monster))
+            targets_properties = self.find_minimums_values(targets_properties,lambda x: self.calculate_destination_score(travel_distances,x,monster))
 
             # determine the best move based on the chosen destinations
-            can_reach_destinations = travel_distances[destinationsss[0][5]] <= monster.action_move
-            info.extend([(
-                [destination[5]] if can_reach_destinations else self.move_closer_to_destinations(travel_distances, trap_counts, destination[5],monster),
-                destination[4] if can_reach_destinations and monster.plus_target() > -1 else tuple(),
-                destination[3] if can_reach_destinations and monster.plus_target() > -1 else [],
-                {destination[5]},
-                {focus}
-                ) for destination in destinationsss])
+            can_reach_destinations = travel_distances[targets_properties[0][2]] <= monster.action_move
+            info.extend([( 
+                focus,
+                destination[2],
+                [destination[2]] if can_reach_destinations else self.move_closer_to_destinations(travel_distances, trap_counts, destination[2],monster),
+                destination[1] if can_reach_destinations and monster.plus_target() > -1 else tuple(),
+                destination[0] if can_reach_destinations and monster.plus_target() > -1 else [],
+                {self.map.find_shortest_sightline(destination[2], attack, self.RULE_VERTEX_LOS) for attack in destination[1]} if can_reach_destinations and monster.plus_target() > -1 else set()
+                ) for destination in targets_properties])
 
-        focusdict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)
-        destdict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)
-        
-        for iinf in info:
-            for act in iinf[0]:
-                destdict[(act,)+iinf[1]].update(iinf[4])
-                focusdict[(act,)+iinf[1]].update(iinf[3])
 
-        solution = list({((act,)+iinf[1]):
-            (act,
-            list(iinf[1]),
-            iinf[2],
-            destdict[(act,)+iinf[1]],
-            {self.map.find_shortest_sightline(act, attack, self.RULE_VERTEX_LOS) for attack in iinf[1]},
-            self.debug_lines,
-            focusdict[(act,)+iinf[1]])
-            for iinf in info for act in iinf[0]}.values())
-
-         # move monster
         if self.logging:
-            self.print_solution(active_monster, solution)
+            self.print_solution(active_monster, info)
 
-        return solution
+        return info
 
-    def print_solution(self, active_monster:int, solution:list[tuple[int, list[int], list[int], set[int], set[tuple[tuple[float, float], tuple[float, float]]], set[tuple[int, tuple[tuple[float, float], tuple[float, float]]]], set[int]]]):
+   
+    def print_solution(self, active_monster:int, solution: list[tuple[ int, int,list[int], tuple[int] | tuple[()], list[int], set[tuple[tuple[float, float], tuple[float, float]]]]]):
         map_debug_tags = [' '] * self.map.map_size
         self.map.figures[active_monster] = ' '
         map_debug_tags[active_monster] = 's'
         if not self.show_each_action_separately:
             for action in solution:
-                self.print_single_solution_summary(active_monster, action[0], action[1])
-                self.map.figures[action[0]] = 'A'
-                for destination in action[6]:
-                    map_debug_tags[destination] = 'd'
-                for target in action[1]:
+                self.print_single_solution_summary(active_monster, action[1], list(action[3]))
+                for possible_move in action[2]:                
+                    self.map.figures[possible_move] = 'A'
+                map_debug_tags[action[1]] = 'd'
+                for target in action[3]:
                     map_debug_tags[target] = 'a'
             self.map.print_solution_map( map_debug_tags )
         else:
             for action in solution:
-                self.print_single_solution_summary(active_monster, action[0], action[1])
+                self.print_single_solution_summary(active_monster, action[1], list(action[3]))
                 action_debug_tags = list(map_debug_tags)
-                self.map.figures[action[0]] = 'A'
-                for destination in action[6]:
-                    action_debug_tags[destination] = 'd'
-                for target in action[1]:
+                for possible_move in action[2]:                
+                    self.map.figures[possible_move] = 'A'
+                action_debug_tags[action[1]] = 'd'
+                for target in action[3]:
                     action_debug_tags[target] = 'a'
                 self.map.print_solution_map( action_debug_tags )
-                self.map.figures[action[0]] = ' '
+                for possible_move in action[2]:                
+                    self.map.figures[possible_move] = ' '
 
     def print_single_solution_summary(self, active_monster:int, move:int, target:list[int]):
         if move == active_monster:
@@ -216,11 +201,11 @@ class Solver:
 
         return this_destination
 
-    def calculate_destination_score(self, travel_distances:list[int], dest:tuple[set[int],int,set[int],list[int],tuple[int,int],int], monster : Monster):
+    def calculate_destination_score(self, travel_distances:list[int], dest:tuple[list[int],tuple[int,int],int], monster : Monster):
 
         this_destination = (
-                sum((monster.is_susceptible_to_disavantage() and self.map.is_adjacent(dest[5], target) for target in dest[4])),
-                travel_distances[dest[5]])
+                sum((monster.is_susceptible_to_disavantage() and self.map.is_adjacent(dest[2], target) for target in dest[1])),
+                travel_distances[dest[2]])
 
         return this_destination
 
@@ -256,15 +241,15 @@ class Solver:
 
         return aoe_hexess
 
-    def calculate_aoe_score(self, travel_distances:list[int], dest:tuple[set[int],int,set[int],list[int],tuple[int,int],int], focus_ranks:dict[int,int]):
+    def calculate_aoe_score(self, travel_distances:list[int], dest:tuple[list[int],tuple[int,int],int], focus_ranks:dict[int,int]):
         targets_of_rank = [0] * (max(focus_ranks.values()) + 1)
-        for target in dest[4]:
+        for target in dest[1]:
             targets_of_rank[focus_ranks[target]] -= 1
         # best_groupss = (
         #     MAX_VALUE - 1,  # path length to the attack location
         # ) + tuple([0] * num_focus_ranks)  # target count for each focus rank
         this_group = (
-                travel_distances[dest[5]],
+                travel_distances[dest[2]],
                 ) + tuple(targets_of_rank)
 
         return this_group
@@ -272,7 +257,7 @@ class Solver:
     def find_focus(self,travel_distances: list[int], trap_counts: list[int],
                    aoe: list[tuple[int, int, int]], aoe_pattern_list: list[list[tuple[int, int, int]]], characters: list[int],monster:Monster, active_monster:int) -> tuple[set[int], dict[int, int]]:
 
-        characterss = [(character,location)
+        character_location = [(character,location)
                         for character in characters
                         for location,distance in enumerate(self.map.find_proximity_distances_within_range(character,monster.attack_range() + monster.aoe_reach()))
                         if distance != MAX_VALUE and
@@ -283,7 +268,7 @@ class Solver:
         proximity_distances = self.map.find_proximity_distances(active_monster)
         
         focuses:set[int]={focus[0]
-                for focus in self.find_minimums_values(characterss,lambda x: self.calculate_focus_score(travel_distances, trap_counts, proximity_distances, x[0], x[1]))} if len(characterss)>0 else set()
+                for focus in self.find_minimums_values(character_location,lambda x: self.calculate_focus_score(travel_distances, trap_counts, proximity_distances, x[0], x[1]))} if len(character_location)>0 else set()
 
         # rank characters for secondary targeting
 

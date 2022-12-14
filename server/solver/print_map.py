@@ -1,4 +1,6 @@
 from solver.settings import MAX_VALUE
+import colorama
+
 
 class Colors:
     purple = '\033[95m'
@@ -68,6 +70,7 @@ def south_edge_glyph(walls:list[list[bool]], location:int, edge:int):
     return '\\' if walls[location][edge] else '\''
 
 def print_map(grid_width:int, grid_height:int, walls:list[list[bool]], top_label:list[str], bottom_label:list[str], extra_label:list[str]=[]):
+    colorama.init()
     grid_size = grid_width * grid_height
 
     if not extra_label:

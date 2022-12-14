@@ -1,5 +1,6 @@
 import time
 import os
+import collections
 import json
 from solver.monster import Monster
 from solver.solver import GloomhavenMap, Rule, Solver
@@ -60,6 +61,30 @@ def templates(filename:str, params:dict[str,bool]={})->str:
         **params
     )
 
+def map_solution(info: list[tuple[int,int,list[int],tuple[int] | tuple[()],list[int],set[tuple[tuple[float, float], tuple[float, float]]]]])->list[tuple[int, list[int], list[int], set[int], set[tuple[tuple[float, float], tuple[float, float]]], set[int], set[int]]]:
+        debug_lines:set[int] = set()
+        if info[0][1] ==-1:
+            return list({((info[0][0],)):(info[0][0],[],[],set(),set(),set(),set())}.values())
+        focusdict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)
+        destdict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)        
+        
+        for iinf in info:
+            for act in iinf[2]:
+                destdict[(act,)+iinf[3]].update({iinf[0]})
+                focusdict[(act,)+iinf[3]].update({iinf[1]})
+   
+        solution = list({((act,)+iinf[3]):
+            (act,
+            list(iinf[3]),
+            iinf[4],
+            destdict[(act,)+iinf[3]],
+            iinf[5],
+            debug_lines,
+            focusdict[(act,)+iinf[3]])
+            for iinf in info for act in iinf[2]}.values())
+            
+        return solution
+
 
 @app.route('/solve', methods=['PUT'])
 def solve():
@@ -69,7 +94,7 @@ def solve():
         s.logging = True
         s.debug_visuals = True
 
-    raw_actions= s.calculate_monster_move()
+    raw_actions= map_solution(s.calculate_monster_move())
 
 
     actions = [
