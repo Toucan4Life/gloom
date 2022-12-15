@@ -42,19 +42,19 @@ class Monster:
         return (abs(a[0] - b[0]) + abs(a[0] + a[1] - b[0] - b[1]) + abs(a[1] - b[1])) // 2
 
     def is_susceptible_to_disavantage(self) -> bool:
-        return False if self.action_range == 0 or self.action_target == 0 else not self.muddled
+        return self.action_range != 0 and self.action_target != 0 and not self.muddled
 
-    def plus_target(self) -> int:
-        return self.action_target - 1
+    def has_attack(self) -> bool:
+        return self.action_target > 0
 
-    def plus_target_for_movement(self) -> int:
-        return max(0, self.plus_target())
+    def max_potential_non_aoe_targets(self) -> int:
+        return self.action_target - 1 if self.is_aoe() else max(1, self.action_target)
     
     def is_max_targets(self) -> bool:
         return self.action_target == 6
 
     def is_aoe(self) -> bool:
-        return self.action_target > 0 and True in self.aoe
+        return self.has_attack() and True in self.aoe
 
     def is_melee_aoe(self) -> bool:
         return self.is_aoe() and self.action_range == 0

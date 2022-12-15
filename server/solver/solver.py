@@ -75,7 +75,7 @@ class Solver:
         # players choose among focus ties
         for focus in focuses:
             locations_properties = [(non_aoe_targets,
-                                monster.plus_target() if monster.is_aoe() else 1 + monster.plus_target_for_movement(),
+                                monster.max_potential_non_aoe_targets(),
                                 aoe_targets,
                                 aoe_hexes,
                                 (),
@@ -83,9 +83,7 @@ class Solver:
                                 for location in range(self.map.map_size)
                                 if self.map.can_end_move_on(location)
                                 for aoe_targets, aoe_hexes, non_aoe_targets in self.get_targets_for_a_location(aoe, location, aoe_pattern_list, characters,monster)
-                                if ((monster.plus_target() if monster.is_aoe() else 1 + monster.plus_target_for_movement()) != 0 and
-                                            focus in non_aoe_targets)
-                                            or focus in aoe_targets]                            
+                                if (monster.max_potential_non_aoe_targets() != 0 and focus in non_aoe_targets) or focus in aoe_targets]
 
             # find best location on board, disregarding ennemies other than focus
             locations_properties = self.find_minimums_values(locations_properties, partial(self.calculate_location_score,
@@ -113,9 +111,9 @@ class Solver:
                 focus,
                 destination[2],
                 [destination[2]] if can_reach_destinations else self.move_closer_to_destinations(travel_distances, trap_counts, destination[2],monster),
-                destination[1] if can_reach_destinations and monster.plus_target() > -1 else tuple(),
-                destination[0] if can_reach_destinations and monster.plus_target() > -1 else [],
-                {self.map.find_shortest_sightline(destination[2], attack, self.RULE_VERTEX_LOS) for attack in destination[1]} if can_reach_destinations and monster.plus_target() > -1 else set()
+                destination[1] if can_reach_destinations and monster.has_attack() else tuple(),
+                destination[0] if can_reach_destinations and monster.has_attack() else [],
+                {self.map.find_shortest_sightline(destination[2], attack, self.RULE_VERTEX_LOS) for attack in destination[1]} if can_reach_destinations and monster.has_attack() else set()
                 ) for destination in targets_properties])
 
 
