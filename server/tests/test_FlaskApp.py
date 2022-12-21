@@ -37,7 +37,7 @@ def test_solve_thin_los(client: 'testing.FlaskClient'):
     q = json.loads(response.data)["reach"]
     r = json.loads(response.data)["scenario_id"]
     s = json.loads(response.data)["sight"]
-
+    
     assert json.dumps(p) == '[{"aoe": [145, 171, 195], "attacks": [145, 169], "destinations": [42], "focuses": [169], "move": 42, "sightlines": [[[3.3796296296293704, 31.385402133447602], [7.932870370370006, 35.623313484374414]], [[3.333333333333166, 31.46558967083489], [9.166666666666833, 33.486315612998006]]]}]'
     assert json.dumps(
         q) == '[[[13, 23], [37, 42], [43, 48], [63, 69], [70, 73], [88, 95], [96, 97], [114, 115], [116, 122], [139, 146], [165, 171]]]'

@@ -70,18 +70,18 @@ def map_solution(info: list[tuple[int,int,list[int],tuple[int] | tuple[()],list[
         aoedict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)
         for iinf in info:
             for act in iinf[2]:
-                destdict[(act,)+iinf[3]].update({iinf[0]})
-                focusdict[(act,)+iinf[3]].update({iinf[1]})
-                aoedict[(act,)+iinf[3]].add(frozenset(iinf[4]))
+                destdict[(act,)+tuple(sorted(iinf[3]))].update({iinf[0]})
+                focusdict[(act,)+tuple(sorted(iinf[3]))].update({iinf[1]})
+                aoedict[(act,)+tuple(sorted(iinf[3]))].add(frozenset(iinf[4]))
    
-        solution = list({((act,)+iinf[3]):
+        solution = list({((act,)+tuple(sorted(iinf[3]))):
             (act,
-            list(iinf[3]),
-            aoedict[(act,)+iinf[3]],
-            destdict[(act,)+iinf[3]],
+            sorted(list(iinf[3])),
+            aoedict[(act,)+tuple(sorted(iinf[3]))],
+            destdict[(act,)+tuple(sorted(iinf[3]))],
             iinf[5],
             debug_lines,
-            focusdict[(act,)+iinf[3]])
+            focusdict[(act,)+tuple(sorted(iinf[3]))])
             for iinf in info for act in iinf[2]}.values())
             
         return solution
