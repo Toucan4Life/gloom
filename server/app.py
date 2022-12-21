@@ -67,16 +67,17 @@ def map_solution(info: list[tuple[int,int,list[int],tuple[int] | tuple[()],list[
             return list({((info[0][0],)):(info[0][0],[],[],set(),set(),set(),set())}.values())
         focusdict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)
         destdict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)        
-        
+        aoedict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)
         for iinf in info:
             for act in iinf[2]:
                 destdict[(act,)+iinf[3]].update({iinf[0]})
                 focusdict[(act,)+iinf[3]].update({iinf[1]})
+                aoedict[(act,)+iinf[3]].add(frozenset(iinf[4]))
    
         solution = list({((act,)+iinf[3]):
             (act,
             list(iinf[3]),
-            iinf[4],
+            aoedict[(act,)+iinf[3]],
             destdict[(act,)+iinf[3]],
             iinf[5],
             debug_lines,
@@ -101,7 +102,7 @@ def solve():
         {
             'move': raw_action[0],
             'attacks': list(raw_action[1]),
-            'aoe': list(raw_action[2]),
+            'aoe': list(list(raw_action[2])[0]),
             'destinations': list(raw_action[6]),
             'focuses': list(raw_action[3]),
             'sightlines': list(raw_action[4]),

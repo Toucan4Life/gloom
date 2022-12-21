@@ -48,6 +48,8 @@ class Monster:
         return self.action_target > 0
 
     def max_potential_non_aoe_targets(self) -> int:
+        if (self.is_max_targets()):
+            return 999
         return self.action_target - 1 if self.is_aoe() else max(1, self.action_target)
     
     def is_max_targets(self) -> bool:

@@ -14,32 +14,32 @@ def map_solution(info: list[tuple[int,int,list[int],tuple[int] | tuple[()],list[
             return list({((info[0][0],)):(info[0][0],[],[],set(),set(),set(),set())}.values())
         focusdict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)
         destdict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)        
-        
+        aoedict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)       
         for iinf in info:
             for act in iinf[2]:
                 destdict[(act,)+iinf[3]].update({iinf[0]})
                 focusdict[(act,)+iinf[3]].update({iinf[1]})
-   
+                aoedict[(act,)+iinf[3]].add(frozenset(iinf[4]))
+
         solution = list({((act,)+iinf[3]):
             (act,
             list(iinf[3]),
-            iinf[4],
+            aoedict[(act,)+iinf[3]],
             destdict[(act,)+iinf[3]],
             iinf[5],
             debug_lines,
             focusdict[(act,)+iinf[3]])
             for iinf in info for act in iinf[2]}.values())
-            
+
         return solution
-def dereduce_location(location: int) -> int:
-        return location
+
 
 def assert_answers(monster:Monster,figures:list[str],contents:list[str],initiatives:list[int],walls:list[list[bool]], correct_answers:set[tuple[int]]):
 
     gmap = GloomhavenMap(16, 7, monster,figures,contents, initiatives,walls, Rule(1))
     scenario = Solver(Rule(1), gmap)
     answers = map_solution(scenario.calculate_monster_move())
-    
+
     test= [(
         (key[0],
             list()if len(key)==1 else list(key[1:]),
@@ -50,7 +50,19 @@ def assert_answers(monster:Monster,figures:list[str],contents:list[str],initiati
             set(correct_answers[2][key]))
             ) for key in correct_answers[0]]
 
-    assert sorted(answers)==sorted(test)
+    sanswers = sorted(answers)
+    stest = sorted(test)
+    for i in range(len(sanswers)):
+        assert sanswers[i][0]==stest[i][0]
+        assert sanswers[i][1]==stest[i][1]
+        if(len(stest[i][2])>0):
+            assert frozenset(stest[i][2]) in sanswers[i][2]
+        assert sanswers[i][3]==stest[i][3]
+        assert sanswers[i][4]==stest[i][4]
+        assert sanswers[i][5]==stest[i][5]
+        assert sanswers[i][6]==stest[i][6]
+  
+
 
 # Move towards the character and offer all valid options for the players to choose among
 def test_Scenario1():
