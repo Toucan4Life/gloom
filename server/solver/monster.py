@@ -29,13 +29,14 @@ class Monster:
 
     def aoe_reach(self) -> int:
         aoe_tile = [self.to_axial_coordinate(i,self.aoe_height,self.aoe_width) for i,t in enumerate(self.aoe) if t is True]
-        if len(aoe_tile)==0:
+        if not self.is_aoe():
             return 0
         if self.is_melee_aoe():
             monster_location = self.to_axial_coordinate(24,self.aoe_height,self.aoe_width)
             dist = [self.axial_distance(monster_location,tup) for tup in aoe_tile]
         else :
             dist = [self.axial_distance(tup[0],tup[1]) for tup in itertools.combinations(aoe_tile, 2)]
+            #print(dist)
         return max(dist)
 
     def axial_distance(self,a:tuple[int,int],b:tuple[int,int]) -> int:

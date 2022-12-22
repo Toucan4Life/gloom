@@ -41,7 +41,7 @@ def assert_answers(monster:Monster,figures:list[str],contents:list[str],initiati
 
     gmap = GloomhavenMap(16, 7, monster,figures,contents, initiatives,walls, Rule(2))
     scenario = Solver(Rule(2),gmap)
-    scenario.logging=False
+    scenario.logging=True
     answers = map_solution(scenario.calculate_monster_move())
 
     test= [(
