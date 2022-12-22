@@ -602,11 +602,18 @@ class hexagonal_grid:
         self.path_cache_with_range[0][cache_key] = distances
         return distances
 
-    def to_axial_coordinate(self, location:int, height:int, width:int) -> tuple[int,int]:
+    def to_axial_coordinate(self, location:int, height:int) -> tuple[int,int]:
         column = location % height
         row = location // height
         return (column - row // 2, row)
         
+    def crow_flies_distances(self, start:int, end:int)->int:
+        axial_start = self.to_axial_coordinate(start,self.map_height)
+        axial_end = self.to_axial_coordinate(end,self.map_height)
+        return int((abs(axial_start[0] - axial_end[0]) 
+          + abs(axial_start[0] + axial_start[1] - axial_end[0] - axial_end[1])
+          + abs(axial_start[1] - axial_end[1])) / 2)
+
     def from_axial_coordinate(self, coordinate:tuple[int,int], height:int, width:int)->int:
        
         column = coordinate[1]
