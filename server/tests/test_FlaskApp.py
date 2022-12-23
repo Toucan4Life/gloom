@@ -62,7 +62,8 @@ def test_solve_sight(client: 'testing.FlaskClient'):
 def test_solve_multiple_destination(client: 'testing.FlaskClient'):
     response = client.put(
         "/solve", data=b'{"scenario_id":8,"solve_view":0,"active_figure":217,"move":2,"range":0,"target":1,"flying":0,"muddled":0,"game_rules":0,"aoe":[],"width":29,"height":25,"map":{"characters":[314],"monsters":[217],"walls":[265,266,345],"obstacles":[],"traps":[],"hazardous":[],"difficult":[],"initiatives":[1],"thin_walls":[]}}')
+
     p = json.loads(response.data)["actions"]
     r = json.loads(response.data)["scenario_id"]
-    assert json.dumps(p) == '[{"aoe": [], "attacks": [], "destinations": [288, 289], "focuses": [314], "move": 215, "sightlines": []}, {"aoe": [], "attacks": [], "destinations": [288, 289], "focuses": [314], "move": 240, "sightlines": []}, {"aoe": [], "attacks": [], "destinations": [289, 315], "focuses": [314], "move": 267, "sightlines": []}]'
+    assert json.dumps(p) == '[{"aoe": [], "attacks": [], "destinations": [289, 315], "focuses": [314], "move": 267, "sightlines": []}, {"aoe": [], "attacks": [], "destinations": [288, 289], "focuses": [314], "move": 215, "sightlines": []}, {"aoe": [], "attacks": [], "destinations": [288, 289], "focuses": [314], "move": 240, "sightlines": []}]'
     assert r == 8

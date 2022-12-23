@@ -29,6 +29,8 @@ class GloomhavenMap(hexagonal_grid):
         if self.monster.flying:
             return self.contents[location] in [' ', 'T', 'O', 'H', 'D'] and self.figures[location] in [' ', 'A']
         return self.contents[location] in [' ', 'T', 'H', 'D'] and self.figures[location] in [' ', 'A']
+    def can_target(self, location: int) -> bool:
+        return self.contents[location] not in ['X','O']
 
     def can_travel_through(self, location: int) -> bool:
         if self.monster.flying | self.monster.jumping:
@@ -119,11 +121,11 @@ class GloomhavenMap(hexagonal_grid):
 
         return distances, traps
     
-    def process_aoe(self) -> tuple[list[tuple[int, int, int]], list[list[tuple[int, int, int]]]]:
+    def process_aoe(self,is_melee_aoe:bool) -> tuple[list[tuple[int, int, int]], list[list[tuple[int, int, int]]]]:
         aoe_pattern_list: list[list[tuple[int, int, int]]] = []
         aoe: list[tuple[int, int, int]] = []
 
-        if self. monster.is_melee_aoe():
+        if is_melee_aoe:
             return [get_offset(self.monster.aoe_center(), location, self.monster.aoe_height) for location in range(self.monster.aoe_size) if self.monster.aoe[location]], []
 
         # precalculate aoe patterns to remove degenerate cases
@@ -140,7 +142,6 @@ class GloomhavenMap(hexagonal_grid):
             for aoe_rotation in range(12):
                 aoe_hexes = [apply_offset(PRECALC_GRID_CENTER, rotate_offset(pin_offset(aoe_offset, aoe_pin), aoe_rotation), PRECALC_GRID_HEIGHT, PRECALC_GRID_SIZE)
                             for aoe_offset in aoe]
-                aoe_hexes.sort()
                 aoe_pattern_set.add(tuple(aoe_hexes))
 
         aoe_pattern_list = [    [get_offset(PRECALC_GRID_CENTER, location, PRECALC_GRID_HEIGHT)
