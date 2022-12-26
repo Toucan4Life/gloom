@@ -121,12 +121,8 @@ class GloomhavenMap(hexagonal_grid):
 
         return distances, traps
     
-    def process_aoe(self,is_melee_aoe:bool) -> tuple[list[tuple[int, int, int]], list[list[tuple[int, int, int]]]]:
-        aoe_pattern_list: list[list[tuple[int, int, int]]] = []
+    def process_aoe(self) -> list[list[tuple[int, int, int]]]:
         aoe: list[tuple[int, int, int]] = []
-
-        if is_melee_aoe:
-            return [get_offset(self.monster.aoe_center(), location, self.monster.aoe_height) for location in range(self.monster.aoe_size) if self.monster.aoe[location]], []
 
         # precalculate aoe patterns to remove degenerate cases
         aoe = [get_offset(self.monster.aoe.index(True), location, self.monster.aoe_height)
@@ -144,11 +140,9 @@ class GloomhavenMap(hexagonal_grid):
                             for aoe_offset in aoe]
                 aoe_pattern_set.add(tuple(aoe_hexes))
 
-        aoe_pattern_list = [    [get_offset(PRECALC_GRID_CENTER, location, PRECALC_GRID_HEIGHT)
+        return [[get_offset(PRECALC_GRID_CENTER, location, PRECALC_GRID_HEIGHT)
                                 for location in aoe]
                             for aoe in aoe_pattern_set]
-
-        return aoe, aoe_pattern_list
 
     def print(self):
         print_map(self.map_width, self.map_height, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in range( self.map_size ) ] )

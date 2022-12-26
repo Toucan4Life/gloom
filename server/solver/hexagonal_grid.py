@@ -130,10 +130,6 @@ class hexagonal_grid:
         distances = self.find_proximity_distances(location_a)
         return distances[location_b] == 1
 
-    def apply_rotated_aoe_offset(self, center: int, offset: tuple[int, int, int], rotation: int) -> int:
-        offset = rotate_offset(offset, rotation)
-        return apply_offset(center, offset, self.map_height, self.map_size)
-
     def apply_aoe_offset(self, center: int, offset: tuple[int, int, int]):
         return apply_offset(center, offset, self.map_height, self.map_size)
 
