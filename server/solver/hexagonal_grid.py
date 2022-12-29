@@ -588,13 +588,15 @@ class hexagonal_grid:
                     continue
 
                 neighbor_distance = distance + 1
-                if neighbor_distance -1 > range :                    
+                if neighbor_distance -1 > range :
+                    distances = [distance[0] for distance in enumerate(distances) if 0 < distance[1] <= range]                  
                     self.path_cache_with_range[0][cache_key] = distances
                     return distances
                 elif neighbor_distance < distances[neighbor]:
                     frontier.append(neighbor)
                     distances[neighbor] = neighbor_distance
 
+        distances = [distance[0] for distance in enumerate(distances) if 0 < distance[1] <= range]
         self.path_cache_with_range[0][cache_key] = distances
         return distances
 

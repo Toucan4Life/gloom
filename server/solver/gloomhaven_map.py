@@ -144,6 +144,62 @@ class GloomhavenMap(hexagonal_grid):
                                 for location in aoe]
                             for aoe in aoe_pattern_set]
 
+    def get_aoe_pattern_list_for_characters(self, characters:list[int])->set[frozenset[int]]:
+                                        
+        new_var = [[location_offset for aoe_offset in aoe_pattern_list if (location_offset:=self.apply_aoe_offset(character, aoe_offset))!=-1]
+                                        for aoe_pattern_list in self.process_aoe()
+                                        for character in characters]
+                             
+        return {frozenset(y) for y in new_var }
+
+    def get_aoe_pattern_list_with_fixed_pattern(self, characters:list[int], monster:Monster)->list[tuple[int, frozenset[int]]]:
+
+        self.monster.aoe[24]=True#center of aoe for fixed pattern
+        index_of_center=sum(monster.aoe[:24])
+                                        
+        aoe_pattern_list = [[location_offset for aoe_offset in aoe_pattern_list if (location_offset:=self.apply_aoe_offset(character, aoe_offset))!=-1]
+                                        for aoe_pattern_list in self.process_aoe()
+                                        for character in characters]
+        return [(aoe_pattern[index_of_center],frozenset(set(aoe_pattern)-{aoe_pattern[index_of_center]}) ) for aoe_pattern in aoe_pattern_list]
+
+    def find_attackable_location_for_focus(self, travel_distances: list[int], characters: list[int], monster:Monster, RULE_VERTEX_LOS: bool):
+        return [ (character,location) for character in characters
+                        for location in self.find_proximity_distances_within_range(character,monster.attack_range() + monster.aoe_reach()-monster.is_melee_aoe())                      
+                        if  travel_distances[location] != MAX_VALUE and
+                            self.can_end_move_on(location) and
+                            self.test_los_between_locations(character, location, RULE_VERTEX_LOS)]
+
+    def find_attackable_location_for_characters(self, travel_distances: list[int], RULE_VERTEX_LOS: bool)-> list[tuple[int, frozenset[int], frozenset[int], frozenset[int]]]:
+        char_in_reachdict:dict[int,set[int]] = collections.defaultdict(set)
+        aoe_in_reachdict:dict[int,set[frozenset[int]]] = collections.defaultdict(set)
+        characters = self.get_characters()
+        if (not self.monster.is_aoe() or self.monster.action_target > 1):
+            [char_in_reachdict[location].add(character) for character in characters
+                                                for location in self.find_proximity_distances_within_range(character,self.monster.attack_range())
+                                                if  travel_distances[location] != MAX_VALUE
+                                                    and self.can_end_move_on(location)
+                                                    and self.test_los_between_locations(character, location, RULE_VERTEX_LOS)]
+        if (not self.monster.is_aoe()):
+            return list({(location,frozenset(),frozenset(),frozenset(char_in_reachdict[location])) for location in char_in_reachdict.keys()})        
+
+        if(self.monster.is_melee_aoe()):
+            [aoe_in_reachdict[location].add(aoe_pattern) for location,aoe_pattern in self.get_aoe_pattern_list_with_fixed_pattern(characters, self.monster)]
+
+        elif(self.monster.is_aoe()):
+            [ aoe_in_reachdict[location].add(aoe_pattern)
+                for aoe_pattern in self.get_aoe_pattern_list_for_characters(characters)
+                for aoe_hex in aoe_pattern
+                if self.can_target(aoe_hex)
+                for location in self.find_proximity_distances_within_range(aoe_hex,self.monster.attack_range())]
+        
+        return list({(location,
+                    frozenset({ target for target in aoe_pattern if target in characters and self.test_los_between_locations(target, location, RULE_VERTEX_LOS)}),
+                    frozenset(aoe_pattern),
+                    frozenset(char_in_reachdict[location]-{ target for target in aoe_pattern if target in characters and self.test_los_between_locations(target, location, RULE_VERTEX_LOS)}))
+                        for location in aoe_in_reachdict.keys()
+                        for aoe_pattern in (aoe_in_reachdict[location])
+                        if travel_distances[location] != MAX_VALUE and self.can_end_move_on(location)})
+
     def print(self):
         print_map(self.map_width, self.map_height, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in range( self.map_size ) ] )
 
