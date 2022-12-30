@@ -64,24 +64,21 @@ class Solver:
 
         solution: list[tuple[int, int,list[int], frozenset[int], list[int],  set[tuple[tuple[float, float], tuple[float, float]]]]] = []
 
-        solution = [(
-                focus,
-                solution_for_focus[2],
-                [solution_for_focus[2]] if travel_distances[solution_for_focus[2]] <= monster.action_move and monster.has_attack()else self.move_closer_to_destinations(travel_distances, trap_counts, solution_for_focus[2],monster),
-                solution_for_focus[1] if travel_distances[solution_for_focus[2]] <= monster.action_move and monster.has_attack() else frozenset(),
-                solution_for_focus[0] if travel_distances[solution_for_focus[2]] <= monster.action_move and monster.has_attack() else [],
-                {self.map.find_shortest_sightline(solution_for_focus[2], attack, self.RULE_VERTEX_LOS) for attack in solution_for_focus[1]} if travel_distances[solution_for_focus[2]] <= monster.action_move and monster.has_attack() else set()
-                ) for focus in focuses for solution_for_focus in self.solve_for_focus(focus, travel_distances, focus_ranks, monster, trap_counts, character_location)] # players choose among focus ties     
+        solution = [(focus, solution_for_focus[2], [solution_for_focus[2]], solution_for_focus[1], solution_for_focus[0],{self.map.find_shortest_sightline(solution_for_focus[2], attack, self.RULE_VERTEX_LOS) for attack in solution_for_focus[1]})
+                    if travel_distances[solution_for_focus[2]] <= monster.action_move and monster.has_attack()
+                    else (focus,solution_for_focus[2], self.move_closer_to_destinations(travel_distances, trap_counts, solution_for_focus[2],monster),frozenset(),[],set())
+                    for focus in focuses for solution_for_focus in self.solve_for_focus(focus, travel_distances, focus_ranks, monster, trap_counts, character_location,len(characters))]
+                    # players choose among focus ties     
 
         if self.logging:
             self.print_solution(active_monster, solution)
 
         return solution
 
-    def solve_for_focus(self, focus: int, travel_distances: list[int], focus_ranks :dict[int,int], monster : Monster, trap_counts: list[int], character_location: list[tuple[int, frozenset[int], frozenset[int], frozenset[int]]]) -> list[tuple[list[int], frozenset[int], int]]:
+    def solve_for_focus(self, focus: int, travel_distances: list[int], focus_ranks :dict[int,int], monster : Monster, trap_counts: list[int], character_location: list[tuple[int, frozenset[int], frozenset[int], frozenset[int]]],number_of_character:int) -> list[tuple[list[int], frozenset[int], int]]:
         locations = self.best_location_to_attack_focus(focus,travel_distances,monster,trap_counts, character_location)
 
-        locations = self.find_all_locations_to_attack_best_target_group(travel_distances, focus_ranks, locations)
+        locations = self.find_all_locations_to_attack_best_target_group(travel_distances, focus_ranks, locations,number_of_character)
            
         return self.find_best_locations_to_attack_best_target_group(travel_distances, monster, locations)
         
@@ -94,20 +91,16 @@ class Solver:
         max_non_aoe_target = monster.max_potential_non_aoe_targets()
 
         return [(aoe_hexes,
-                    frozenset(aoe_targets.union(tup)),
+                    frozenset(targetable_char),
                     location,
-                    len(aoe_targets)+min(max_non_aoe_target, len(non_aoe_targets))
-                    )
+                    len(aoe_targets)+min(max_non_aoe_target, len(non_aoe_targets))                    )
                     for location,aoe_targets, aoe_hexes, non_aoe_targets in character_location
-                    if location in locations
-                    if (max_non_aoe_target != 0 and focus in non_aoe_targets) or focus in aoe_targets
+                    if location in locations and ((max_non_aoe_target != 0 and focus in non_aoe_targets) or focus in aoe_targets)
                     for tup in itertools.combinations(non_aoe_targets, min(max_non_aoe_target, len(non_aoe_targets)))
-                    if focus in aoe_targets.union(tup)
-                    ]
+                    if focus in (targetable_char:=aoe_targets.union(tup))                    ]
 
-    def find_all_locations_to_attack_best_target_group(self, travel_distances: list[int], focus_ranks: dict[int, int], targets_properties: list[tuple[frozenset[int], frozenset[int], int, int]])-> list[tuple[frozenset[int], frozenset[int], int, int]]:
-        
-        best_groups:set[frozenset[int]] = {grp[1] for grp in self.find_minimums_values(targets_properties,lambda x: self.calculate_aoe_score(travel_distances, x, focus_ranks))}
+    def find_all_locations_to_attack_best_target_group(self, travel_distances: list[int], focus_ranks: dict[int, int], targets_properties: list[tuple[frozenset[int], frozenset[int], int, int]],number_of_character:int)-> list[tuple[frozenset[int], frozenset[int], int, int]]:        
+        best_groups:set[frozenset[int]] = {grp[1] for grp in self.find_minimums_values(targets_properties,lambda x: self.calculate_aoe_score(travel_distances, x, focus_ranks, number_of_character))}
         return [dest for dest in targets_properties if dest[1] in best_groups]
   
     def print_solution(self, active_monster:int, solution: list[tuple[ int, int,list[int], frozenset[int], list[int], set[tuple[tuple[float, float], tuple[float, float]]]]]):
@@ -193,8 +186,8 @@ class Solver:
 
         return this_destination
 
-    def calculate_aoe_score(self, travel_distances:list[int], dest: tuple[frozenset[int], frozenset[int], int, int], focus_ranks:dict[int,int]):
-        targets_of_rank = [0] * (max(focus_ranks.values()) + 1)
+    def calculate_aoe_score(self, travel_distances:list[int], dest: tuple[frozenset[int], frozenset[int], int, int], focus_ranks:dict[int,int], number_of_character:int):
+        targets_of_rank = [0] * number_of_character
         for target in dest[1]:
             targets_of_rank[focus_ranks[target]] -= 1
         # best_groupss = (

@@ -192,13 +192,14 @@ class GloomhavenMap(hexagonal_grid):
                 if self.can_target(aoe_hex)
                 for location in self.find_proximity_distances_within_range(aoe_hex,self.monster.attack_range())]
         
-        return list({(location,
-                    frozenset({ target for target in aoe_pattern if target in characters and self.test_los_between_locations(target, location, RULE_VERTEX_LOS)}),
-                    frozenset(aoe_pattern),
-                    frozenset(char_in_reachdict[location]-{ target for target in aoe_pattern if target in characters and self.test_los_between_locations(target, location, RULE_VERTEX_LOS)}))
+        return list({self.get_attack_target(location, aoe_pattern,characters,RULE_VERTEX_LOS, char_in_reachdict)
                         for location in aoe_in_reachdict.keys()
                         for aoe_pattern in (aoe_in_reachdict[location])
                         if travel_distances[location] != MAX_VALUE and self.can_end_move_on(location)})
+
+    def get_attack_target(self, location:int, aoe_pattern: frozenset[int], characters:list[int],RULE_VERTEX_LOS:bool,char_in_reachdict: collections.defaultdict[int, set[int]]):
+        aoe_targets = { target for target in aoe_pattern if target in characters and self.test_los_between_locations(target, location, RULE_VERTEX_LOS)}
+        return (location, frozenset(aoe_targets), frozenset(aoe_pattern), frozenset(char_in_reachdict[location]-aoe_targets))
 
     def print(self):
         print_map(self.map_width, self.map_height, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in range( self.map_size ) ] )

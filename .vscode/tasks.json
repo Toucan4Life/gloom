@@ -11,7 +11,7 @@
             "args": [
                 "-m",
                 "pytest",
-                "${workspaceRoot}/server/tests/test_Gloomhaven.py"
+                "${workspaceRoot}/server/tests/test_JOTL.py"
             ],
             "options": {
                 "env": {

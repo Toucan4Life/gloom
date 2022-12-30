@@ -194,10 +194,8 @@ class hexagonal_grid:
     def test_line(self, bounds: tuple[int, int, int, int], vertex_position_a: tuple[float, float], vertex_position_b: tuple[float, float]) -> bool:
         if vertex_position_a == vertex_position_b:
             return True
-        for occluder in self.occluders_in(bounds):
-            if line_line_intersection((vertex_position_a, vertex_position_b), occluder):
-                return False
-        return True
+
+        return all((not line_line_intersection((vertex_position_a, vertex_position_b), occluder) for occluder in self.occluders_in(bounds)))
 
     def determine_los_cross_section_edge(self, location_a: int, location_b: int) -> int:
         hex_to_hex_direction = direction(
@@ -486,22 +484,13 @@ class hexagonal_grid:
         return result
 
     def test_vertex_los_between_locations(self, location_a: int, location_b: int) -> bool:
-        bounds = self.calculate_bounds(location_a, location_b)
+        bounds = self.calculate_bounds(location_a, location_b)        
 
-        for vertex_a in range(6):
-            if self.vertex_at_wall(location_a, vertex_a):
-                continue
-            vertex_position_a = self.get_vertex(location_a, vertex_a)
-
-            for vertex_b in range(6):
-                if self.vertex_at_wall(location_b, vertex_b):
-                    continue
-                vertex_position_b = self.get_vertex(location_b, vertex_b)
-
-                if self.test_line(bounds, vertex_position_a, vertex_position_b):
-                    return True
-
-        return False
+        return any((self.test_line(bounds, self.get_vertex(location_a, vertex_a), self.get_vertex(location_b, vertex_b))
+                    for vertex_a in range(6) for vertex_b in range(6)
+                    if not self.vertex_at_wall(location_b, vertex_b)
+                    and not self.vertex_at_wall(location_a, vertex_a)))
+        
 
     def find_shortest_sightline(self, location_a: int, location_b: int, rule_vertex_los:bool) -> tuple[tuple[float, float], tuple[float, float]]:
         if not rule_vertex_los:
