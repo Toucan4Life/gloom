@@ -1,5 +1,5 @@
 import textwrap
-import itertools
+
 from functools import partial
 from typing import Callable
 from typing import Any
@@ -54,9 +54,7 @@ class Solver:
 
         proximity_distances = self.map.find_proximity_distances(active_monster)
 
-        character_location = self.map.find_attackable_location_for_characters( travel_distances, self.RULE_VERTEX_LOS)
-
-        focuses, focus_ranks = self.find_focus(travel_distances, trap_counts, characters,proximity_distances,[(y,char_loc[0]) for char_loc in character_location for y in char_loc[1].union(char_loc[3])],monster)
+        focuses, focus_ranks = self.find_focus(travel_distances, trap_counts, characters,proximity_distances,self.map.get_all_location_attackable_char(self.RULE_VERTEX_LOS),monster)
 
         # if we find no actions, stand still
         if not focuses:
@@ -67,16 +65,16 @@ class Solver:
         solution = [(focus, solution_for_focus[2], [solution_for_focus[2]], solution_for_focus[1], solution_for_focus[0],{self.map.find_shortest_sightline(solution_for_focus[2], attack, self.RULE_VERTEX_LOS) for attack in solution_for_focus[1]})
                     if travel_distances[solution_for_focus[2]] <= monster.action_move and monster.has_attack()
                     else (focus,solution_for_focus[2], self.move_closer_to_destinations(travel_distances, trap_counts, solution_for_focus[2],monster),frozenset(),[],set())
-                    for focus in focuses for solution_for_focus in self.solve_for_focus(focus, travel_distances, focus_ranks, monster, trap_counts, character_location,len(characters))]
-                    # players choose among focus ties     
+                    for focus in focuses for solution_for_focus in self.solve_for_focus(focus, travel_distances, focus_ranks, monster, trap_counts,len(characters))]
+                    # players choose among focus ties
 
         if self.logging:
             self.print_solution(active_monster, solution)
 
         return solution
 
-    def solve_for_focus(self, focus: int, travel_distances: list[int], focus_ranks :dict[int,int], monster : Monster, trap_counts: list[int], character_location: list[tuple[int, frozenset[int], frozenset[int], frozenset[int]]],number_of_character:int) -> list[tuple[list[int], frozenset[int], int]]:
-        locations = self.best_location_to_attack_focus(focus,travel_distances,monster,trap_counts, character_location)
+    def solve_for_focus(self, focus: int, travel_distances: list[int], focus_ranks :dict[int,int], monster : Monster, trap_counts: list[int],number_of_character:int) -> list[tuple[list[int], frozenset[int], int]]:
+        locations = self.best_location_to_attack_focus(focus,travel_distances,monster,trap_counts,)
 
         locations = self.find_all_locations_to_attack_best_target_group(travel_distances, focus_ranks, locations,number_of_character)
            
@@ -85,19 +83,13 @@ class Solver:
     def find_best_locations_to_attack_best_target_group(self, travel_distances: list[int], monster: Monster, locations: list[tuple[frozenset[int], frozenset[int], int, int]]):
         return self.find_minimums_values(locations, lambda x: self.calculate_destination_score(travel_distances,x,monster))
 
-    def best_location_to_attack_focus(self, focus: int, travel_distances: list[int],  monster : Monster, trap_counts: list[int], character_location: list[tuple[int, frozenset[int], frozenset[int], frozenset[int]]]):
+    def best_location_to_attack_focus(self, focus: int, travel_distances: list[int],  monster : Monster, trap_counts: list[int]):
 
-        locations:set[int] = set(self.find_minimums_values([char_loc[0] for char_loc in character_location if focus in char_loc[1].union(char_loc[3])], partial(self.calculate_location_score, travel_distances, trap_counts, focus,monster)))
-        max_non_aoe_target = monster.max_potential_non_aoe_targets()
+        locations:set[int] = set(self.find_minimums_values([loc_chars[0] for loc_chars in self.map.get_all_attackable_char_by_location(self.RULE_VERTEX_LOS) if focus in loc_chars[1]], partial(self.calculate_location_score, travel_distances, trap_counts, focus,monster)))
 
-        return [(aoe_hexes,
-                    frozenset(targetable_char),
-                    location,
-                    len(aoe_targets)+min(max_non_aoe_target, len(non_aoe_targets))                    )
-                    for location,aoe_targets, aoe_hexes, non_aoe_targets in character_location
-                    if location in locations and ((max_non_aoe_target != 0 and focus in non_aoe_targets) or focus in aoe_targets)
-                    for tup in itertools.combinations(non_aoe_targets, min(max_non_aoe_target, len(non_aoe_targets)))
-                    if focus in (targetable_char:=aoe_targets.union(tup))                    ]
+        return [x for location in locations
+                  for x in self.map.get_all_attackable_char_combination_for_a_location(location, self.RULE_VERTEX_LOS)
+                  if focus in x[1]]
 
     def find_all_locations_to_attack_best_target_group(self, travel_distances: list[int], focus_ranks: dict[int, int], targets_properties: list[tuple[frozenset[int], frozenset[int], int, int]],number_of_character:int)-> list[tuple[frozenset[int], frozenset[int], int, int]]:        
         best_groups:set[frozenset[int]] = {grp[1] for grp in self.find_minimums_values(targets_properties,lambda x: self.calculate_aoe_score(travel_distances, x, focus_ranks, number_of_character))}
