@@ -19,7 +19,7 @@ def map_solution(info: list[tuple[int,int,list[int],tuple[int] | tuple[()],list[
             for act in iinf[2]:
                 destdict[(act,)+tuple(sorted(iinf[3]))].update({iinf[0]})
                 focusdict[(act,)+tuple(sorted(iinf[3]))].update({iinf[1]})
-                aoedict[(act,)+tuple(sorted(iinf[3]))].add(frozenset(iinf[4]))
+                aoedict[(act,)+tuple(sorted(iinf[3]))].update(iinf[4])
    
         solution = list({((act,)+tuple(sorted(iinf[3]))):
             (act,

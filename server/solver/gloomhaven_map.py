@@ -16,7 +16,7 @@ class GloomhavenMap(hexagonal_grid):
     #difficult terrain effects the last hex of a jump move
     Does_difficult_Terrain_Affect_Last_Hex_On_Jump:bool
     Valid_active_monster_attack_location:list[tuple[int, frozenset[int], frozenset[int], frozenset[int]]]
-    Valid_active_monster_attack_target_for_location:dict[int,list[tuple[frozenset[int], frozenset[int], int, int]]] 
+    Valid_active_monster_attack_target_for_location:dict[int,list[tuple[frozenset[int], frozenset[int], int]]] 
     def __init__(self, width: int, height: int, monster:Monster,figures: list[str],contents: list[str], initiatives: list[int],walls:list[list[bool]],rule:Rule):
         self.monster=monster
         self.figures = figures
@@ -211,12 +211,12 @@ class GloomhavenMap(hexagonal_grid):
         aoe_targets = { target for target in aoe_pattern if target in characters and self.test_los_between_locations(target, location, RULE_VERTEX_LOS)}
         return (location, frozenset(aoe_targets), frozenset(aoe_pattern), frozenset(char_in_reachdict[location]-aoe_targets))
 
-    def get_all_location_attackable_char(self, RULE_VERTEX_LOS:bool)->list[tuple[int, int]]:
+    def get_all_location_attackable_char(self, RULE_VERTEX_LOS:bool)->set[tuple[int, int]]:
         character_location=self.find_attackable_location_for_characters(RULE_VERTEX_LOS)
-        return [(y,char_loc[0]) for char_loc in character_location for y in char_loc[1].union(char_loc[3])]
+        return {(y,char_loc[0]) for char_loc in character_location for y in char_loc[1].union(char_loc[3])}
     
     def get_all_attackable_char_by_location(self,RULE_VERTEX_LOS:bool):
-        return [(char_loc[0],char_loc[1].union(char_loc[3]))for char_loc in self.find_attackable_location_for_characters(RULE_VERTEX_LOS)]
+        return {(char_loc[0],char_loc[1].union(char_loc[3]))for char_loc in self.find_attackable_location_for_characters(RULE_VERTEX_LOS)}
 
     def get_all_attackable_char_combination_for_a_location(self, loc: int,RULE_VERTEX_LOS:bool):
         if loc in self.Valid_active_monster_attack_target_for_location:
@@ -226,8 +226,7 @@ class GloomhavenMap(hexagonal_grid):
 
         p = [(aoe_hexes,
                     frozenset(aoe_targets.union(tup)),
-                    location,
-                    len(aoe_targets)+min(max_non_aoe_target, len(non_aoe_targets)))
+                    location)
                     for location,aoe_targets, aoe_hexes, non_aoe_targets in self.find_attackable_location_for_characters(RULE_VERTEX_LOS)
                     if location == loc
                     for tup in itertools.combinations(non_aoe_targets, min(max_non_aoe_target, len(non_aoe_targets)))]
@@ -235,6 +234,18 @@ class GloomhavenMap(hexagonal_grid):
         self.Valid_active_monster_attack_target_for_location[loc]=p
         
         return p
+
+    def get_all_attackable_char_combination_for_a_location2(self, locations: set[int],RULE_VERTEX_LOS:bool):
+        locations_for_groups :dict[frozenset[int],set[int]] = collections.defaultdict(set)
+
+        max_non_aoe_target = self.monster.max_potential_non_aoe_targets()
+
+        [locations_for_groups[frozenset(aoe_targets.union(tup))].add(location)
+                    for location,aoe_targets, _, non_aoe_targets in self.find_attackable_location_for_characters(RULE_VERTEX_LOS)
+                    if location in locations
+                    for tup in itertools.combinations(non_aoe_targets, min(max_non_aoe_target, len(non_aoe_targets)))]
+                            
+        return locations_for_groups
 
     def print(self):
         print_map(self.map_width, self.map_height, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in range( self.map_size ) ] )
