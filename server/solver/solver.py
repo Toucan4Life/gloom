@@ -29,7 +29,7 @@ class Solver:
         #proximity is ignored when determining monster focus
         self.RULE_PROXIMITY_FOCUS = rule == Rule.Jotl
 
-    def calculate_monster_move(self) -> list[tuple[int, int, list[int], frozenset[int], list[int], set[tuple[tuple[float, float], tuple[float, float]]]]]:
+    def calculate_monster_move(self) -> list[tuple[int, int,list[int], list[int], frozenset[frozenset[int]], set[tuple[tuple[float, float], tuple[float, float]]]]]:
 
         monster = self.map.get_active_monster()
         if self.logging:
@@ -48,7 +48,7 @@ class Solver:
         characters = self.map.get_characters()
 
         if not characters:
-            return [(active_monster, -1, [], frozenset(), [], set())]
+            return [(active_monster, -1, [], [], frozenset(), set())]
 
         travel_distances, trap_counts = self.map.find_path_distances(active_monster)
 
@@ -58,7 +58,7 @@ class Solver:
 
         # if we find no actions, stand still
         if not focuses:
-            return [(active_monster, -1, [], frozenset(), [], set())]
+            return [(active_monster, -1, [], [], frozenset(), set())]
 
         solution: list[tuple[int, int,list[int], list[int], frozenset[frozenset[int]], set[tuple[tuple[float, float], tuple[float, float]]]]] = []
 
@@ -92,7 +92,7 @@ class Solver:
         targets_prop2=[ x for x in self.map.get_all_attackable_char_combination_for_a_location2(locations, self.RULE_VERTEX_LOS).items() if focus in x[0]]
         return self.find_minimums_values(targets_prop2,lambda x: self.calculate_aoe_score(travel_distances, x, focus_ranks, number_of_character))
         
-    def print_solution(self, active_monster:int, solution: list[tuple[ int, int,list[int], frozenset[int], list[int], set[tuple[tuple[float, float], tuple[float, float]]]]]):
+    def print_solution(self, active_monster:int, solution: list[tuple[int, int,list[int], list[int], frozenset[frozenset[int]], set[tuple[tuple[float, float], tuple[float, float]]]]]):
         map_debug_tags = [' '] * self.map.map_size
         self.map.figures[active_monster] = ' '
         map_debug_tags[active_monster] = 's'
