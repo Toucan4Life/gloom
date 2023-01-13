@@ -102,7 +102,7 @@ def solve():
         {
             'move': raw_action[0],
             'attacks': list(raw_action[1]),
-            'aoe': list(list(raw_action[2])[0]),
+            'aoe': list(list(raw_action[2])[0])if len(list(raw_action[2]))>0 else list(),
             'destinations': list(raw_action[6]),
             'focuses': list(raw_action[3]),
             'sightlines': list(raw_action[4]),
