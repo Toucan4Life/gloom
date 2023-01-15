@@ -218,7 +218,7 @@ class GloomhavenMap(hexagonal_grid):
     def get_all_attackable_char_by_location(self,RULE_VERTEX_LOS:bool):
         return {(char_loc[0],char_loc[1].union(char_loc[3]))for char_loc in self.find_attackable_location_for_characters(RULE_VERTEX_LOS)}
 
-    def get_all_attackable_char_combination_for_a_location(self, loc: int,RULE_VERTEX_LOS:bool):
+    def get_all_attackable_char_combination_for_a_location(self, loc: int,RULE_VERTEX_LOS:bool)->list[tuple[frozenset[int], frozenset[int], int]]:
         if loc in self.Valid_active_monster_attack_target_for_location:
             return self.Valid_active_monster_attack_target_for_location[loc]
 
