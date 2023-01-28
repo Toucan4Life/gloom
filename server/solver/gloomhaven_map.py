@@ -247,6 +247,15 @@ class GloomhavenMap(hexagonal_grid):
                             
         return locations_for_groups
 
+    def are_location_at_disadvantage(self, locationA:int, locationB:int)-> bool:
+        return self.monster.is_susceptible_to_disavantage() and self.is_adjacent(locationB, locationA)
+
+    def can_monster_reach(self, travel_distances:list[int], dest:int):
+        return travel_distances[dest] <= self.monster.action_move
+
+    def does_monster_attack(self):
+        return self.monster.has_attack()
+
     def print(self):
         print_map(self.map_width, self.map_height, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in range( self.map_size ) ] )
 
