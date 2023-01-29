@@ -1,5 +1,4 @@
 import textwrap
-from functools import partial
 from typing import Callable
 from typing import Any
 from solver.rule import Rule
@@ -86,8 +85,8 @@ class Solver:
         loc = [(dest[0],d) for dest in groups for d in dest[1]]
         
         location_criteria : list[Callable[[tuple[frozenset[int], int]], int]] = [
-                            lambda loc: sum(((self.map.are_location_at_disadvantage(target, loc[1])) for target in loc[0])),
-                            lambda loc: travel_distances[loc[1]]]
+                            lambda loc: sum(((self.map.are_location_at_disadvantage(target, loc[1])) for target in loc[0])),#total_targets_at_disadvantage
+                            lambda loc: travel_distances[loc[1]]] #travel_distance_to_location
 
         return self.find_minimums_values(loc, location_criteria)
 
@@ -213,10 +212,10 @@ class Solver:
                 evaluation = func(candidate)
                 if (current_score[j]<evaluation):
                     break
-                elif(current_score[j]==evaluation):
+                if(current_score[j]==evaluation):
                     if(j==num_function-1):
                         best_iterable.append(candidate)
-                elif(current_score[j]>evaluation):
+                else:
                     current_score[j]=evaluation
                     if(j<num_function-1):
                         current_score[j+1:num_function]=[score_functions[z](candidate) for z in range(j+1,num_function)]
