@@ -38,18 +38,16 @@ class Solver:
             if self.message:
                 print(textwrap.fill(self.message, 82))
 
-        #self.map.print_custom_map(bottom_label=trap_counts)
-
         active_monster = self.map.get_active_monster_location()
     
         characters = self.map.get_characters()
 
+        # if we find no actions or characters, stand still
         if not characters:
             return [(active_monster, -1, [], [], frozenset(), set())]
 
         character_location = list(self.map.get_all_location_attackable_char(self.RULE_VERTEX_LOS))
 
-        # if we find no actions, stand still
         if not character_location:
             return [(active_monster, -1, [], [], frozenset(), set())]
         
@@ -61,13 +59,11 @@ class Solver:
 
         focus_ranks = self.find_secondary_focus(characters, proximity_distances)
 
-        solution: list[tuple[int, int,list[int], list[int], frozenset[frozenset[int]], set[tuple[tuple[float, float], tuple[float, float]]]]] = []
-
-        solution = [(focus, location, [location], list(target), frozenset(y[0] for y in self.map.get_all_attackable_char_combination_for_a_location(location, self.RULE_VERTEX_LOS) if y[1]==target),{self.map.find_shortest_sightline(location, attack, self.RULE_VERTEX_LOS) for attack in target})
+        solution : list[tuple[int, int,list[int], list[int], frozenset[frozenset[int]], set[tuple[tuple[float, float], tuple[float, float]]]]] = [
+                    (focus, location, [location], list(target), frozenset(y[0] for y in self.map.get_all_attackable_char_combination_for_a_location(location, self.RULE_VERTEX_LOS) if y[1]==target),{self.map.find_shortest_sightline(location, attack, self.RULE_VERTEX_LOS) for attack in target})
                     if self.map.can_monster_reach(travel_distances, location) and self.map.does_monster_attack()
                     else (focus,location, self.move_closer_to_destinations(travel_distances, trap_counts, location),[],frozenset(),set())
                     for focus in focuses for target,location in self.solve_for_focus(focus, travel_distances, focus_ranks, trap_counts,len(characters))]
-                    # players choose among focus ties
 
         if self.logging:
             self.print_solution(active_monster, solution)
