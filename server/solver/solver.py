@@ -84,16 +84,89 @@ class Solver:
         
     def find_best_locations_to_attack_best_target_group(self, travel_distances: list[int], groups: list[tuple[frozenset[int], set[int]]])-> list[tuple[frozenset[int], int]]:
         loc = [(dest[0],d) for dest in groups for d in dest[1]]
-        return self.find_minimums_values(loc, lambda x: self.calculate_destination_score(travel_distances,x))
+        
+        location_criteria : list[Callable[[tuple[frozenset[int], int]], int]] = [
+                            lambda loc: sum(((self.map.are_location_at_disadvantage(target, loc[1])) for target in loc[0])),
+                            lambda loc: travel_distances[loc[1]]]
+
+        return self.find_minimums_values(loc, location_criteria)
 
     def best_location_to_attack_focus(self, focus: int, travel_distances: list[int], trap_counts: list[int])->set[int]:
         locations_characters=[loc_chars[0] for loc_chars in self.map.get_all_attackable_char_by_location(self.RULE_VERTEX_LOS) if focus in loc_chars[1]]
-        return set(self.find_minimums_values(locations_characters, partial(self.calculate_location_score, travel_distances, trap_counts, focus)))
+
+        location_criteria : list[Callable[[int], int]] = [
+                            lambda loc : trap_counts[loc], #trap_to_attack_location
+                            lambda loc : -int(self.map.can_monster_reach(travel_distances, loc)), #can_reach_attack_location
+                            lambda loc : int(self.map.are_location_at_disadvantage(focus, loc))] #is_disadvantage_against_focus
+
+        return set(self.find_minimums_values(locations_characters, location_criteria))
   
     def find_all_locations_to_attack_best_target_group(self, travel_distances: list[int], focus_ranks: dict[int, int], locations: set[int],number_of_character:int,focus:int)-> list[tuple[frozenset[int], set[int]]]:
-        targets_prop2=[ x for x in self.map.get_all_attackable_char_combination_for_a_location2(locations, self.RULE_VERTEX_LOS).items() if focus in x[0]]
-        return self.find_minimums_values(targets_prop2,lambda x: self.calculate_aoe_score(travel_distances, x, focus_ranks, number_of_character))
-        
+        def target_count_for_each_focus_rank(number_of_character:int, focus_ranks:dict[int,int], dest:tuple[frozenset[int], set[int]]) -> tuple[int]:
+            targets_of_rank = [0] * number_of_character
+            for target in dest[0]:
+                targets_of_rank[focus_ranks[target]] -= 1
+            return tuple(targets_of_rank)
+         
+        group = [x for x in self.map.get_all_attackable_char_combination_for_a_location2(locations, self.RULE_VERTEX_LOS).items() if focus in x[0]]
+
+        group_criteria : list[Callable[[tuple[frozenset[int], set[int]]], int | tuple[int]]] = [
+                        lambda group : -len(group[0]), #total_number_of_target
+                        lambda group : min((travel_distances[loc] for loc in group[1])), #path_length_to_the_attack_location
+                        lambda group : target_count_for_each_focus_rank(number_of_character, focus_ranks, group)]
+
+        return self.find_minimums_values(group,group_criteria)
+
+    def move_closer_to_destinations(self, travel_distances: list[int], trap_counts: list[int], destination: int)->list[int]:
+        distance_to_destination, traps_to_destination = self.map.find_path_distances_reverse(destination)
+
+        locations = [location for location in range(self.map.map_size)
+                            if self.map.can_monster_reach(travel_distances,location) and
+                            self.map.can_end_move_on(location)]
+
+        location_criteria: list[Callable[[int], int | tuple[int]]] = [
+                            lambda location : traps_to_destination[location] + trap_counts[location], #traps_along_path
+                            lambda location : distance_to_destination[location], #distance_to_destination
+                            lambda location : travel_distances[location]] #ravel_distances
+
+        return self.find_minimums_values(locations,location_criteria)
+
+    def find_focus(self,travel_distances: list[int], trap_counts: list[int], proximity_distances: list[int], character_location: list[tuple[int, int]]) -> set[int]:
+        focus_criteria : list[Callable[[tuple[int, int]], int | tuple[int]]] = [
+                        lambda char_loc : trap_counts[char_loc[1]], #trap_count_to_location
+                        lambda char_loc : travel_distances[char_loc[1]], #travel_distances_to_location
+                        lambda char_loc : 0 if self.RULE_PROXIMITY_FOCUS else proximity_distances[char_loc[0]], #proximity_distance_to_location
+                        lambda char_loc : self.map.get_character_initiative(char_loc[0])] #char_initiative
+
+        return {focus[0] for focus in self.find_minimums_values(character_location,focus_criteria)}
+
+    def find_secondary_focus(self, characters: list[int], proximity_distances: list[int]):
+        secondary_score = [self.calculate_secondary_focus_score(proximity_distances, character) for character in characters]
+        sorted_score = sorted({_[0] for _ in secondary_score})
+        focus_ranks = {y[1]: sorted_score.index(y[0]) for y in secondary_score}
+        return focus_ranks
+
+    def calculate_secondary_focus_score(self,proximity_distances:list[int], character:int):
+        return (proximity_distances[character], self.map.get_character_initiative(character)),character
+
+    def solve_reaches(self, viewpoints: list[int]) -> list[list[tuple[int, int]]]:
+        monster = self.map.get_active_monster()
+        return [self.map.solve_sight(_,1 if monster.action_range == 0 else monster.action_range, self.RULE_VERTEX_LOS) for _ in viewpoints] if  monster.action_target != 0 else []
+
+    def solve_sights(self, viewpoints: list[int]) -> list[list[tuple[int, int]]]:
+        sights = [self.map.solve_sight(_,MAX_VALUE, self.RULE_VERTEX_LOS) for _ in viewpoints]
+
+        if self.logging:
+            for sight in sights:
+                visible_locations = [False] * self.map.map_size
+                visible_locations[self.map.get_active_monster_location()] = True
+                for visible_range in sight:
+                    for location in range(*visible_range):
+                        visible_locations[location] = True
+                self.map.print_los_map(visible_locations)
+
+        return sights
+                
     def print_solution(self, active_monster:int, solution: list[tuple[int, int,list[int], list[int], frozenset[frozenset[int]], set[tuple[tuple[float, float], tuple[float, float]]]]]):
         map_debug_tags = [' '] * self.map.map_size
         self.map.figures[active_monster] = ' '
@@ -130,101 +203,24 @@ class Solver:
                 out += f', attack {attack}'
         print(out)
 
-    def find_minimums_values(self,iterable:list[Any],key:Callable[[Any],Any]):
-        score=[key(col) for col in iterable]
-        best_score=min(score)
-        return [iterable[i] for i,x in enumerate(score) if x == best_score]
+    def find_minimums_values(self,iterable:list[Any],score_functions:list[Callable[[Any],Any]]):
+        num_function = len(score_functions)
+        current_score=[MAX_VALUE]*num_function
+        best_iterable:list[Any]=[]
 
-    def move_closer_to_destinations(self, travel_distances: list[int], trap_counts: list[int], destination: int)->list[int]:
+        for _,candidate in enumerate(iterable):
+            for j,func in enumerate(score_functions):
+                evaluation = func(candidate)
+                if (current_score[j]<evaluation):
+                    break
+                elif(current_score[j]==evaluation):
+                    if(j==num_function-1):
+                        best_iterable.append(candidate)
+                elif(current_score[j]>evaluation):
+                    current_score[j]=evaluation
+                    if(j<num_function-1):
+                        current_score[j+1:num_function]=[score_functions[z](candidate) for z in range(j+1,num_function)]
+                    best_iterable=[candidate]
+                    break
 
-        distance_to_destination, traps_to_destination = self.map.find_path_distances_reverse(destination)
-
-        valid_locations = [location for location in range(self.map.map_size)
-                            if self.map.can_monster_reach(travel_distances,location) and
-                            self.map.can_end_move_on(location)]
-
-        return self.find_minimums_values(valid_locations,lambda x: self.calculate_location_score_for_movement(travel_distances, trap_counts, distance_to_destination, traps_to_destination, x))
-
-    def calculate_location_score_for_movement(self, travel_distances:list[int], trap_counts:list[int], distance_to_destination:list[int], traps_to_destination:list[int], location:int):
-        # traps to destination and along travel
-        # distance to destination
-        # travel distance
-        return (traps_to_destination[location] + trap_counts[location],
-                distance_to_destination[location],
-                travel_distances[location])
-
-    def calculate_location_score(self,travel_distances:list[int],trap_counts:list[int], focus:int, dest: int):
-        # best_groupss = (
-        #     MAX_VALUE - 1,  # traps to the attack location
-        #     0,             # can reach the attack location
-        #     1,             # disadvantage against the focus
-        #     0,             # total number of targets
-        #     MAX_VALUE - 1,  # path length to the attack location
-        # ) + tuple([0] * num_focus_ranks)  # target count for each focus rank
-        this_destination = (
-            trap_counts[dest],
-            -(self.map.can_monster_reach(travel_distances, dest)),
-            int(self.map.are_location_at_disadvantage(focus, dest))
-        )
-
-        return this_destination
-
-    def calculate_destination_score(self, travel_distances:list[int], dest:tuple[frozenset[int],int]):
-
-        this_destination = (
-                sum(((self.map.are_location_at_disadvantage(target, dest[1])) for target in dest[0])),
-                travel_distances[dest[1]])
-
-        return this_destination
-
-    def calculate_aoe_score(self, travel_distances:list[int], dest: tuple[frozenset[int], set[int]], focus_ranks:dict[int,int], number_of_character:int):
-        targets_of_rank = [0] * number_of_character
-        for target in dest[0]:
-            targets_of_rank[focus_ranks[target]] -= 1
-        # best_groupss = (
-        #     MAX_VALUE - 1,  # path length to the attack location
-        # ) + tuple([0] * num_focus_ranks)  # target count for each focus rank
-        this_group = (
-                -len(dest[0]),
-                min([travel_distances[loc] for loc in dest[1]]),
-                tuple(targets_of_rank))
-
-        return this_group
-    
-    def find_focus(self,travel_distances: list[int], trap_counts: list[int],proximity_distances: list[int],character_location: list[tuple[int, int]]) -> set[int]:
-
-        return {focus[0]
-                for focus in self.find_minimums_values(character_location,lambda x: self.calculate_focus_score(travel_distances, trap_counts, proximity_distances, x[0], x[1]))}
-
-    def find_secondary_focus(self, characters: list[int], proximity_distances: list[int]):
-        secondary_score = [self.calculate_secondary_focus_score(proximity_distances, character) for character in characters]
-        sorted_score = sorted({_[0] for _ in secondary_score})
-        focus_ranks = {y[1]: sorted_score.index(y[0]) for y in secondary_score}
-        return focus_ranks
-
-    def calculate_secondary_focus_score(self,proximity_distances:list[int], character:int):
-        return (proximity_distances[character], self.map.get_character_initiative(character)),character
-
-    def calculate_focus_score(self, travel_distances:list[int], trap_counts:list[int], proximity_distances:list[int], character:int, location:int):
-        return (trap_counts[location],
-                travel_distances[location],
-                0 if self.RULE_PROXIMITY_FOCUS else proximity_distances[character],
-                self.map.get_character_initiative(character))
-
-    def solve_reaches(self, viewpoints: list[int]) -> list[list[tuple[int, int]]]:
-        monster = self.map.get_active_monster()
-        return [self.map.solve_sight(_,1 if monster.action_range == 0 else monster.action_range, self.RULE_VERTEX_LOS) for _ in viewpoints] if  monster.action_target != 0 else []
-
-    def solve_sights(self, viewpoints: list[int]) -> list[list[tuple[int, int]]]:
-        sights = [self.map.solve_sight(_,MAX_VALUE, self.RULE_VERTEX_LOS) for _ in viewpoints]
-
-        if self.logging:
-            for sight in sights:
-                visible_locations = [False] * self.map.map_size
-                visible_locations[self.map.get_active_monster_location()] = True
-                for visible_range in sight:
-                    for location in range(*visible_range):
-                        visible_locations[location] = True
-                self.map.print_los_map(visible_locations)
-
-        return sights
+        return best_iterable
