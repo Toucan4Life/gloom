@@ -60,20 +60,20 @@ class Solver:
         focus_ranks = self.find_secondary_focus(characters, proximity_distances)
 
         solution : list[tuple[int, int,list[int], list[int], frozenset[frozenset[int]], set[tuple[tuple[float, float], tuple[float, float]]]]] = [
-                    (focus, location, [location], list(target), frozenset(y[0] for y in self.map.get_all_attackable_char_combination_for_a_location(location, self.RULE_VERTEX_LOS) if y[1]==target),{self.map.find_shortest_sightline(location, attack, self.RULE_VERTEX_LOS) for attack in target})
+                    (focus, location, [location], list(target), frozenset(y for y in self.map.get_aoe_pattern(location, self.RULE_VERTEX_LOS,target)),{self.map.find_shortest_sightline(location, attack, self.RULE_VERTEX_LOS) for attack in target})
                     if self.map.can_monster_reach(travel_distances, location) and self.map.does_monster_attack()
                     else (focus,location, self.move_closer_to_destinations(travel_distances, trap_counts, location),[],frozenset(),set())
-                    for focus in focuses for target,location in self.solve_for_focus(focus, travel_distances, focus_ranks, trap_counts,len(characters))]
+                    for focus in focuses for target,location in self.solve_for_focus(focus, travel_distances, focus_ranks, trap_counts)]
 
         if self.logging:
             self.print_solution(active_monster, solution)
 
         return solution
 
-    def solve_for_focus(self, focus: int, travel_distances: list[int], focus_ranks :dict[int,int],trap_counts: list[int],number_of_character:int) -> list[tuple[frozenset[int], int]]:
+    def solve_for_focus(self, focus: int, travel_distances: list[int], focus_ranks :dict[int,int],trap_counts: list[int]) -> list[tuple[frozenset[int], int]]:
         locations = self.best_location_to_attack_focus(focus,travel_distances,trap_counts)
 
-        groups = self.find_all_locations_to_attack_best_target_group(travel_distances, focus_ranks, locations,number_of_character,focus)
+        groups = self.find_all_locations_to_attack_best_target_group(travel_distances, focus_ranks, locations,focus)
 
         return self.find_best_locations_to_attack_best_target_group(travel_distances, groups)
         
@@ -86,29 +86,29 @@ class Solver:
 
         return self.find_minimums_values(loc, location_criteria)
 
-    def best_location_to_attack_focus(self, focus: int, travel_distances: list[int], trap_counts: list[int])->set[int]:
-        locations_characters=[loc_chars[0] for loc_chars in self.map.get_all_attackable_char_by_location(self.RULE_VERTEX_LOS) if focus in loc_chars[1]]
+    def best_location_to_attack_focus(self, focus: int, travel_distances: list[int], trap_counts: list[int])->list[int]:
+        locations_characters={loc_chars[0] for loc_chars in self.map.get_all_attackable_char_by_location(self.RULE_VERTEX_LOS) if focus in loc_chars[1]}
 
         location_criteria : list[Callable[[int], int]] = [
                             lambda loc : trap_counts[loc], #trap_to_attack_location
                             lambda loc : -int(self.map.can_monster_reach(travel_distances, loc)), #can_reach_attack_location
                             lambda loc : int(self.map.are_location_at_disadvantage(focus, loc))] #is_disadvantage_against_focus
 
-        return set(self.find_minimums_values(locations_characters, location_criteria))
+        return self.find_minimums_values(list(locations_characters), location_criteria)
   
-    def find_all_locations_to_attack_best_target_group(self, travel_distances: list[int], focus_ranks: dict[int, int], locations: set[int],number_of_character:int,focus:int)-> list[tuple[frozenset[int], set[int]]]:
-        def target_count_for_each_focus_rank(number_of_character:int, focus_ranks:dict[int,int], dest:tuple[frozenset[int], set[int]]) -> tuple[int]:
-            targets_of_rank = [0] * number_of_character
+    def find_all_locations_to_attack_best_target_group(self, travel_distances: list[int], focus_ranks: dict[int, int], locations: list[int],focus:int)-> list[tuple[frozenset[int], set[int]]]:
+        def target_count_for_each_focus_rank(focus_ranks:dict[int,int], dest:tuple[frozenset[int], set[int]]) -> tuple[int]:
+            targets_of_rank = [0] * len(focus_ranks)
             for target in dest[0]:
                 targets_of_rank[focus_ranks[target]] -= 1
             return tuple(targets_of_rank)
          
-        group = [x for x in self.map.get_all_attackable_char_combination_for_a_location2(locations, self.RULE_VERTEX_LOS).items() if focus in x[0]]
+        group = [x for x in self.map.get_all_attackable_char_combination(locations, self.RULE_VERTEX_LOS).items() if focus in x[0]]
 
         group_criteria : list[Callable[[tuple[frozenset[int], set[int]]], int | tuple[int]]] = [
                         lambda group : -len(group[0]), #total_number_of_target
                         lambda group : min((travel_distances[loc] for loc in group[1])), #path_length_to_the_attack_location
-                        lambda group : target_count_for_each_focus_rank(number_of_character, focus_ranks, group)]
+                        lambda group : target_count_for_each_focus_rank(focus_ranks, group)]
 
         return self.find_minimums_values(group,group_criteria)
 
