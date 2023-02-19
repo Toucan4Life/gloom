@@ -13,9 +13,8 @@ class Monster:
     jumping: bool = False
     muddled: bool = False
     aoe: list[bool] = field(default_factory=lambda: [False]*49)
-
-
-
+    teleport : bool = False
+    
     def aoe_center(self) -> int:
         center = (self.aoe_size - 1) // 2
 

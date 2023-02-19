@@ -25,6 +25,8 @@ class Solver:
 
         #proximity is ignored when determining monster focus
         self.RULE_PROXIMITY_FOCUS = rule == Rule.Jotl
+        #Prioritize focus disadvantage
+        self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE = rule != Rule.Frost
 
     def calculate_monster_move(self) -> list[tuple[int, int,list[int], list[int], frozenset[frozenset[int]], set[tuple[tuple[float, float], tuple[float, float]]]]]:
 
@@ -91,7 +93,7 @@ class Solver:
         location_criteria : list[Callable[[int], int]] = [
                             lambda loc : trap_counts[loc], #trap_to_attack_location
                             lambda loc : -int(self.map.can_monster_reach(travel_distances, loc)), #can_reach_attack_location
-                            lambda loc : int(self.map.are_location_at_disadvantage(focus, loc))] #is_disadvantage_against_focus
+                            lambda loc : int(self.map.are_location_at_disadvantage(focus, loc)) if self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE else 0] #is_disadvantage_against_focus
 
         return self.find_minimums_values(locations_characters, location_criteria)
   

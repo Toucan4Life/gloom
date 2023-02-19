@@ -44,6 +44,8 @@ class GloomhavenMap(hexagonal_grid):
         return self.contents[location] not in ['X','O']
 
     def can_travel_through(self, location: int) -> bool:
+        if self.monster.teleport:
+            return self.contents[location] in [ ' ', 'X', 'T', 'H', 'D', 'O', 'I' ]
         if self.monster.flying | self.monster.jumping:
             return self.contents[location] in [' ', 'T', 'H', 'D', 'O', 'I']
         return self.contents[location] in [' ', 'T', 'H', 'D', 'I'] and self.figures[location] != 'C'    
@@ -54,7 +56,7 @@ class GloomhavenMap(hexagonal_grid):
         return self.contents[location] in ['T', 'H']
     
     def is_icy(self, location: int) -> bool:
-        if self.monster.flying | self.monster.jumping:
+        if self.monster.flying | self.monster.jumping | self.monster.teleport:
             return False
         return self.contents[location] == 'I'
 
@@ -91,8 +93,9 @@ class GloomhavenMap(hexagonal_grid):
                     continue
                 if self.walls[current][edge]:
                     continue
-
+                slide = False
                 while self.is_icy(neighbor):
+                    slide = True
                     next_neighbor = self.neighbors[neighbor][edge]
                     if next_neighbor == -1:
                         break
@@ -102,15 +105,15 @@ class GloomhavenMap(hexagonal_grid):
                         break
                     neighbor = next_neighbor
 
-                neighbor_distance = distance + 1 + ( 0 if self.monster.flying or self.monster.jumping else self.additional_path_cost( neighbor ) )
-                neighbor_trap = self.is_trap( neighbor ) + ( 0 if self.monster.jumping else trap )
+                neighbor_distance = distance + 1 + ( 0 if self.monster.flying or self.monster.jumping or self.monster.teleport or slide else self.additional_path_cost( neighbor ) )
+                neighbor_trap = self.is_trap( neighbor ) + ( 0 if self.monster.jumping or self.monster.teleport else trap )
 
                 if (neighbor_trap, neighbor_distance) < (traps[neighbor], distances[neighbor]):
                     frontier.append(neighbor)
                     distances[neighbor] = neighbor_distance
                     traps[neighbor] = neighbor_trap
 
-        if self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump and self.monster.jumping:
+        if self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump and self.monster.jumping and not self.monster.teleport :
             for location in range(self.map_size):
                 distances[location] += self.additional_path_cost(
                     location)
@@ -128,7 +131,7 @@ class GloomhavenMap(hexagonal_grid):
             destination)
         distances = list(distances)
         traps = list(traps)
-        if not self.monster.flying:
+        if not self.monster.flying and not self.monster.teleport:
             if not self.monster.jumping or self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump:
                 destination_additional_path_cost = self.additional_path_cost(
                     destination)
@@ -169,8 +172,9 @@ class GloomhavenMap(hexagonal_grid):
 
         distances[destination] = 0
         traps[destination] = 0
-        if self.monster.jumping:
-            if self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump:
+
+        if self.monster.jumping or self.monster.teleport:
+            if not self.monster.teleport and self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump:
                 distances[destination] += self.additional_path_cost( destination )
             traps[destination] += int( self.is_trap( destination ) )
 
@@ -199,10 +203,10 @@ class GloomhavenMap(hexagonal_grid):
                         could_have_stopped_here = True
                     if not could_have_stopped_here:
                         continue
-
+                slide = False           
                 while True:
-                    neighbor_distance = distance + 1 + ( 0 if self.monster.flying or self.monster.jumping else self.additional_path_cost( current ) )
-                    neighbor_trap = trap + ( 0 if self.monster.jumping else self.is_trap( current ) )
+                    neighbor_distance = distance + 1 + ( 0 if self.monster.flying or self.monster.jumping or self.monster.teleport or slide else self.additional_path_cost( current ) )
+                    neighbor_trap = trap + ( 0 if self.monster.jumping or self.monster.teleport else self.is_trap( current ) )
                     if ( neighbor_trap, neighbor_distance ) < ( traps[neighbor], distances[neighbor] ):
                         frontier.append( neighbor )
                         distances[neighbor] = neighbor_distance
@@ -220,8 +224,8 @@ class GloomhavenMap(hexagonal_grid):
                         break
                     neighbor = next_neighbor
 
-        if self.monster.jumping:
-            if self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump:
+        if self.monster.jumping or self.monster.teleport:
+            if not self.monster.teleport and self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump:
                 distances[destination] -= self.additional_path_cost( destination )
             traps[destination] -= int( self.is_trap( destination ) )
 
@@ -405,9 +409,11 @@ class GloomhavenMap(hexagonal_grid):
                 out += ', TARGET ALL'
             else:
                 out += f',NON AOE TARGETS {self.monster.max_potential_non_aoe_targets()}'
+        if self.monster.teleport:
+            out += ', TELEPORT'               
         if self.monster.flying:
             out += ', FLYING'
-        elif self.monster.jumping:
+        if self.monster.jumping:
             out += ', JUMPING'
         if self.monster.muddled:
             out += ', MUDDLED'

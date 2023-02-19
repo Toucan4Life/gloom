@@ -152,12 +152,13 @@ def unpack_scenario(data: bytes) -> tuple['Solver', bool, bool,int,int]:
     jumping = int(packed_scenario['flying']) == 1
     flying = int(packed_scenario['flying']) == 2
     muddled = int(packed_scenario['muddled']) == 1
+    teleport= int( packed_scenario['teleport'] ) == 1
 
     for _ in packed_scenario['aoe']:
         if _ != (7*7 - 1) // 2 or action_range > 0:
             aoe[_] = True
 
-    monster = Monster(action_move,action_range,action_target,flying,jumping,muddled,aoe)
+    monster = Monster(action_move,action_range,action_target,flying,jumping,muddled,aoe, teleport)
     rule = int(packed_scenario.get('game_rules', '0'))
 
 
