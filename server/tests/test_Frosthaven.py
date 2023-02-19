@@ -3427,3 +3427,124 @@ def test_Scenario150():
     figures[89] = 'A'
 
     assert_answers(m, figures,contents,initiatives,walls,({(89, 31)}, {(89, 31): []}, {(89, 31): {89}}, {(89, 31): {31}}, {(89, 31): {((18.256983240223448, 9.971387470389518), (7.555555555555945, 6.831978185409897))}}, {(89, 31): set()}))
+
+# Monsters slide along icy terrain
+def test_Scenario151():
+    m=Monster(action_move=1)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[38] = 'C'
+    initiatives[38] = 1
+    contents[19] = 'I'
+    contents[25] = 'I'
+
+    figures[12] = 'A'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(32, 38)}, {(32, 38): []}, {(32, 38): {32}}, {(32, 38): {38}}, {(32, 38): {((7.75, 7.361215932167728), (7.75, 7.361215932167728))}}, {(32, 38): set()}))
+
+# Flying monsters do not slide
+def test_Scenario152():
+    m=Monster(action_move=1,flying=True)
+    figures,contents,initiatives,walls = init_test()
+    figures[38] = 'C'
+    initiatives[38] = 1
+    contents[19] = 'I'
+    contents[25] = 'I'
+
+    figures[12] = 'A'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(19,)}, {(19,): []}, {(19,): {32}}, {(19,): {38}}, {(19,): set()}, {(32, 38): set()}))
+
+# Sliding stops at figures
+def test_Scenario153():
+    m=Monster(action_move=2)
+    figures,contents,initiatives,walls = init_test()
+    figures[38] = 'C'
+    initiatives[38] = 1
+    contents[19] = 'I'
+    contents[25] = 'I'
+    contents[32] = 'I'
+    figures[12] = 'A'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(32, 38)}, {(32, 38): []}, {(32, 38): {32}}, {(32, 38): {38}}, {(32, 38): {((7.75, 7.361215932167728), (7.75, 7.361215932167728))}}, {(32, 38): set()}))
+
+# Monster uses ice to reach target then moves out of disadvantage
+def test_Scenario154():
+    m=Monster(action_move=2,action_range=2)
+    figures,contents,initiatives,walls = init_test()
+    figures[38] = 'C'
+    initiatives[38] = 1
+    contents[19] = 'I'
+    contents[25] = 'I'
+    contents[32] = 'I'
+    contents[33] = 'I'
+    contents[39] = 'I'
+    figures[12] = 'A'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(24, 38),(47, 38)}, {(24, 38): [],(47, 38): []}, {(24, 38): {24},(47, 38): {47}}, {(24, 38): {38},(47, 38): {38}}, {(24, 38): {((6.4999999999995, 6.928203230274643), (7.5000000000005, 6.928203230276375))},(47, 38): {((9.499999999999499, 8.660254037845252), (9.0000000000005, 7.794228634059082))}}, {(24, 38): set(),(24, 47): set()}))
+
+# Monster uses ice to minimize distance to target
+def test_Scenario155():
+    m=Monster(action_move=3)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[21] = 'C'
+    initiatives[21] = 1
+
+    contents[18] = 'I'
+    contents[19] = 'I'
+    contents[37] = 'I'
+    contents[38] = 'I'
+    contents[39] = 'I'
+
+    figures[27] = 'A'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(23,),(16,),(36,)}, {(23,): [],(16,): [],(36,): []}, {(23,): {22},(16,): {22, 15},(36,): {29}}, {(23,): {21},(16,): {21},(36,): {21}}, {(23,): set(),(16,): set(),(36,): set()}, {(23, ): set(),(16, ): set(),(36, ): set()}))
+
+
+# Monster anticipates future use of ice when determining path to focus
+def test_Scenario156():
+    m=Monster(action_move=2)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[21] = 'C'
+    initiatives[21] = 1
+
+    contents[37] = 'I'
+    contents[38] = 'I'
+    contents[39] = 'I'
+
+    figures[27] = 'A'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(40,)}, {(40,): []}, {(40,): {29}}, {(40,): {21}}, {(40,): set()}, {(40): set()}))
+# Monster anticipates future use of ice, including accounting for a slide-stopping wall, when determining path to focus
+def test_Scenario157():
+    m=Monster(action_move=2)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[45] = 'C'
+    initiatives[45] = 1
+
+    contents[26] = 'I'
+    contents[33] = 'I'
+    contents[39] = 'I'
+    walls[46][2] = True
+    figures[12] = 'A'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(39,)}, {(39,): []}, {(39,): {38}}, {(39,): {45}}, {(39,): set()}, {(39): set()}))
+
+# Monster anticipates future use of ice, including accounting for a slide-stopping wall, when determining path to focus
+def test_Scenario158():
+    m=Monster(action_move=2)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[51] = 'C'
+    initiatives[45] = 1
+
+    contents[24] = 'I'
+    contents[31] = 'I'
+    contents[37] = 'I'
+    walls[30][1] = True
+    figures[12] = 'A'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(18,)}, {(18,): []}, {(18,): {44}}, {(18,): {51}}, {(18,): set()}, {(39): set()}))

@@ -175,6 +175,7 @@ def unpack_scenario(data: bytes) -> tuple['Solver', bool, bool,int,int]:
     add_elements(contents, 'traps', 'T')
     add_elements(contents, 'hazardous', 'H')
     add_elements(contents, 'difficult', 'D')
+    add_elements(contents, 'icy', 'I')
     add_elements(figures, 'characters', 'C')
     add_elements(figures, 'monsters', 'M')
 

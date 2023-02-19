@@ -32,7 +32,7 @@ def test_views(client: 'testing.FlaskClient'):
 
 def test_solve_thin_los(client: 'testing.FlaskClient'):
     response = client.put(
-        "/solve", data=b'{"scenario_id":3,"solve_view":2,"active_figure":42,"move":0,"range":5,"target":2,"flying":1,"muddled":0,"game_rules":0,"aoe":[23,24,32],"width":29,"height":25,"map":{"characters":[145,169],"monsters":[42],"walls":[115],"obstacles":[96],"traps":[117],"hazardous":[40,216],"difficult":[168],"initiatives":[4,3],"thin_walls":[[43,1],[44,2],[68,0],[69,0],[69,2],[70,2],[94,0],[95,2]]}}')
+        "/solve", data=b'{"scenario_id":3,"solve_view":2,"active_figure":42,"move":0,"range":5,"target":2,"flying":1,"muddled":0,"game_rules":0,"aoe":[23,24,32],"width":29,"height":25,"map":{"characters":[145,169],"monsters":[42],"walls":[115],"obstacles":[96],"traps":[117],"hazardous":[40,216],"difficult":[168],"icy":[],"initiatives":[4,3],"thin_walls":[[43,1],[44,2],[68,0],[69,0],[69,2],[70,2],[94,0],[95,2]]}}')
     p = json.loads(response.data)["actions"]
     q = json.loads(response.data)["reach"]
     r = json.loads(response.data)["scenario_id"]
@@ -48,7 +48,7 @@ def test_solve_thin_los(client: 'testing.FlaskClient'):
 
 def test_solve_sight(client: 'testing.FlaskClient'):
     response = client.put(
-        "/solve", data=b'{"scenario_id":18,"solve_view":2,"active_figure":44,"move":2,"range":5,"target":2,"flying":1,"muddled":1,"game_rules":0,"aoe":[23,24,32],"width":29,"height":25,"map":{"characters":[145,169],"monsters":[44],"walls":[115],"obstacles":[96],"traps":[117],"hazardous":[40,191],"difficult":[168],"initiatives":[4,3],"thin_walls":[[43,1],[44,2],[68,0],[69,0],[69,2],[70,2],[94,0],[95,2]]}}')
+        "/solve", data=b'{"scenario_id":18,"solve_view":2,"active_figure":44,"move":2,"range":5,"target":2,"flying":1,"muddled":1,"game_rules":0,"aoe":[23,24,32],"width":29,"height":25,"map":{"characters":[145,169],"monsters":[44],"walls":[115],"obstacles":[96],"traps":[117],"icy":[],"hazardous":[40,191],"difficult":[168],"initiatives":[4,3],"thin_walls":[[43,1],[44,2],[68,0],[69,0],[69,2],[70,2],[94,0],[95,2]]}}')
     p = json.loads(response.data)["actions"]
     q = json.loads(response.data)["reach"]
     r = json.loads(response.data)["scenario_id"]
@@ -61,7 +61,7 @@ def test_solve_sight(client: 'testing.FlaskClient'):
 
 def test_solve_multiple_destination(client: 'testing.FlaskClient'):
     response = client.put(
-        "/solve", data=b'{"scenario_id":8,"solve_view":0,"active_figure":217,"move":2,"range":0,"target":1,"flying":0,"muddled":0,"game_rules":0,"aoe":[],"width":29,"height":25,"map":{"characters":[314],"monsters":[217],"walls":[265,266,345],"obstacles":[],"traps":[],"hazardous":[],"difficult":[],"initiatives":[1],"thin_walls":[]}}')
+        "/solve", data=b'{"scenario_id":8,"solve_view":0,"active_figure":217,"move":2,"range":0,"target":1,"flying":0,"muddled":0,"game_rules":0,"aoe":[],"width":29,"height":25,"map":{"characters":[314],"monsters":[217],"walls":[265,266,345],"obstacles":[],"traps":[],"hazardous":[],"difficult":[],"icy":[],"initiatives":[1],"thin_walls":[]}}')
 
     p = json.loads(response.data)["actions"]
     r = json.loads(response.data)["scenario_id"]

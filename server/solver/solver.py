@@ -112,7 +112,7 @@ class Solver:
         return self.find_minimums_values(group,group_criteria)
 
     def move_closer_to_destinations(self, travel_distances: list[int], trap_counts: list[int], destination: int)->list[int]:
-        distance_to_destination, traps_to_destination = self.map.find_path_distances_reverse(destination)
+        distance_to_destination, traps_to_destination = self.map.find_path_distances_to_destination(destination)
 
         locations = [location for location in range(self.map.map_size)
                             if self.map.can_monster_reach(travel_distances,location) and

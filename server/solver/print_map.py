@@ -39,7 +39,7 @@ def format_aoe_content(value:str):
 
 def format_numerical_label(value:int):
     if value == MAX_VALUE:
-        return '   '
+        return '999'
     if value < 10:
         return f' {value} '
     return f'{value}'
