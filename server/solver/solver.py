@@ -143,7 +143,7 @@ class Solver:
         return focus_ranks
 
     def calculate_secondary_focus_score(self,proximity_distances:list[int], character:int):
-        return (proximity_distances[character], self.map.get_character_initiative(character)),character
+        return (0 if self.RULE_PROXIMITY_FOCUS else proximity_distances[character], self.map.get_character_initiative(character)),character
 
     def solve_reaches(self, viewpoints: list[int]) -> list[list[tuple[int, int]]]:
         monster = self.map.get_active_monster()

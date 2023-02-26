@@ -101,6 +101,8 @@ class GloomhavenMap(hexagonal_grid):
                         break
                     if not self.can_travel_through( next_neighbor ):
                         break
+                    if self.figures[next_neighbor] == 'M':
+                       break
                     elif self.walls[neighbor][edge]:
                         break
                     neighbor = next_neighbor
@@ -199,11 +201,15 @@ class GloomhavenMap(hexagonal_grid):
                         could_have_stopped_here = True
                     elif not self.can_travel_through(  opposite_neighbor ):
                         could_have_stopped_here = True
+                    elif self.figures[opposite_neighbor] == 'M':
+                        could_have_stopped_here = True
                     elif self.walls[current][opposite_edge]:
                         could_have_stopped_here = True
                     if not could_have_stopped_here:
                         continue
-                slide = False           
+                
+                slide = False
+                prev_neighbor = current
                 while True:
                     neighbor_distance = distance + 1 + ( 0 if self.monster.flying or self.monster.jumping or self.monster.teleport or slide else self.additional_path_cost( current ) )
                     neighbor_trap = trap + ( 0 if self.monster.jumping or self.monster.teleport else self.is_trap( current ) )
@@ -212,7 +218,7 @@ class GloomhavenMap(hexagonal_grid):
                         distances[neighbor] = neighbor_distance
                         traps[neighbor] = neighbor_trap
 
-                    if not self.is_icy( neighbor ):
+                    if not self.is_icy( neighbor ) or self.figures[prev_neighbor] == 'M':
                         break
 
                     next_neighbor = self.neighbors[neighbor][edge]
@@ -222,6 +228,7 @@ class GloomhavenMap(hexagonal_grid):
                         break
                     elif self.walls[neighbor][edge]:
                         break
+                    prev_neighbor = neighbor
                     neighbor = next_neighbor
 
         if self.monster.jumping or self.monster.teleport:

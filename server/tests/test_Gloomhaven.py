@@ -3549,3 +3549,355 @@ def test_Scenario158():
     figures[12] = 'A'
 
     assert_answers(m, figures,contents,initiatives,walls,({(18,)}, {(18,): []}, {(18,): {44}}, {(18,): {51}}, {(18,): set()}, {(39): set()}))
+
+# Sliding onto difficult terrain does not costs an extra move
+def test_Scenario159():
+    m=Monster(action_move=2)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[12] = 'A'
+    figures[38] = 'C'
+
+    contents[19] = 'I'
+    contents[25] = 'D'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(32,38)}, {(32,38): []}, {(32,38): {32}}, {(32,38): {38}}, {(32,38):  {((8.0, 7.794228634059947), (8.0, 7.794228634059947))}}, {(32,38): set()}))
+
+# Sliding onto difficult terrain does not costs an extra move
+def test_Scenario160():
+    m=Monster(action_move=2)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[6] = 'A'
+    figures[38] = 'C'
+
+    contents[33] = 'I'
+    contents[39] = 'D'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(19,), (20,)},{(19,): [], (20,): []},{(19,): {32, 39}, (20,): {39}},{(19,): {38}, (20,): {38}},{(19,): set(), (20,): set()},{(19,): {32}, (20,): {32}}))
+
+# Monsters teleport through walls
+def test_Scenario161():
+    m=Monster(action_move=2, teleport=True)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[17] = 'A'
+    figures[31] = 'C'
+
+    contents[22] = 'X'
+    contents[23] = 'X'
+    contents[24] = 'X'
+    contents[25] = 'X'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(32,31), (30,31)},{(32,31): [], (30,31): []},{(32,31): {32}, (30,31): {30}},{(32,31): {31}, (30,31): {31}},{(32,31): { ((7.5, 6.928203230275509), (7.5, 6.928203230275509))},(30,31): {((7.5, 5.196152422706632), (7.5, 5.196152422706632))}},{(32,31): {32}, (30,31): {32}}))
+    
+# Flying monsters teleport onto obstacles and traps
+def test_Scenario162():
+    m=Monster(action_move=2, teleport=True, flying=True)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[17] = 'A'
+    figures[31] = 'C'
+
+    contents[22] = 'X'
+    contents[23] = 'X'
+    contents[24] = 'X'
+    contents[25] = 'X'
+    contents[30] = 'T'
+    contents[32] = 'O'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(32,31), (30,31)},{(32,31): [], (30,31): []},{(32,31): {32}, (30,31): {30}},{(32,31): {31}, (30,31): {31}},{(32,31): {((7.5, 6.928203230275509), (7.5, 6.928203230275509))},(30,31): {((7.5, 5.196152422706632), (7.5, 5.196152422706632))}},{(32,31): {32}, (30,31): {32}}))
+#Online test question #21
+def test_Scenario163():
+    m=Monster(action_move=2, jumping=True)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[22] = 'A'
+    figures[26] = 'C'
+
+    contents[24] = 'D'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(23,)},{(23,): []},{(23,): {25}},{(23,): {26},},{(23,): set()},{(23,): {32}}))
+    
+#Online test question #22
+def test_Scenario164():
+    m=Monster(action_move=2, jumping=True)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[22] = 'A'
+    figures[25] = 'C'
+
+    contents[24] = 'D'
+
+    assert_answers(m, figures,contents,initiatives,walls,({( 17, ), ( 23, ), ( 31, ) },{( 17, ): [], ( 23, ): [], ( 31, ) : []},{( 17, ): {18}, ( 23, ): {24}, ( 31, ) : {32}},{( 17, ): {25}, ( 23, ): {25}, ( 31, )  : {25},},{( 17, ): set(), ( 23, ): set(), ( 31, ) : set()},{( 17, ): {32}, ( 23, ): {32}, ( 31, ) : {32}}))
+    
+#Online test question #23
+def test_Scenario165():
+    m=Monster(action_move=2, jumping=True)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[29] = 'A'
+    figures[33] = 'C'
+
+    contents[17] = 'X'
+    contents[18] = 'X'
+    contents[19] = 'X'
+    contents[24] = 'X'
+    contents[31] = 'T'
+    contents[38] = 'X'
+    contents[45] = 'X'
+    contents[46] = 'X'
+    contents[47] = 'X'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(30,)},{(30,): []},{(30,): {32}},{(30,): {33},},{(30,): set()},{(30,): {32}}))
+    
+#Online test question #24
+def test_Scenario166():
+    m=Monster(action_move=2,action_range=3,action_target=3, jumping=True)
+    figures,contents,initiatives,walls = init_test()
+
+
+    figures[24] = 'A'
+    figures[30] = 'C'
+    initiatives[30] = 1
+    figures[32] = 'C'
+    initiatives[32] = 2
+    figures[44] = 'C'
+    initiatives[44] = 4
+    figures[46] = 'C'
+    initiatives[46] = 3
+
+    assert_answers(m, figures,contents,initiatives,walls,({( 23, 30, 32, 46 )},{( 23, 30, 32, 46 ): []},{( 23, 30, 32, 46 ): {23}},{( 23, 30, 32, 46 ): {32},},{( 23, 30, 32, 46 ): {  ((6.0, 6.06217782649107), (6.5, 6.928203230275509)),  ((6.5, 5.196152422706632), (9.5, 6.928203230275509)),  ((6.5, 5.196152422706632), (6.5, 5.196152422706632))}},{( 23, 30, 32, 46 ): {32}}))
+    
+#Online test question #25
+def test_Scenario167():
+    m=Monster(action_move=4, action_target=2)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[11] = 'C'
+    initiatives[11] = 3
+    figures[22] = 'A'
+    figures[26] = 'C'
+    initiatives[26] = 1
+    figures[39] = 'C'
+    initiatives[39] = 2
+
+    contents[32] = 'O'
+    contents[38] = 'O'
+    assert_answers(m, figures,contents,initiatives,walls,({( 33, 26, 39 )},{( 33, 26, 39 ): []},{( 33, 26, 39 ): {33}},{( 33, 26, 39 ): {26}},{( 33, 26, 39 ): {  ((6.5, 10.392304845413264), (6.5, 10.392304845413264)),  ((8.0, 9.526279441628825), (8.0, 9.526279441628825))}},{( 33, 26, 39 ): {32}}))
+    
+#Monsters measure proximity around walls
+def test_Scenario168():
+    m=Monster(action_move=4)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[15] = 'C'
+    initiatives[15] = 1
+    figures[17] = 'A'
+    figures[48] = 'C'
+    initiatives[48] = 1
+
+    contents[8] = 'X'
+    contents[16] = 'X'
+    contents[23] = 'X'
+    contents[31] = 'X'
+    contents[38] = 'X'
+    contents[46] = 'X'
+
+    assert_answers(m, figures,contents,initiatives,walls,({( 40, 48 ), ( 47, 48 ), ( 7, 15 )},{( 40, 48 ): [], ( 47, 48 ): [], ( 7, 15 ): []},{(40, 48 ):{40}, (47, 48 ): {47}, ( 7, 15 ): {7}},{(40, 48 ):{48}, (47, 48 ): {48}, ( 7, 15 ): {15}},{(40, 48 ):{ ((9.5, 10.392304845413264), (9.5, 10.392304845413264))},(47, 48 ):{  ((10.5, 10.392304845413264), (10.5, 10.392304845413264))},( 7, 15 ):{((3.5, 1.7320508075688772), (3.5, 1.7320508075688772))}},{(40, 48 ):{15}, (47, 48 ): {15}, ( 7, 15 ): {33}}))
+    
+#Even teleporting monsters measure proximity around walls
+def test_Scenario169():
+    m=Monster(action_move=4, teleport=True)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[24] = 'A'
+    figures[30] = 'C'
+    initiatives[30] = 1
+    figures[47] = 'C'
+    initiatives[47] = 2
+
+    contents[8] = 'X'
+    contents[16] = 'X'
+    contents[23] = 'X'
+    contents[31] = 'X'
+    contents[38] = 'X'
+    contents[46] = 'X'
+
+    assert_answers(m, figures,contents,initiatives,walls,({( 39, 47 )},{( 39, 47 ): []},{( 39, 47 ): {39}},{( 39, 47 ): {47}},{( 39, 47 ):{((9.0, 9.526279441628825), (9.0, 9.526279441628825))}},{( 39, 47 ): {15}}))
+        
+#Monsters do not measure proximity around obstacles
+def test_Scenario170():
+    m=Monster(action_move=4, teleport=True)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[24] = 'A'
+    figures[30] = 'C'
+    initiatives[30] = 1
+    figures[47] = 'C'
+    initiatives[47] = 2
+
+    contents[8] = 'X'
+    contents[16] = 'X'
+    contents[23] = 'X'
+    contents[31] = 'O'
+    contents[38] = 'X'
+    contents[46] = 'X'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(37, 30), ( 22, 30 ) },{(37, 30): [], ( 22, 30 ): []},{(37, 30):{37}, ( 22, 30 ): {22}},{(37, 30):{30}, ( 22, 30 ): {30}},{(37, 30):{  ((7.5, 5.196152422706632), (7.5, 5.196152422706632))},( 22, 30 ):{((6.5, 3.4641016151377544), (6.5, 3.4641016151377544))}},{(37, 30):{15}, ( 22, 30 ): {15}}))
+    
+#Monsters do not slide through other monsters
+def test_Scenario171():
+    m=Monster(action_move=1)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[9] = 'A'
+    figures[32] = 'M'
+    figures[54] = 'C'
+    initiatives[54] = 1
+
+    contents[17] = 'I'
+    contents[24] = 'I'
+    contents[32] = 'I'
+    contents[39] = 'I'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(24, )},{(24, ): []},{(24, ):{47}},{(24, ):{54}},{(24, ):set()},{(24, ):{15}}))
+
+#Monsters can step through other monsters that are on icy terrain
+def test_Scenario172():
+    m=Monster(action_move=1)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[9] = 'A'
+    figures[32] = 'M'
+    figures[54] = 'C'
+    initiatives[54] = 1
+
+    contents[17] = 'I'
+    contents[24] = 'I'
+    contents[32] = 'I'
+    contents[39] = 'I'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(24, )},{(24, ): []},{(24, ):{47}},{(24, ):{54}},{(24, ):set()},{(24, ):{15}}))
+    
+#Monsters will slide into a blocking monster to move closer to their focus
+def test_Scenario173():
+    m=Monster(action_move=1)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[9] = 'A'
+    figures[39] = 'M'
+    figures[54] = 'C'
+    initiatives[54] = 1
+
+    contents[17] = 'I'
+    contents[24] = 'I'
+    contents[32] = 'I'
+    contents[39] = 'I'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(32, )},{(32, ): []},{(32, ):{47}},{(32, ):{54}},{(32, ):set()},{(32, ):{15}}))
+    
+#Monsters will slide into a blocking monster to move closer to their focus
+def test_Scenario174():
+    m=Monster(action_move=1)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[9] = 'A'
+    figures[47] = 'M'
+    figures[54] = 'C'
+    initiatives[54] = 1
+
+    contents[17] = 'I'
+    contents[24] = 'I'
+    contents[32] = 'I'
+    contents[39] = 'I'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(39, )},{(39, ): []},{(39, ):{53, 48}},{(39, ):{54}},{(39, ):set()},{(39, ):{15}}))
+    
+#Monsters will slide into a blocking monster to move closer to their focus
+def test_Scenario175():
+    m=Monster(action_move=1)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[9] = 'A'
+    figures[32] = 'M'
+    figures[39] = 'M'
+    figures[54] = 'C'
+    initiatives[54] = 1
+
+    contents[17] = 'I'
+    contents[24] = 'I'
+    contents[32] = 'I'
+    contents[39] = 'I'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(24,)},{(24,): []},{(24,):{47}},{(24,):{54}},{(24,):set()},{(24,):{15}}))
+    
+#Monsters will slide into a blocking monster to move closer to their focus
+def test_Scenario176():
+    m=Monster(action_move=1)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[9] = 'A'
+    figures[39] = 'M'
+    figures[54] = 'C'
+    initiatives[54] = 1
+
+    contents[17] = 'I'
+    contents[24] = 'I'
+    contents[32] = 'I'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(32,)},{(32,): []},{(32,):{47}},{(32,):{54}},{(32,):set()},{(32,):{15}}))
+    
+#Monsters will step through a blocking monster on icy terrain to move closer to their focus
+def test_Scenario177():
+    m=Monster(action_move=2)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[9] = 'A'
+    figures[24] = 'M'
+    figures[39] = 'M'
+    figures[54] = 'C'
+    initiatives[54] = 1
+
+    contents[17] = 'I'
+    contents[24] = 'I'
+    contents[32] = 'I'
+    contents[39] = 'I'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(32,)},{(32,): []},{(32,):{47}},{(32,):{54}},{(32,):set()},{(32,):{15}}))
+    
+#Monsters do not slide through characters
+def test_Scenario178():
+    m=Monster(action_move=3, action_target=2)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[9] = 'A'
+    figures[39] = 'C'
+    initiatives[39] = 1
+    figures[54] = 'C'
+    initiatives[54] = 1
+
+    contents[17] = 'I'
+    contents[24] = 'I'
+    contents[32] = 'I'
+    contents[39] = 'I'
+
+    assert_answers(m, figures,contents,initiatives,walls,({( 32,39 ) },{( 32,39 ) : []},{( 32,39) :{32}},{( 32,39 ) :{39}},{( 32,39) :{ ((8.0, 7.794228634059947), (8.0, 7.794228634059947))}},{( 32,39) :{15}}))
+    
+#Monsters do not slide through characters
+def test_Scenario179():
+    m=Monster(action_move=4, action_target=2)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[9] = 'A'
+    figures[39] = 'C'
+    initiatives[39] = 1
+    figures[54] = 'C'
+    initiatives[54] = 1
+
+    contents[17] = 'I'
+    contents[24] = 'I'
+    contents[32] = 'I'
+    contents[39] = 'I'
+
+    assert_answers(m, figures,contents,initiatives,walls,({( 47, 39, 54 ) },{( 47, 39, 54 ) : []},{( 47, 39, 54 ) :{47}},{( 47, 39, 54 ) :{39}},{( 47, 39, 54 ) :{  ((11.0, 9.526279441628825), (11.0, 9.526279441628825)),((9.0, 9.526279441628825), (9.0, 9.526279441628825))}},{( 47, 39, 54 ) :{15}}))
