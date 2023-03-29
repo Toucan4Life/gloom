@@ -71,173 +71,84 @@ class GloomhavenMap(hexagonal_grid):
 
     def get_character_initiative(self, character:int) -> int:
         return self.initiatives[character]
-
-    def find_path_distances(self, start: int) -> tuple[list[int], list[int]]:
-
-        distances = [MAX_VALUE] * self.map_size
-        traps = [MAX_VALUE] * self.map_size
-
+    
+    def get_traversal_graph(self,start:int, isReversed:bool) -> list[list[tuple[int, tuple[int, int]]]]:
         frontier: collections.deque[int] = collections.deque()
         frontier.append(start)
-        distances[start] = 0
-        traps[start] = 0
+
+        scores = list(zip([MAX_VALUE] * self.map_size,[MAX_VALUE] * self.map_size))
+        scores[start] = (0,0)
+
+        visited:set[int] = set()
+
+        best_parents:list[list[tuple[int,tuple[int,int]]]] =  [[] for _ in range(self.map_size)]
 
         while len(frontier) != 0:
             current = frontier.popleft()
-            distance = distances[current]
-            trap = traps[current]
-            for edge, neighbor in enumerate(self.neighbors[current]):
-                if neighbor == -1:
-                    continue
-                if not self.can_travel_through(neighbor):
-                    continue
-                if self.walls[current][edge]:
-                    continue
-                slide = False
-                while self.is_icy(neighbor):
-                    slide = True
-                    next_neighbor = self.neighbors[neighbor][edge]
-                    if next_neighbor == -1:
-                        break
-                    if not self.can_travel_through( next_neighbor ):
-                        break
-                    if self.figures[next_neighbor] == 'M':
-                       break
-                    elif self.walls[neighbor][edge]:
-                        break
-                    neighbor = next_neighbor
-
-                neighbor_distance = distance + 1 + ( 0 if self.monster.flying or self.monster.jumping or self.monster.teleport or slide else self.additional_path_cost( neighbor ) )
-                neighbor_trap = self.is_trap( neighbor ) + ( 0 if self.monster.jumping or self.monster.teleport else trap )
-
-                if (neighbor_trap, neighbor_distance) < (traps[neighbor], distances[neighbor]):
+            for neighbor, score in self.find_neighbors_and_movement_cost(current):                
+                best_parents[neighbor].append((current,score)) if isReversed else best_parents[current].append((neighbor,score))                 
+                if(neighbor not in visited and neighbor not in frontier):
                     frontier.append(neighbor)
-                    distances[neighbor] = neighbor_distance
-                    traps[neighbor] = neighbor_trap
+            visited.add(current)
+        return best_parents
+    
+    def find_active_monster_traversal_cost(self, start: int) -> tuple[list[int], list[int]]:
+        best_parents = self.get_traversal_graph(start,False)
+        frontier: collections.deque[int] = collections.deque()
+        frontier.append(start)
+        scores = list(zip([MAX_VALUE] * self.map_size,[MAX_VALUE] * self.map_size))
+        scores[start] = (0,0)
 
-        if self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump and self.monster.jumping and not self.monster.teleport :
-            for location in range(self.map_size):
-                distances[location] += self.additional_path_cost(
-                    location)
-            distances[start] -= self.additional_path_cost(start)
+        while len(frontier) != 0:
+            current = frontier.popleft()            
+            for neighbor, score in best_parents[current]:
+                total_score = self.add_score(scores[current], current, score)
+                if total_score < scores[neighbor]:
+                    frontier.append(neighbor)
+                    scores[neighbor] = total_score
+        return [x[1] for x in scores], [x[0] for x in scores]
 
-        return distances, traps
+    def find_neighbors_and_movement_cost(self, location :int):
+        neighbor_cost:list[tuple[int,tuple[int,int]]]=[]
+        for edge, neighbor in enumerate(self.neighbors[location]):
+            if neighbor == -1 or not self.can_travel_through(neighbor) or self.walls[location][edge]:
+                continue
+            slide = False
+            while self.is_icy(neighbor):
+                slide = True
+                next_neighbor = self.neighbors[neighbor][edge]
+                if next_neighbor == -1 or not self.can_travel_through(next_neighbor) or self.figures[next_neighbor] == 'M' or self.walls[neighbor][edge]:
+                    break
+                neighbor = next_neighbor
 
-    def find_path_distances_reverse(self, destination: int) -> tuple[list[int], list[int]]:
-        # reverse in that we find the path distance to the destination from every location
-        # path distance is symetric except for difficult terrain and traps
-        # we correct for the asymetry of starting vs ending on difficult terrain
-        # we correct for the asymetry of starting vs ending on traps
+            neighbor_distance = 1 if self.monster.flying or (self.monster.jumping and not self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump) or self.monster.teleport or slide else self.additional_path_cost( neighbor ) + 1
+            neighbor_cost.append((neighbor,(int(self.is_trap(neighbor)),neighbor_distance)))
+        return neighbor_cost
+    
+    def add_score(self, previous_score:tuple[int,int], current:int, score:tuple[int,int]):
 
-        distances, traps = self.find_path_distances(
-            destination)
-        distances = list(distances)
-        traps = list(traps)
-        if not self.monster.flying and not self.monster.teleport:
-            if not self.monster.jumping or self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump:
-                destination_additional_path_cost = self.additional_path_cost(
-                    destination)
-                if destination_additional_path_cost > 0:
-                    distances = [
-                        _ + destination_additional_path_cost if _ != MAX_VALUE else _ for _ in distances]
-                for location in range(self.map_size):
-                    distances[location] -= self.additional_path_cost(
-                        location)
-
-            if self.is_trap(destination):
-                traps = [_ + 1 if _ != MAX_VALUE else _ for _ in traps]
-            for location in range(self.map_size):
-                traps[location] -= int(self.is_trap(location))
-
-        return distances, traps
+        return ((0 if self.monster.jumping or self.monster.teleport else previous_score[0]) + score[0],
+                (-1 if self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump and
+                    self.monster.jumping and
+                    not self.monster.teleport and
+                    self.additional_path_cost(current) else 0) + previous_score[1] + score[1])
     
     def find_path_distances_to_destination( self, destination:int):
-        # optimization to share cache with find_path_distances
-        # only valid when there is no icy terrain
-        if not self.Has_Icy_Terrain:
-            distances, traps = self.find_path_distances_reverse( destination)
-            return distances, traps
-
-        distances = [ MAX_VALUE ] * self.map_size
-        traps = [ MAX_VALUE ] * self.map_size
-
-        # # ground truth
-        # for location in range( self.MAP_SIZE ):
-        #   if traversal_test( self, location ):
-        #     d, t = self.find_path_distances( location, traversal_test )
-        #     distances[location] = d[destination]
-        #     traps[location] = t[destination]
-        # return distances, traps
-
-        frontier :Deque[int]= collections.deque()
-        frontier.append( destination )
-
-        distances[destination] = 0
-        traps[destination] = 0
-
-        if self.monster.jumping or self.monster.teleport:
-            if not self.monster.teleport and self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump:
-                distances[destination] += self.additional_path_cost( destination )
-            traps[destination] += int( self.is_trap( destination ) )
-
-        while not len( frontier ) == 0:
-            current :int = frontier.popleft()
-            distance = distances[current]
-            trap = traps[current]
-            for edge, neighbor in enumerate( self.neighbors[current] ):
-                if neighbor == -1:
-                    continue
-                if not self.can_travel_through( neighbor ):
-                    continue
-                if self.walls[current][edge]:
-                    continue
-
-                if self.is_icy( current ):
-                    opposite_edge = ( edge + 3 ) % 6
-                    opposite_neighbor = self.neighbors[current][opposite_edge]
-
-                    could_have_stopped_here = False
-                    if opposite_neighbor == -1:
-                        could_have_stopped_here = True
-                    elif not self.can_travel_through(  opposite_neighbor ):
-                        could_have_stopped_here = True
-                    elif self.figures[opposite_neighbor] == 'M':
-                        could_have_stopped_here = True
-                    elif self.walls[current][opposite_edge]:
-                        could_have_stopped_here = True
-                    if not could_have_stopped_here:
-                        continue
-                
-                slide = False
-                prev_neighbor = current
-                while True:
-                    neighbor_distance = distance + 1 + ( 0 if self.monster.flying or self.monster.jumping or self.monster.teleport or slide else self.additional_path_cost( current ) )
-                    neighbor_trap = trap + ( 0 if self.monster.jumping or self.monster.teleport else self.is_trap( current ) )
-                    if ( neighbor_trap, neighbor_distance ) < ( traps[neighbor], distances[neighbor] ):
-                        frontier.append( neighbor )
-                        distances[neighbor] = neighbor_distance
-                        traps[neighbor] = neighbor_trap
-
-                    if not self.is_icy( neighbor ) or self.figures[prev_neighbor] == 'M':
-                        break
-
-                    next_neighbor = self.neighbors[neighbor][edge]
-                    if next_neighbor == -1:
-                        break
-                    if not self.can_travel_through( next_neighbor ):
-                        break
-                    elif self.walls[neighbor][edge]:
-                        break
-                    prev_neighbor = neighbor
-                    neighbor = next_neighbor
-
-        if self.monster.jumping or self.monster.teleport:
-            if not self.monster.teleport and self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump:
-                distances[destination] -= self.additional_path_cost( destination )
-            traps[destination] -= int( self.is_trap( destination ) )
-
-        return distances, traps
-    
+        start = self.get_active_monster_location()
+        best_parents = self.get_traversal_graph(start, True)
+        frontier: collections.deque[int] = collections.deque()
+        frontier.append(destination)
+        scores = list(zip([MAX_VALUE] * self.map_size,[MAX_VALUE] * self.map_size))
+        scores[destination] = (0,0)
+        while len(frontier) != 0:
+            current = frontier.popleft()            
+            for neighbor, score in best_parents[current]:
+                total_score = self.add_score(score, current, scores[current])
+                if total_score < scores[neighbor]:
+                    frontier.append(neighbor)
+                    scores[neighbor] = total_score
+        return [x[1] for x in scores], [x[0] for x in scores]
+ 
     def process_aoe(self) -> list[list[tuple[int, int, int]]]:
         aoe: list[tuple[int, int, int]] = []
 
@@ -286,7 +197,7 @@ class GloomhavenMap(hexagonal_grid):
         aoe_in_reachdict:dict[int,set[frozenset[int]]] = collections.defaultdict(set)
         result:dict[int,set[tuple[frozenset[int], frozenset[int], frozenset[int]]]]= collections.defaultdict(set)
         characters = self.get_characters()
-        travel_distances,_ = self.find_path_distances(self.get_active_monster_location())
+        travel_distances,_, = self.find_active_monster_traversal_cost(self.get_active_monster_location())
         if (not self.monster.is_aoe() or self.monster.action_target > 1):
             [char_in_reachdict[location].add(character) for character in characters
                                                 for location in self.find_proximity_distances_within_range(character,self.monster.attack_range())

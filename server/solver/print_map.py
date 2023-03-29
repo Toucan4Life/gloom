@@ -42,6 +42,8 @@ def format_numerical_label(value:int):
         return '999'
     if value < 10:
         return f' {value} '
+    if value < 100:
+        return f' {value}'
     return f'{value}'
 
 def format_axial_coordinate(value:tuple[int,int]):

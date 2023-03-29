@@ -48,10 +48,7 @@ class hexagonal_grid:
             self.extra_walls[location] = [self.walls[location][_]
                                             and not contents_walls[location][_] for _ in range(6)]
 
-    def measure_proximity_through(self,  location: int) -> bool:
-        return self.contents[location] != 'X'
-
-    def blocks_los(self,  location: int) -> bool:
+    def does_block_los(self,  location: int) -> bool:
         return self.contents[location] == 'X'
 
     def additional_path_cost(self, location: int) -> int:
@@ -160,7 +157,7 @@ class hexagonal_grid:
             for row in range(bounds[0], bounds[2]):
                 location = column_location + row
 
-                if self.blocks_los(location):
+                if self.does_block_los(location):
                     for vertex in range(3):
                         hex_edge_a = self.get_vertex(location, vertex)
                         hex_edge_b = self.get_vertex(
@@ -185,7 +182,7 @@ class hexagonal_grid:
                     if self.extra_walls[location][edge]:
                         encoded_wall += 1 << edge
 
-                if self.blocks_los(location):
+                if self.does_block_los(location):
                     encoded_wall += 1 << 3
 
                 if encoded_wall != 0:
@@ -541,7 +538,7 @@ class hexagonal_grid:
             for edge, neighbor in enumerate(self.neighbors[current]):
                 if neighbor == -1:
                     continue
-                if not self.measure_proximity_through(neighbor):
+                if self.does_block_los(neighbor):
                     continue
                 if self.walls[current][edge]:
                     continue
@@ -571,7 +568,7 @@ class hexagonal_grid:
 
                 if neighbor == -1:
                     continue
-                if self.blocks_los(neighbor):
+                if self.does_block_los(neighbor):
                     continue
                 if self.walls[current][edge]:
                     continue
@@ -619,7 +616,7 @@ class hexagonal_grid:
         has_run_begun = False
         run = 0
         for location in range(self.map_size):
-            if distances[location] <= upper_bound and not self.blocks_los(location) and location != monster and self.test_los_between_locations(monster, location, RULE_VERTEX_LOS):
+            if distances[location] <= upper_bound and not self.does_block_los(location) and location != monster and self.test_los_between_locations(monster, location, RULE_VERTEX_LOS):
                 if not has_run_begun :
                     run = location
                     has_run_begun = True

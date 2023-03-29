@@ -54,7 +54,7 @@ class Solver:
         
         proximity_distances = self.map.find_proximity_distances(active_monster)
 
-        travel_distances, trap_counts = self.map.find_path_distances(active_monster)
+        travel_distances, trap_counts = self.map.find_active_monster_traversal_cost(active_monster)
         
         focuses = self.find_focus(travel_distances, trap_counts,proximity_distances,character_location)
 
@@ -123,7 +123,7 @@ class Solver:
         location_criteria: list[Callable[[int], int | tuple[int]]] = [
                             lambda location : traps_to_destination[location] + trap_counts[location], #traps_along_path
                             lambda location : distance_to_destination[location], #distance_to_destination
-                            lambda location : travel_distances[location]] #ravel_distances
+                            lambda location : travel_distances[location]] #travel_distances
 
         return self.find_minimums_values(locations,location_criteria)
 
