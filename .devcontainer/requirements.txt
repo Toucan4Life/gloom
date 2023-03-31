@@ -1,0 +1,8 @@
+Flask
+pytest
+pytest-xdist
+pylint
+autopep8
+snakeviz
+pytest-profiling
+colorama
