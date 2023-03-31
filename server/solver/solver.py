@@ -38,27 +38,14 @@ class Solver:
             self.map.print_summary(self.debug_toggle)
             if self.message:
                 print(textwrap.fill(self.message, 82))
-
-        active_monster = self.map.get_active_monster_location()
-    
-        characters = self.map.get_characters()
-
-        # if we find no actions or characters, stand still
-        if not characters:
-            return [(active_monster, -1, [], [], frozenset(), set())]
-
-        character_location = list(self.map.get_all_location_attackable_char())
-
-        if not character_location:
-            return [(active_monster, -1, [], [], frozenset(), set())]
         
-        proximity_distances = self.map.find_proximity_distances(active_monster)
+        proximity_distances = self.map.find_proximity_distances(self.map.get_active_monster_location())
 
-        travel_distances, trap_counts = self.map.find_active_monster_traversal_cost(active_monster)
+        travel_distances, trap_counts = self.map.find_active_monster_traversal_cost()
         
-        focuses = self.find_focus(travel_distances, trap_counts,proximity_distances,character_location)
+        focuses = self.find_focus(travel_distances, trap_counts,proximity_distances)
 
-        focus_ranks = self.find_secondary_focus(characters, proximity_distances)
+        focus_ranks = self.find_secondary_focus(proximity_distances)
 
         solution : list[tuple[int, int,list[int], list[int], frozenset[frozenset[int]], set[tuple[tuple[float, float], tuple[float, float]]]]] = [
                     (focus, location, [location], list(target), frozenset(self.map.get_all_attackable_char_combination_for_a_location(location)[target]),{self.map.find_shortest_sightline(location, attack) for attack in target})
@@ -67,9 +54,9 @@ class Solver:
                     for focus in focuses for target,location in self.solve_for_focus(focus, travel_distances, focus_ranks, trap_counts)]
 
         if self.logging:
-            self.print_solution(active_monster, solution)
+            self.print_solution(solution)
 
-        return solution
+        return solution if len(solution)>0 else [(self.map.get_active_monster_location(), -1, [], [], frozenset(), set())]
 
     def solve_for_focus(self, focus: int, travel_distances: list[int], focus_ranks :dict[int,int],trap_counts: list[int]) -> list[tuple[frozenset[int], int]]:
         locations = self.best_location_to_attack_focus(focus,travel_distances,trap_counts)
@@ -114,7 +101,7 @@ class Solver:
         return self.find_minimums_values(group,group_criteria)
 
     def move_closer_to_destinations(self, travel_distances: list[int], trap_counts: list[int], destination: int)->list[int]:
-        distance_to_destination, traps_to_destination = self.map.find_path_distances_to_destination(destination)
+        distance_to_destination, traps_to_destination = self.map.find_active_monster_traversal_cost(destination)
 
         locations = [location for location in range(self.map.map_size)
                             if self.map.can_monster_reach(travel_distances,location) and
@@ -127,7 +114,9 @@ class Solver:
 
         return self.find_minimums_values(locations,location_criteria)
 
-    def find_focus(self,travel_distances: list[int], trap_counts: list[int], proximity_distances: list[int], character_location: list[tuple[int, int]]) -> set[int]:
+    def find_focus(self,travel_distances: list[int], trap_counts: list[int], proximity_distances: list[int]) -> set[int]:
+        character_location = list(self.map.get_all_location_attackable_char())
+
         focus_criteria : list[Callable[[tuple[int, int]], int | tuple[int]]] = [
                         lambda char_loc : trap_counts[char_loc[1]], #trap_count_to_location
                         lambda char_loc : travel_distances[char_loc[1]], #travel_distances_to_location
@@ -136,8 +125,8 @@ class Solver:
 
         return {focus[0] for focus in self.find_minimums_values(character_location,focus_criteria)}
 
-    def find_secondary_focus(self, characters: list[int], proximity_distances: list[int]):
-        secondary_score = [self.calculate_secondary_focus_score(proximity_distances, character) for character in characters]
+    def find_secondary_focus(self, proximity_distances: list[int]):
+        secondary_score = [self.calculate_secondary_focus_score(proximity_distances, character) for character in self.map.get_characters()]
         sorted_score = sorted({_[0] for _ in secondary_score})
         focus_ranks = {y[1]: sorted_score.index(y[0]) for y in secondary_score}
         return focus_ranks
@@ -163,7 +152,8 @@ class Solver:
 
         return sights
                 
-    def print_solution(self, active_monster:int, solution: list[tuple[int, int,list[int], list[int], frozenset[frozenset[int]], set[tuple[tuple[float, float], tuple[float, float]]]]]):
+    def print_solution(self, solution: list[tuple[int, int,list[int], list[int], frozenset[frozenset[int]], set[tuple[tuple[float, float], tuple[float, float]]]]]):
+        active_monster = self.map.get_active_monster_location()
         map_debug_tags = [' '] * self.map.map_size
         self.map.figures[active_monster] = ' '
         map_debug_tags[active_monster] = 's'

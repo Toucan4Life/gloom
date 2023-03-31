@@ -72,28 +72,19 @@ class GloomhavenMap(hexagonal_grid):
     def get_character_initiative(self, character:int) -> int:
         return self.initiatives[character]
     
-    def get_traversal_graph(self,start:int, isReversed:bool) -> list[list[tuple[int, tuple[int, int]]]]:
-        frontier: collections.deque[int] = collections.deque()
-        frontier.append(start)
-
-        scores = list(zip([MAX_VALUE] * self.map_size,[MAX_VALUE] * self.map_size))
-        scores[start] = (0,0)
-
-        visited:set[int] = set()
-
-        best_parents:list[list[tuple[int,tuple[int,int]]]] =  [[] for _ in range(self.map_size)]
-
-        while len(frontier) != 0:
-            current = frontier.popleft()
-            for neighbor, score in self.find_neighbors_and_movement_cost(current):                
-                best_parents[neighbor].append((current,score)) if isReversed else best_parents[current].append((neighbor,score))                 
-                if(neighbor not in visited and neighbor not in frontier):
-                    frontier.append(neighbor)
-            visited.add(current)
-        return best_parents
+    def get_traversal_graph(self, isReversed:bool) -> list[list[tuple[int, tuple[int, int]]]]:
+        if isReversed:
+            best_parents:list[list[tuple[int,tuple[int,int]]]] =  [[] for _ in range(self.map_size)]
+            for current in range(self.map_size):
+                for neighbor, score in self.find_neighbors_and_movement_cost(current):                
+                    best_parents[neighbor].append((current,score)) 
+            return best_parents 
+        
+        return [self.find_neighbors_and_movement_cost(current) for current in range(self.map_size)]
     
-    def find_active_monster_traversal_cost(self, start: int) -> tuple[list[int], list[int]]:
-        best_parents = self.get_traversal_graph(start,False)
+    def find_active_monster_traversal_cost(self,destination :int =-1) -> tuple[list[int], list[int]]:
+        start = self.get_active_monster_location() if destination ==-1 else destination
+        best_parents = self.get_traversal_graph(destination!=-1)
         frontier: collections.deque[int] = collections.deque()
         frontier.append(start)
         scores = list(zip([MAX_VALUE] * self.map_size,[MAX_VALUE] * self.map_size))
@@ -102,11 +93,12 @@ class GloomhavenMap(hexagonal_grid):
         while len(frontier) != 0:
             current = frontier.popleft()            
             for neighbor, score in best_parents[current]:
-                total_score = self.add_score(scores[current], current, score)
+                total_score = self.add_score(scores[current], score) if destination ==-1 else self.add_score(score, scores[current])
                 if total_score < scores[neighbor]:
                     frontier.append(neighbor)
                     scores[neighbor] = total_score
-        return [x[1] for x in scores], [x[0] for x in scores]
+                    
+        return [x[1] + self.additional_path_cost(i) if self.monster.jumping and self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump else x[1] for i,x in enumerate(scores)], [x[0] for x in scores]
 
     def find_neighbors_and_movement_cost(self, location :int):
         neighbor_cost:list[tuple[int,tuple[int,int]]]=[]
@@ -121,34 +113,13 @@ class GloomhavenMap(hexagonal_grid):
                     break
                 neighbor = next_neighbor
 
-            neighbor_distance = 1 if self.monster.flying or (self.monster.jumping and not self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump) or self.monster.teleport or slide else self.additional_path_cost( neighbor ) + 1
+            neighbor_distance = 1 if self.monster.flying or self.monster.teleport or slide or self.monster.jumping else self.additional_path_cost( neighbor ) + 1
             neighbor_cost.append((neighbor,(int(self.is_trap(neighbor)),neighbor_distance)))
         return neighbor_cost
     
-    def add_score(self, previous_score:tuple[int,int], current:int, score:tuple[int,int]):
-
-        return ((0 if self.monster.jumping or self.monster.teleport else previous_score[0]) + score[0],
-                (-1 if self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump and
-                    self.monster.jumping and
-                    not self.monster.teleport and
-                    self.additional_path_cost(current) else 0) + previous_score[1] + score[1])
+    def add_score(self, previous_score:tuple[int,int], score:tuple[int,int]):
+        return ((0 if self.monster.jumping or self.monster.teleport else previous_score[0]) + score[0], previous_score[1] + score[1])
     
-    def find_path_distances_to_destination( self, destination:int):
-        start = self.get_active_monster_location()
-        best_parents = self.get_traversal_graph(start, True)
-        frontier: collections.deque[int] = collections.deque()
-        frontier.append(destination)
-        scores = list(zip([MAX_VALUE] * self.map_size,[MAX_VALUE] * self.map_size))
-        scores[destination] = (0,0)
-        while len(frontier) != 0:
-            current = frontier.popleft()            
-            for neighbor, score in best_parents[current]:
-                total_score = self.add_score(score, current, scores[current])
-                if total_score < scores[neighbor]:
-                    frontier.append(neighbor)
-                    scores[neighbor] = total_score
-        return [x[1] for x in scores], [x[0] for x in scores]
- 
     def process_aoe(self) -> list[list[tuple[int, int, int]]]:
         aoe: list[tuple[int, int, int]] = []
 
@@ -197,7 +168,7 @@ class GloomhavenMap(hexagonal_grid):
         aoe_in_reachdict:dict[int,set[frozenset[int]]] = collections.defaultdict(set)
         result:dict[int,set[tuple[frozenset[int], frozenset[int], frozenset[int]]]]= collections.defaultdict(set)
         characters = self.get_characters()
-        travel_distances,_, = self.find_active_monster_traversal_cost(self.get_active_monster_location())
+        travel_distances,_, = self.find_active_monster_traversal_cost()
         if (not self.monster.is_aoe() or self.monster.action_target > 1):
             [char_in_reachdict[location].add(character) for character in characters
                                                 for location in self.find_proximity_distances_within_range(character,self.monster.attack_range())
