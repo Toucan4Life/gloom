@@ -6,3 +6,4 @@ autopep8
 snakeviz
 pytest-profiling
 colorama
+pipe

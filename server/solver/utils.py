@@ -1,6 +1,7 @@
 from typing import Iterable
 from solver.settings import *
 from functools import cmp_to_key
+from pipe import Pipe
 
 COS_30 = math.cos(30.0 / 180.0 * math.pi)
 EPSILON = 1e-12
@@ -13,6 +14,26 @@ EPSILON = 1e-12
 #     r = pprint.pformat(a)
 #     print('%s = %s' % (expression, r))
 
+@Pipe
+def minima(iterable,func):
+    iterable = [x for x in iterable]
+    if len(iterable) == 0 :
+        return list()
+    iterable = list(iterable)
+    current_score:int=func(iterable[0])
+    best_iterable:list[Any]=[iterable[0]]
+
+    for _,candidate in enumerate(iterable[1:]):
+        evaluation = func(candidate)
+        if (current_score<evaluation):
+            continue
+        if(current_score==evaluation):
+            best_iterable.append(candidate)
+        else:
+            current_score=evaluation
+            best_iterable=[candidate]
+
+    return best_iterable
 
 def get_offset(center: int, location: int, grid_height: int) -> tuple[int, int, int]:
     location_row = location % grid_height
