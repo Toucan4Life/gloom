@@ -1,11 +1,13 @@
 from typing import Iterable
 from solver.settings import *
 from functools import cmp_to_key
-from pipe import Pipe
+from pipe import Pipe, select, filter
+import builtins
+import collections
 
 COS_30 = math.cos(30.0 / 180.0 * math.pi)
 EPSILON = 1e-12
-
+enumerate_piped = Pipe(builtins.enumerate)
 
 # def debug(expression):
 #     # traceback.print_stack()
@@ -34,6 +36,21 @@ def minima(iterable,func):
             best_iterable=[candidate]
 
     return best_iterable
+
+@Pipe
+def inverse_list(iterableFirst,second_iterable_func):
+    locations_for_groups :dict[frozenset[int],set[int]] = collections.defaultdict(set)
+
+    for loc in iterableFirst:
+        for group in second_iterable_func(loc):
+            locations_for_groups[group].add(loc)
+            
+    return list(locations_for_groups.items())
+# @Pipe
+# def minima(iterable,func):
+#     evaluated = list(iterable | select(lambda x: func(x)))
+#     minimum = min(evaluated, default=None)
+#     return evaluated | enumerate_piped | filter(lambda x : x[1] == minimum) | select (lambda x : iterable[x[0]]) 
 
 def get_offset(center: int, location: int, grid_height: int) -> tuple[int, int, int]:
     location_row = location % grid_height

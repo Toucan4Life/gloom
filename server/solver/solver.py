@@ -1,11 +1,9 @@
 import textwrap
-from typing import Callable
-from typing import Any
 from solver.rule import Rule
 from solver.gloomhaven_map import GloomhavenMap
 from solver.settings import MAX_VALUE
-from pipe import select, chain
-from solver.utils import minima
+from pipe import select, chain, filter
+from solver.utils import minima, inverse_list
 
 class Solver:
     logging: bool
@@ -44,16 +42,19 @@ class Solver:
 
         travel_distances, trap_counts = self.map.find_active_monster_traversal_cost()
 
-        focus_ranks = self.find_secondary_focus(proximity_distances)
+        focus_ranks = self.find_secondary_focus(proximity_distances)        
         
-        focuses = self.find_focus(travel_distances, trap_counts,proximity_distances)
-
-        solution : list[tuple[int, int,list[int], list[int], frozenset[frozenset[int]], set[tuple[tuple[float, float], tuple[float, float]]]]] = [
-                    (focus, location, [location], list(target), frozenset(self.map.get_all_attackable_char_combination_for_a_location(location)[target]),{self.map.find_shortest_sightline(location, attack) for attack in target})
-                    if self.map.can_monster_reach(travel_distances, location) and self.map.does_monster_attack()
-                    else (focus,location, self.move_closer_to_destinations(travel_distances, trap_counts, location),[],frozenset(),set())
-                    for focus in focuses for target,location in self.solve_for_focus(focus, travel_distances, focus_ranks, trap_counts)]
-
+        solution = list(self.map.get_all_location_attackable_char()|
+                        minima(lambda char_loc : trap_counts[char_loc[1]]) |
+                        minima(lambda char_loc : travel_distances[char_loc[1]]) |
+                        minima(lambda char_loc : 0 if self.RULE_PROXIMITY_FOCUS else proximity_distances[char_loc[0]]) |
+                        minima(lambda char_loc : self.map.get_character_initiative(char_loc[0])) |
+                        select(lambda char_loc : char_loc[0])| 
+                                select(lambda focus : (self.solve_for_focus(focus, travel_distances, focus_ranks, trap_counts) | 
+                                    select(lambda tar_loc : (focus, tar_loc[1], [tar_loc[1]], list(tar_loc[0]), list(self.map.get_all_attackable_char_combination_for_a_location(tar_loc[1])[frozenset(tar_loc[0])] | select(lambda x : x[1])),{self.map.find_shortest_sightline(tar_loc[1], attack) for attack in tar_loc[0]})
+                                                if self.map.can_monster_reach(travel_distances, tar_loc[1]) and self.map.does_monster_attack()
+                                                else (focus,tar_loc[1], self.move_closer_to_destinations(travel_distances, trap_counts, tar_loc[1]),[],frozenset(),set()))))|chain)
+        
         if self.logging:
             self.print_solution(solution)
 
@@ -66,35 +67,27 @@ class Solver:
                 targets_of_rank[focus_ranks[target]] -= 1
             return tuple(targets_of_rank)
         
-        locations = (self.map.get_locations_hitting(focus) |
+        return (self.map.get_locations_hitting(focus) |
                 minima(lambda loc : trap_counts[loc]) |
                 minima(lambda loc : -int(self.map.can_monster_reach(travel_distances, loc))) |
-                minima(lambda loc : int(self.map.are_location_at_disadvantage(focus, loc)) if self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE else 0))
-
-        return ([x for x in self.map.get_all_attackable_char_combination(locations).items() if focus in x[0]] |
+                minima(lambda loc : int(self.map.are_location_at_disadvantage(focus, loc)) if self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE else 0) |
+                inverse_list(lambda loc:self.map.get_all_attackable_char_combination_for_a_location(loc).keys()) |
+                filter(lambda group : focus in group[0]) |
                 minima(lambda group :-len(group[0])) |
                 minima(lambda group : min((travel_distances[loc] for loc in group[1]))) |
                 minima(lambda group : target_count_for_each_focus_rank(focus_ranks, group[0])) |
-                select(lambda group : [(group[0],d) for d in group[1]]) |
-                chain |
+                select(lambda group : group[1] | select (lambda grp : (group[0],grp))) | chain |
                 minima(lambda loc : sum(((self.map.are_location_at_disadvantage(target, loc[1])) for target in loc[0]))) |
                 minima(lambda loc : travel_distances[loc[1]]) )
 
     def move_closer_to_destinations(self, travel_distances: list[int], trap_counts: list[int], destination: int)->list[int]:
         distance_to_destination, traps_to_destination = self.map.find_active_monster_traversal_cost(destination)
 
-        return ([location for location in range(self.map.map_size)if self.map.can_monster_reach(travel_distances,location) and self.map.can_end_move_on(location)] |
-            minima(lambda location : traps_to_destination[location] + trap_counts[location]) |
-            minima(lambda location : distance_to_destination[location]) |
-            minima(lambda location : travel_distances[location]))
-
-    def find_focus(self,travel_distances: list[int], trap_counts: list[int], proximity_distances: list[int]) -> set[int]:
-        return (list(self.map.get_all_location_attackable_char())|
-            minima(lambda char_loc : trap_counts[char_loc[1]]) |
-            minima(lambda char_loc : travel_distances[char_loc[1]]) |
-            minima(lambda char_loc : 0 if self.RULE_PROXIMITY_FOCUS else proximity_distances[char_loc[0]]) |
-            minima(lambda char_loc : self.map.get_character_initiative(char_loc[0])) |
-            select(lambda char_loc : char_loc[0]))
+        return (range(self.map.map_size) |
+                filter(lambda location : self.map.can_monster_reach(travel_distances,location) and self.map.can_end_move_on(location)) |
+                minima(lambda location : traps_to_destination[location] + trap_counts[location]) |
+                minima(lambda location : distance_to_destination[location]) |
+                minima(lambda location : travel_distances[location]))
 
     def find_secondary_focus(self, proximity_distances: list[int]):
         secondary_score = [self.calculate_secondary_focus_score(proximity_distances, character) for character in self.map.get_characters()]

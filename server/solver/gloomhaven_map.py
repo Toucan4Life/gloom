@@ -1,13 +1,13 @@
 import collections
 from solver.rule import Rule
-from typing import Deque
 from solver.hexagonal_grid import hexagonal_grid
 from solver.monster import Monster
 from solver.settings import MAX_VALUE
 from solver.utils import apply_offset, get_offset, pin_offset, rotate_offset
 from solver.print_map import format_aoe, format_content, format_initiative, format_numerical_label, print_map, format_los, format_axial_coordinate
-import itertools
-
+from itertools import combinations
+from solver.utils import inverse_list
+from pipe import select,filter
 class GloomhavenMap(hexagonal_grid):
     figures: list[str] 
     contents: list[str] 
@@ -204,31 +204,22 @@ class GloomhavenMap(hexagonal_grid):
         return {(y,key) for key,char_locs in self.find_attackable_location_for_characters().items() for char_loc in char_locs for y in char_loc[0].union(char_loc[2])}
     
     def get_locations_hitting(self, location:int):
-        return {key for key,char_locs in self.find_attackable_location_for_characters().items() for char_loc in char_locs  if location in char_loc[0].union(char_loc[2])}
+        return (list(self.find_attackable_location_for_characters().items()) |
+                filter(lambda key_chars : any(key_chars[1] | select(lambda key_char : location in key_char[0].union(key_char[2])))) |
+                select(lambda keys : keys[0]))
     
     def get_all_attackable_char_combination_for_a_location(self, loc:int):
         if loc in self.Valid_active_monster_attack_target_for_location:
             return self.Valid_active_monster_attack_target_for_location[loc]
-        
-        x:dict[frozenset[int],list[frozenset[int]]] = collections.defaultdict(list)
 
         max_non_aoe_target = self.monster.max_potential_non_aoe_targets()
-
-        [x[frozenset(aoe_targets.union(tup))].append(aoe_hexes)
-                    for aoe_targets, aoe_hexes, non_aoe_targets in self.find_attackable_location_for_characters()[loc]
-                    for tup in itertools.combinations(non_aoe_targets, min(max_non_aoe_target, len(non_aoe_targets)))]
         
-        self.Valid_active_monster_attack_target_for_location[loc]=x
-        return x
-    
-    def get_all_attackable_char_combination(self, locations: list[int]):
-        locations_for_groups :dict[frozenset[int],set[int]] = collections.defaultdict(set)
+        t = dict(self.find_attackable_location_for_characters()[loc] | 
+            inverse_list(lambda x : combinations(x[2], min(max_non_aoe_target, len(x[2]))) |
+                                     select(lambda tup : frozenset(x[0].union(tup)))))
 
-        [locations_for_groups[group].add(loc)
-          for loc in locations
-          for group in self.get_all_attackable_char_combination_for_a_location(loc).keys()]
-
-        return locations_for_groups
+        self.Valid_active_monster_attack_target_for_location[loc]=t
+        return t
 
     def are_location_at_disadvantage(self, locationA:int, locationB:int)-> bool:
         return self.monster.is_susceptible_to_disavantage() and self.is_adjacent(locationB, locationA)
