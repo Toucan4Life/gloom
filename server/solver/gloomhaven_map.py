@@ -6,8 +6,8 @@ from solver.settings import MAX_VALUE
 from solver.utils import apply_offset, get_offset, pin_offset, rotate_offset
 from solver.print_map import format_aoe, format_content, format_initiative, format_numerical_label, print_map, format_los, format_axial_coordinate
 from itertools import combinations
-from solver.utils import inverse_list
-from pipe import select,filter
+from solver.utils import invert_key_values
+from pipe import select,filter,chain
 class GloomhavenMap(hexagonal_grid):
     figures: list[str] 
     contents: list[str] 
@@ -170,11 +170,11 @@ class GloomhavenMap(hexagonal_grid):
         characters = self.get_characters()
         travel_distances,_, = self.find_active_monster_traversal_cost()
         if (not self.monster.is_aoe() or self.monster.action_target > 1):
-            [char_in_reachdict[location].add(character) for character in characters
-                                                for location in self.find_proximity_distances_within_range(character,self.monster.attack_range())
-                                                if  travel_distances[location] != MAX_VALUE
-                                                    and self.can_end_move_on(location)
-                                                    and self.test_los_between_locations(character, location, self.RULE_VERTEX_LOS)]
+            char_in_reachdict = collections.defaultdict(set,dict(characters |
+                invert_key_values(lambda character : self.find_proximity_distances_within_range(character,self.monster.attack_range()) |
+                                               filter(lambda location: travel_distances[location] != MAX_VALUE
+                                                        and self.can_end_move_on(location)
+                                                        and self.test_los_between_locations(character, location, self.RULE_VERTEX_LOS)))))
         if (not self.monster.is_aoe()):
             [result[location].add((frozenset(),frozenset(),frozenset(char_in_reachdict[location]))) for location in char_in_reachdict.keys()]
             return result
@@ -183,16 +183,15 @@ class GloomhavenMap(hexagonal_grid):
             [aoe_in_reachdict[location].add(aoe_pattern) for location,aoe_pattern in self.get_aoe_pattern_list_with_fixed_pattern(characters, self.monster)]
 
         elif(self.monster.is_aoe()):
-            [ aoe_in_reachdict[location].add(aoe_pattern)
-                for aoe_pattern in self.get_aoe_pattern_list_for_characters(characters)
-                for aoe_hex in aoe_pattern
-                if self.can_target(aoe_hex)
-                for location in self.find_proximity_distances_within_range(aoe_hex,self.monster.attack_range())]
+            aoe_in_reachdict= dict(self.get_aoe_pattern_list_for_characters(characters) | 
+                    invert_key_values(lambda aoe_pattern: aoe_pattern |
+                                       filter(lambda aoe_hex : self.can_target(aoe_hex)) |
+                                       select(lambda aoe_hex : self.find_proximity_distances_within_range(aoe_hex,self.monster.attack_range())) | chain))
         
-        [result[location].add(self.get_attack_target(location, aoe_pattern,characters, char_in_reachdict))
-                        for location in aoe_in_reachdict.keys()
-                        for aoe_pattern in (aoe_in_reachdict[location])
-                        if travel_distances[location] != MAX_VALUE and self.can_end_move_on(location)]
+        result=dict(list(aoe_in_reachdict.keys()) |
+                filter(lambda location : travel_distances[location] != MAX_VALUE and self.can_end_move_on(location)) |
+                select(lambda location :(location,list(aoe_in_reachdict[location] | select (lambda aoe_pattern : self.get_attack_target(location, aoe_pattern,characters, char_in_reachdict))))))
+            
         self.Valid_active_monster_attack_location=result
         return result
 
@@ -204,9 +203,7 @@ class GloomhavenMap(hexagonal_grid):
         return {(y,key) for key,char_locs in self.find_attackable_location_for_characters().items() for char_loc in char_locs for y in char_loc[0].union(char_loc[2])}
     
     def get_locations_hitting(self, location:int):
-        return (list(self.find_attackable_location_for_characters().items()) |
-                filter(lambda key_chars : any(key_chars[1] | select(lambda key_char : location in key_char[0].union(key_char[2])))) |
-                select(lambda keys : keys[0]))
+        return self.get_all_location_attackable_char() | filter(lambda x:x[0] == location) | select(lambda x :  x[1])
     
     def get_all_attackable_char_combination_for_a_location(self, loc:int):
         if loc in self.Valid_active_monster_attack_target_for_location:
@@ -215,7 +212,7 @@ class GloomhavenMap(hexagonal_grid):
         max_non_aoe_target = self.monster.max_potential_non_aoe_targets()
         
         t = dict(self.find_attackable_location_for_characters()[loc] | 
-            inverse_list(lambda x : combinations(x[2], min(max_non_aoe_target, len(x[2]))) |
+            invert_key_values(lambda x : combinations(x[2], min(max_non_aoe_target, len(x[2]))) |
                                      select(lambda tup : frozenset(x[0].union(tup)))))
 
         self.Valid_active_monster_attack_target_for_location[loc]=t

@@ -38,12 +38,12 @@ def minima(iterable,func):
     return best_iterable
 
 @Pipe
-def inverse_list(iterableFirst,second_iterable_func):
+def invert_key_values(keys,values_for_key_func):
     locations_for_groups :dict[frozenset[int],set[int]] = collections.defaultdict(set)
 
-    for loc in iterableFirst:
-        for group in second_iterable_func(loc):
-            locations_for_groups[group].add(loc)
+    for key in keys:
+        for value in values_for_key_func(key):
+            locations_for_groups[value].add(key)
             
     return list(locations_for_groups.items())
 # @Pipe

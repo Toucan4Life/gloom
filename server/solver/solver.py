@@ -3,7 +3,7 @@ from solver.rule import Rule
 from solver.gloomhaven_map import GloomhavenMap
 from solver.settings import MAX_VALUE
 from pipe import select, chain, filter
-from solver.utils import minima, inverse_list
+from solver.utils import minima, invert_key_values
 
 class Solver:
     logging: bool
@@ -71,7 +71,7 @@ class Solver:
                 minima(lambda loc : trap_counts[loc]) |
                 minima(lambda loc : -int(self.map.can_monster_reach(travel_distances, loc))) |
                 minima(lambda loc : int(self.map.are_location_at_disadvantage(focus, loc)) if self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE else 0) |
-                inverse_list(lambda loc:self.map.get_all_attackable_char_combination_for_a_location(loc).keys()) |
+                invert_key_values(lambda loc:self.map.get_all_attackable_char_combination_for_a_location(loc).keys()) |
                 filter(lambda group : focus in group[0]) |
                 minima(lambda group :-len(group[0])) |
                 minima(lambda group : min((travel_distances[loc] for loc in group[1]))) |
