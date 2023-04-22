@@ -52,6 +52,11 @@ class Monster:
             return 999
         return self.action_target - 1 if self.is_aoe() else max(1, self.action_target)
     
+    def extra_target(self) -> int:
+        if (self.has_attack()):
+            return self.action_target - 1 
+        return 0
+    
     def is_max_targets(self) -> bool:
         return self.action_target == 6
 

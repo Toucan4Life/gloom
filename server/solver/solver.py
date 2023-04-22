@@ -51,7 +51,7 @@ class Solver:
                         minima(lambda char_loc : self.map.get_character_initiative(char_loc[0])) |
                         select(lambda char_loc : char_loc[0])| 
                                 select(lambda focus : (self.solve_for_focus(focus, travel_distances, focus_ranks, trap_counts) | 
-                                    select(lambda tar_loc : (focus, tar_loc[1], [tar_loc[1]], list(tar_loc[0]), list(self.map.get_all_attackable_char_combination_for_a_location(tar_loc[1])[frozenset(tar_loc[0])] | select(lambda x : x[1])),{self.map.find_shortest_sightline(tar_loc[1], attack) for attack in tar_loc[0]})
+                                    select(lambda tar_loc : (focus, tar_loc[1], [tar_loc[1]], list(tar_loc[0]), list(self.map.get_all_attackable_char_combination_for_a_location(tar_loc[1])[frozenset(tar_loc[0])] | select(lambda x : x[1])|chain),{self.map.find_shortest_sightline(tar_loc[1], attack) for attack in tar_loc[0]})
                                                 if self.map.can_monster_reach(travel_distances, tar_loc[1]) and self.map.does_monster_attack()
                                                 else (focus,tar_loc[1], self.move_closer_to_destinations(travel_distances, trap_counts, tar_loc[1]),[],frozenset(),set()))))|chain)
         
@@ -67,7 +67,9 @@ class Solver:
                 targets_of_rank[focus_ranks[target]] -= 1
             return tuple(targets_of_rank)
         
-        return (self.map.get_locations_hitting(focus) |
+        return (self.map.get_all_location_attackable_char() |
+                filter(lambda x:x[0] == focus) |
+                select(lambda x :  x[1])|
                 minima(lambda loc : trap_counts[loc]) |
                 minima(lambda loc : -int(self.map.can_monster_reach(travel_distances, loc))) |
                 minima(lambda loc : int(self.map.are_location_at_disadvantage(focus, loc)) if self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE else 0) |
