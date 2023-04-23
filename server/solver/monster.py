@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from solver.utils import  get_offset
 import sys
 import itertools
 @dataclass
@@ -62,6 +63,9 @@ class Monster:
 
     def is_aoe(self) -> bool:
         return self.has_attack() and True in self.aoe
+    
+    def aoe_pattern(self) -> list[int]:        
+        return [get_offset(self.aoe.index(True), location, self.aoe_height) for location in range(self.aoe_size) if self.aoe[location]]
 
     def is_melee_aoe(self) -> bool:
         return self.is_aoe() and self.action_range == 0

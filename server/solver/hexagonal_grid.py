@@ -627,7 +627,27 @@ class hexagonal_grid:
         if has_run_begun :
             reach.append((run, self.map_size))
         return reach
+    
+    def get_all_patterns_hitting_hexes(self, hexes:list[int], relative_pattern:list[int])->set[frozenset[int]]:      
+        PRECALC_GRID_HEIGHT = 21
+        PRECALC_GRID_WIDTH = 21
+        PRECALC_GRID_SIZE = PRECALC_GRID_HEIGHT * PRECALC_GRID_WIDTH
+        PRECALC_GRID_CENTER = (PRECALC_GRID_SIZE - 1) // 2
 
+        aoe_pattern_set: set[tuple[int]] = set()
+        for aoe_pin in relative_pattern:
+            for aoe_rotation in range(12):
+                aoe_hexes = [apply_offset(PRECALC_GRID_CENTER, rotate_offset(pin_offset(aoe_offset, aoe_pin), aoe_rotation), PRECALC_GRID_HEIGHT, PRECALC_GRID_SIZE)
+                            for aoe_offset in relative_pattern]
+                aoe_pattern_set.add(tuple(aoe_hexes))
+
+        new_var = [[get_offset(PRECALC_GRID_CENTER, location, PRECALC_GRID_HEIGHT)
+                                for location in aoe]
+                            for aoe in aoe_pattern_set]
+                 
+        return [[location_offset for aoe_offset in aoe_pattern_list if (location_offset:=self.apply_aoe_offset(character, aoe_offset))!=-1]
+                                        for aoe_pattern_list in new_var
+                                        for character in hexes]
     # def find_distances(self, start: int) -> list[int]:
     #     cache_key = (start)
     #     if cache_key in self.path_cache[3]:

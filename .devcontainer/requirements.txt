@@ -7,3 +7,4 @@ snakeviz
 pytest-profiling
 colorama
 pipe
+cachetools
