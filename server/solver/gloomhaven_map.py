@@ -5,7 +5,7 @@ from solver.monster import Monster
 from solver.settings import MAX_VALUE
 from solver.print_map import format_aoe, format_content, format_initiative, format_numerical_label, print_map, format_los, format_axial_coordinate
 from itertools import combinations
-from solver.utils import invert_key_values
+from solver.utils import invert_key_values,dijkstra_algorithm
 from pipe import select,filter,chain
 from cachetools import cached
 class GloomhavenMap(hexagonal_grid):
@@ -78,22 +78,11 @@ class GloomhavenMap(hexagonal_grid):
     
     @cached(cache={})
     def find_active_monster_traversal_cost(self,destination :int =-1) -> tuple[list[int], list[int]]:
-        start = self.get_active_monster_location() if destination ==-1 else destination
-        best_parents = self.get_traversal_graph(destination!=-1)
-        frontier: collections.deque[int] = collections.deque()
-        frontier.append(start)
-        scores = list(zip([MAX_VALUE] * self.map_size,[MAX_VALUE] * self.map_size))
-        scores[start] = (0,0)
-
-        while len(frontier) != 0:
-            current = frontier.popleft()            
-            for neighbor, score in best_parents[current]:
-                total_score = self.add_score(scores[current], score) if destination ==-1 else self.add_score(score, scores[current])
-                if total_score < scores[neighbor]:
-                    frontier.append(neighbor)
-                    scores[neighbor] = total_score
-                    
-        return [x[1] + self.additional_path_cost(i) if self.monster.jumping and self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump else x[1] for i,x in enumerate(scores)], [x[0] for x in scores]
+        start = self.get_active_monster_location() if destination ==-1 else destination          
+        scores = dijkstra_algorithm(start, self.get_traversal_graph(destination!=-1))              
+                      
+        return ([x[1] + self.additional_path_cost(i) if self.monster.jumping and self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump else x[1] for i,x in enumerate(scores)],
+                [(int(self.is_trap(i)) if destination == -1 else 0) if self.monster.jumping or self.monster.teleport else x[0] for i,x in enumerate(scores)])
 
     def find_neighbors_and_movement_cost(self, location :int):
         neighbor_cost:list[tuple[int,tuple[int,int]]]=[]
@@ -109,12 +98,9 @@ class GloomhavenMap(hexagonal_grid):
                 neighbor = next_neighbor
 
             neighbor_distance = 1 if self.monster.flying or self.monster.teleport or slide or self.monster.jumping else self.additional_path_cost( neighbor ) + 1
-            neighbor_cost.append((neighbor,(int(self.is_trap(neighbor)),neighbor_distance)))
+            neighbor_cost.append((neighbor,(0 if self.monster.jumping or self.monster.teleport else int(self.is_trap(neighbor)),neighbor_distance)))
         return neighbor_cost
-    
-    def add_score(self, previous_score:tuple[int,int], score:tuple[int,int]):
-        return ((0 if self.monster.jumping or self.monster.teleport else previous_score[0]) + score[0], previous_score[1] + score[1])
-   
+ 
     def get_aoe_pattern_list_with_fixed_pattern(self, characters:list[int], monster:Monster)->list[tuple[int, frozenset[int]]]:
         self.monster.aoe[24]=True#center of aoe for fixed pattern
         index_of_center=sum(monster.aoe[:24])

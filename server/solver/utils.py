@@ -46,11 +46,21 @@ def invert_key_values(keys,values_for_key_func):
             locations_for_groups[value].add(key)
             
     return list(locations_for_groups.items())
-# @Pipe
-# def minima(iterable,func):
-#     evaluated = list(iterable | select(lambda x: func(x)))
-#     minimum = min(evaluated, default=None)
-#     return evaluated | enumerate_piped | filter(lambda x : x[1] == minimum) | select (lambda x : iterable[x[0]]) 
+
+def dijkstra_algorithm(start, graph):
+        frontier: collections.deque[int] = collections.deque()
+        frontier.append(start)
+        scores = list(zip([MAX_VALUE] * len(graph),[MAX_VALUE] * len(graph)))
+        scores[start] = (0,0)
+
+        while len(frontier) != 0:
+            current = frontier.popleft()            
+            for neighbor, score in graph[current]:
+                total_score =(scores[current][0] + score[0], scores[current][1] + score[1])
+                if total_score < scores[neighbor]:
+                    frontier.append(neighbor)
+                    scores[neighbor] = total_score
+        return scores
 
 def get_offset(center: int, location: int, grid_height: int) -> tuple[int, int, int]:
     location_row = location % grid_height
