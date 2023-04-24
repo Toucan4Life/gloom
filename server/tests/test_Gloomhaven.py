@@ -3003,7 +3003,7 @@ def test_Scenario132():
 
 # The monster first uses proximity to rank secondary targets, before initiative. Because of the wall line between the monster and C10, C10 is two proximity steps away. Thus, the monster prefers C30 as its second target
 def test_Scenario133():
-    m=Monster(action_move=1, action_range=1, action_target=2)
+    m=Monster(action_move=1, action_range=2, action_target=2)
     figures,contents,initiatives,walls = init_test()
 
 
@@ -3901,3 +3901,56 @@ def test_Scenario179():
     contents[39] = 'I'
 
     assert_answers(m, figures,contents,initiatives,walls,({( 47, 39, 54 ) },{( 47, 39, 54 ) : []},{( 47, 39, 54 ) :{47}},{( 47, 39, 54 ) :{39}},{( 47, 39, 54 ) :{  ((11.0, 9.526279441628825), (11.0, 9.526279441628825)),((9.0, 9.526279441628825), (9.0, 9.526279441628825))}},{( 47, 39, 54 ) :{15}}))
+#In Frosthaven, if a monster with multiple attacks cannot make an attack this turn, it moves towards the closest hex that allows it to attack its focus. In Gloomhaven, the monster moves towards the hex that maximizes its attack
+def test_Scenario180():
+    m=Monster(action_move=1, action_target=2)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[12] = 'A'
+    figures[23] = 'C'
+    initiatives[23] = 1
+    figures[30] = 'C'
+    initiatives[30] = 2
+
+    contents[18] = 'X'
+    contents[24] = 'X'
+
+    m.aoe[17] = True
+    m.aoe[23] = True
+
+    assert_answers(m, figures,contents,initiatives,walls,({( 19, ) },{( 19, ) : []},{( 19,) :{31}},{( 19, ) :{23}},{( 19,) :set()},{( 19, ) :{15}}))
+
+#In Frosthaven, if a monster with AoE cannot make an attack this turn, it moves towards the closest hex that allows it to attack its focus. In Gloomhaven, the monster moves towards the hex that maximizes its attack
+def test_Scenario181():
+    m=Monster(action_move=1, action_target=1)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[12] = 'A'
+    figures[23] = 'C'
+    initiatives[23] = 1
+    figures[30] = 'C'
+    initiatives[30] = 2
+
+    contents[18] = 'X'
+    contents[24] = 'X'
+
+    m.aoe[17] = True
+    m.aoe[23] = True
+
+    assert_answers(m, figures,contents,initiatives,walls,({( 19, ) },{( 19, ) : []},{( 19,) :{31}},{( 19, ) :{23}},{( 19,) :set()},{( 19, ) :{15}}))
+
+#In Frosthaven, if a monster with multiple attacks cannot make an attack this turn, it moves towards the closest hex that allows it to attack its focus. In Gloomhaven, the monster moves towards the hex that maximizes its attack
+def test_Scenario182():
+    m=Monster(action_move=1, action_target=2, action_range=2)
+    figures,contents,initiatives,walls = init_test()
+
+    figures[11] = 'C'
+    initiatives[11] = 1
+    figures[22] = 'A'
+    figures[39] = 'C'
+    initiatives[39] = 2
+
+    contents[18] = 'X'
+    contents[24] = 'X'
+
+    assert_answers(m, figures,contents,initiatives,walls,({( 23, ),( 30, ) },{( 23, ) : [],( 30, ) : []},{( 23,) :{25},( 30,) :{25}},{( 23, ) :{11},( 30, ) :{11}},{( 23,) :set(),( 30,) :set()},{( 23, ) :{15},( 30, ) :{15}}))

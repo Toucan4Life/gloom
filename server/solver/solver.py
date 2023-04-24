@@ -2,7 +2,7 @@ import textwrap
 from solver.rule import Rule
 from solver.gloomhaven_map import GloomhavenMap
 from solver.settings import MAX_VALUE
-from pipe import select, chain, filter
+from pipe import select, chain, filter,tee
 from solver.utils import minima, invert_key_values
 
 class Solver:
@@ -24,9 +24,10 @@ class Solver:
         self.rule=rule
         #proximity is ignored when determining monster focus
         self.RULE_PROXIMITY_FOCUS = rule == Rule.Jotl
-        #Prioritize focus disadvantage
         self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE = rule != Rule.Frost
-
+        self.RULE_MAXIMIZE_FUTURE_MULTIATTACK = rule != Rule.Frost
+        #rank secondary targets' priority using focus rules
+        self.RULE_RANK_SECONDARY_TARGETS = rule != Rule.Frost
     def calculate_monster_move(self) -> list[tuple[int, int,list[int], list[int], frozenset[frozenset[int]], set[tuple[tuple[float, float], tuple[float, float]]]]]:
 
         if self.logging:
@@ -60,7 +61,6 @@ class Solver:
             for target in group:
                 targets_of_rank[focus_ranks[target]] -= 1
             return tuple(targets_of_rank)
-         
         return (self.map.get_all_location_attackable_char()|
                 minima(lambda char_loc : trap_counts[char_loc[1]]) |
                 minima(lambda char_loc : travel_distances[char_loc[1]]) |
@@ -75,14 +75,14 @@ class Solver:
                     minima(lambda loc : int(self.map.are_location_at_disadvantage(focus, loc)) if self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE else 0) |
                     invert_key_values(lambda loc:self.map.get_all_attackable_char_combination_for_a_location(loc).keys()) |
                     filter(lambda group : focus in group[0]) |
-                    minima(lambda group :-len(group[0])) |
-                    minima(lambda group : min((travel_distances[loc] for loc in group[1]))) |
-                    minima(lambda group : target_count_for_each_focus_rank(focus_ranks, group[0])) |
+                    minima(lambda group :-len(group[0]) if self.RULE_MAXIMIZE_FUTURE_MULTIATTACK or self.map.can_monster_reach(travel_distances,list(group[1])[0]) else 0) |
+                    minima(lambda group : min((travel_distances[loc] for loc in group[1]))if self.RULE_MAXIMIZE_FUTURE_MULTIATTACK or self.map.can_monster_reach(travel_distances,list(group[1])[0]) else 0) |
+                    minima(lambda group : (target_count_for_each_focus_rank(focus_ranks, group[0]) if self.RULE_RANK_SECONDARY_TARGETS else 0)if self.RULE_MAXIMIZE_FUTURE_MULTIATTACK or self.map.can_monster_reach(travel_distances,list(group[1])[0]) else 0) |
                     select(lambda group : group[1] | select (lambda grp : (group[0],grp))) | chain |
-                    minima(lambda loc : sum(((self.map.are_location_at_disadvantage(target, loc[1])) for target in loc[0]))) |
+                    minima(lambda loc : sum(((self.map.are_location_at_disadvantage(target, loc[1])) for target in loc[0]))if self.RULE_MAXIMIZE_FUTURE_MULTIATTACK or self.map.can_monster_reach(travel_distances,loc[1]) else 0) |
                     minima(lambda loc : travel_distances[loc[1]])|
                     select(lambda tar_loc: (tar_loc[0],tar_loc[1],focus)))
-                | chain)
+                |chain)
 
     def move_closer_to_destinations(self, travel_distances: list[int], trap_counts: list[int], destination: int)->list[int]:
         distance_to_destination, traps_to_destination = self.map.find_active_monster_traversal_cost(destination)
