@@ -68,7 +68,7 @@ class GloomhavenMap(hexagonal_grid):
     
     def get_traversal_graph(self, isReversed:bool) -> list[list[tuple[int, tuple[int, int]]]]:
         if isReversed:
-            best_parents:list[list[tuple[int,tuple[int,int]]]] =  [[] for _ in range(self.map_size)]
+            best_parents:list[list[tuple[int,tuple[int,int]]]] = [[] for _ in range(self.map_size)]
             for current in range(self.map_size):
                 for neighbor, score in self.find_neighbors_and_movement_cost(current):                
                     best_parents[neighbor].append((current,score)) 
@@ -82,7 +82,7 @@ class GloomhavenMap(hexagonal_grid):
         scores = dijkstra_algorithm(start, self.get_traversal_graph(destination!=-1))              
                       
         return ([x[1] + self.additional_path_cost(i) if self.monster.jumping and self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump else x[1] for i,x in enumerate(scores)],
-                [(int(self.is_trap(i)) if destination == -1 else 0) if self.monster.jumping or self.monster.teleport else x[0] for i,x in enumerate(scores)])
+                [int(self.is_trap(i)) if self.monster.jumping or self.monster.teleport else x[0] for i,x in enumerate(scores)])
 
     def find_neighbors_and_movement_cost(self, location :int):
         neighbor_cost:list[tuple[int,tuple[int,int]]]=[]

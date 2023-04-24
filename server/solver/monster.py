@@ -64,7 +64,7 @@ class Monster:
     def is_aoe(self) -> bool:
         return self.has_attack() and True in self.aoe
     
-    def aoe_pattern(self) -> list[int]:        
+    def aoe_pattern(self) -> list[tuple[int, int, int]]:        
         return [get_offset(self.aoe.index(True), location, self.aoe_height) for location in range(self.aoe_size) if self.aoe[location]]
 
     def is_melee_aoe(self) -> bool:
