@@ -60,8 +60,8 @@ class Solver:
             for target in group:
                 targets_of_rank[focus_ranks[target]] -= 1
             return tuple(targets_of_rank)
-        
-        new_var = list(self.map.get_all_location_attackable_char()|
+         
+        return (self.map.get_all_location_attackable_char()|
                 minima(lambda char_loc : trap_counts[char_loc[1]]) |
                 minima(lambda char_loc : travel_distances[char_loc[1]]) |
                 minima(lambda char_loc : 0 if self.RULE_PROXIMITY_FOCUS else proximity_distances[char_loc[0]]) |
@@ -83,8 +83,6 @@ class Solver:
                     minima(lambda loc : travel_distances[loc[1]])|
                     select(lambda tar_loc: (tar_loc[0],tar_loc[1],focus)))
                 | chain)
-         
-        return new_var
 
     def move_closer_to_destinations(self, travel_distances: list[int], trap_counts: list[int], destination: int)->list[int]:
         distance_to_destination, traps_to_destination = self.map.find_active_monster_traversal_cost(destination)
