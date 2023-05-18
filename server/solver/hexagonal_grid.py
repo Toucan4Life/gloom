@@ -51,9 +51,6 @@ class hexagonal_grid:
     def does_block_los(self,  location: int) -> bool:
         return self.contents[location] == 'X'
 
-    def additional_path_cost(self, location: int) -> int:
-        return int(self.contents[location] == 'D')
-
     def get_vertex(self, location: int, vertex: int) -> tuple[float, float]:
         return self.vertices[location * 6 + vertex]
                                         

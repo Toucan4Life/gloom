@@ -75,8 +75,8 @@ class Solver:
             return tuple(targets_of_rank)
         
         attack_locations_for_focus = (self.map.get_all_location_attackable_char() |
-                    filter(lambda x : x[0] == focus) |
-                    select(lambda x : x[1]) |
+                    filter(lambda char_loc : char_loc[0] == focus) |
+                    select(lambda char_loc : char_loc[1]) |
                     minima(lambda loc : trap_counts[loc]) |
                     minima(lambda loc : -int(self.map.can_monster_reach(travel_distances, loc))) |
                     minima(lambda loc : int(self.map.are_location_at_disadvantage(focus, loc)) if self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE else 0))

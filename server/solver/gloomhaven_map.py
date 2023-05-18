@@ -44,16 +44,17 @@ class GloomhavenMap(hexagonal_grid):
             return self.contents[location] in [' ', 'T', 'H', 'D', 'O', 'I']
         return self.contents[location] in [' ', 'T', 'H', 'D', 'I'] and self.figures[location] != 'C'    
 
-    def is_trap(self, location: int) -> bool:
+    def is_damaging_location(self, location: int) -> bool:
         if self.monster.flying:
             return False
         return self.contents[location] in ['T', 'H']
     
     def is_icy(self, location: int) -> bool:
-        if self.monster.flying | self.monster.jumping | self.monster.teleport:
-            return False
         return self.contents[location] == 'I'
 
+    def is_difficult_terrain(self, location: int) -> int:
+        return int(self.contents[location] == 'D')
+    
     def get_active_monster(self) -> Monster:
         return self.monster
 
@@ -81,24 +82,26 @@ class GloomhavenMap(hexagonal_grid):
         start = self.get_active_monster_location() if destination ==-1 else destination          
         scores = dijkstra_algorithm(start, self.get_traversal_graph(destination!=-1))              
                       
-        return ([x[1] + self.additional_path_cost(i) if self.monster.jumping and self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump else x[1] for i,x in enumerate(scores)],
-                [int(self.is_trap(i)) if self.monster.jumping or self.monster.teleport else x[0] for i,x in enumerate(scores)])
+        return ([x[1] + (1 if self.is_difficult_terrain(i) and self.monster.jumping and self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump  else 0) for i,x in enumerate(scores)],
+                [x[0] + (1 if self.is_damaging_location(i) and (self.monster.jumping or self.monster.teleport) else 0) for i,x in enumerate(scores)])
 
     def find_neighbors_and_movement_cost(self, location :int):
         neighbor_cost:list[tuple[int,tuple[int,int]]]=[]
         for edge, neighbor in enumerate(self.neighbors[location]):
-            if neighbor == -1 or not self.can_travel_through(neighbor) or self.walls[location][edge]:
+            if neighbor == -1 or not self.can_travel_through(neighbor) or (self.walls[location][edge] and not self.monster.teleport and not self.monster.jumping and not self.monster.flying):
                 continue
             slide = False
-            while self.is_icy(neighbor):
-                slide = True
-                next_neighbor = self.neighbors[neighbor][edge]
-                if next_neighbor == -1 or not self.can_travel_through(next_neighbor) or self.figures[next_neighbor] == 'M' or self.walls[neighbor][edge]:
-                    break
-                neighbor = next_neighbor
 
-            neighbor_distance = 1 if self.monster.flying or self.monster.teleport or slide or self.monster.jumping else self.additional_path_cost( neighbor ) + 1
-            neighbor_cost.append((neighbor,(0 if self.monster.jumping or self.monster.teleport else int(self.is_trap(neighbor)),neighbor_distance)))
+            if not self.monster.flying and not self.monster.jumping and not self.monster.teleport:            
+                while self.is_icy(neighbor) :
+                    slide = True
+                    next_neighbor = self.neighbors[neighbor][edge]
+                    if next_neighbor == -1 or not self.can_travel_through(next_neighbor) or self.figures[next_neighbor] == 'M' or self.walls[neighbor][edge]:
+                        break
+                    neighbor = next_neighbor
+
+            neighbor_distance = 1 if not self.is_difficult_terrain(neighbor) or self.monster.flying or self.monster.teleport or slide or self.monster.jumping else 2
+            neighbor_cost.append((neighbor,(0 if self.monster.jumping or self.monster.teleport or not self.is_damaging_location(neighbor) else 1,neighbor_distance)))
         return neighbor_cost
  
     def get_aoe_pattern_list_with_fixed_pattern(self, characters:list[int], monster:Monster)->list[tuple[int, frozenset[int]]]:
