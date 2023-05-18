@@ -66,5 +66,5 @@ def test_solve_multiple_destination(client: 'testing.FlaskClient'):
     p = json.loads(response.data)["actions"]
     r = json.loads(response.data)["scenario_id"]
 
-    assert json.dumps(p) == '[{"aoe": [], "attacks": [], "destinations": [288, 289], "focuses": [314], "move": 215, "sightlines": []}, {"aoe": [], "attacks": [], "destinations": [288, 289], "focuses": [314], "move": 240, "sightlines": []}, {"aoe": [], "attacks": [], "destinations": [289, 315], "focuses": [314], "move": 267, "sightlines": []}]'
+    assert json.dumps(p) == '[{"aoe": [], "attacks": [], "destinations": [289, 315], "focuses": [314], "move": 267, "sightlines": []}, {"aoe": [], "attacks": [], "destinations": [288, 289], "focuses": [314], "move": 215, "sightlines": []}, {"aoe": [], "attacks": [], "destinations": [288, 289], "focuses": [314], "move": 240, "sightlines": []}]'
     assert r == 8
