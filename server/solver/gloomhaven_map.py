@@ -88,7 +88,7 @@ class GloomhavenMap(hexagonal_grid):
     def find_neighbors_and_movement_cost(self, location :int):
         neighbor_cost:list[tuple[int,tuple[int,int]]]=[]
         for edge, neighbor in enumerate(self.neighbors[location]):
-            if neighbor == -1 or not self.can_travel_through(neighbor) or (self.walls[location][edge] and not self.monster.teleport and not self.monster.jumping and not self.monster.flying):
+            if neighbor == -1 or not self.can_travel_through(neighbor) or (self.walls[location][edge]):
                 continue
             slide = False
 
