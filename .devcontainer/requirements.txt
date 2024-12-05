@@ -1,6 +1,7 @@
 Flask
 pytest
 pytest-xdist
+pytest-cov
 pylint
 autopep8
 snakeviz
