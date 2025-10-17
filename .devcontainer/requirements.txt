@@ -9,3 +9,4 @@ pytest-profiling
 colorama
 pipe
 cachetools
+dacite

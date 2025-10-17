@@ -2,16 +2,16 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Run Profiling",
+            "name": "Run Profiling", // Should launch http://127.0.0.1:8080/snakeviz/%2Fworkspaces%2Fgloom%2Fprof%2Fcombined.prof
             "preLaunchTask": "run_profiling_test", // The name of the task defined above
             "request": "launch",
-            "type": "python",
+            "type": "debugpy",
             "module": "snakeviz",
-            "args": ["prof/combined.prof"]
+            "args": ["prof/combined.prof"] 
         },
         {
             "name": "Python: Flask",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "flask",
             "env": {
