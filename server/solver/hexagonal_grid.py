@@ -1,7 +1,34 @@
-from solver.utils import *
+"""Hex-grid geometry, LOS, range, and AOE helpers for the solver."""
+
+# pylint: disable=invalid-name, line-too-long, missing-function-docstring, trailing-whitespace
+
 import collections
+from collections.abc import Iterable
+
+from solver.settings import MAX_VALUE, SQRT_3_OVER_2, VERTEX_INSIDE, VERTEX_OUTSIDE_BOUND_ONE, VERTEX_OUTSIDE_BOUND_ZERO
+from solver.utils import (
+    COS_30,
+    apply_offset,
+    calculate_distance,
+    calculate_polygon_properties,
+    direction,
+    get_offset,
+    get_visibility_windows_at,
+    lerp_along_line,
+    line_hex_edge_intersection,
+    line_line_intersection,
+    map_window_polygon,
+    occluder_intersections,
+    occluder_target_intersection,
+    pin_offset,
+    rotate_offset,
+    visibility_cache_key,
+    within_bound,
+)
 
 class hexagonal_grid:
+    """Grid model with adjacency, LOS, and movement helpers."""
+
     def __init__(self, width: int, height: int):
         self.map_width = width
         self.map_height = height
@@ -13,17 +40,18 @@ class hexagonal_grid:
         self.extra_walls:list[list[bool]]
         self.vertices:list[tuple[float, float]]
         self.visibility_cache :dict[tuple[int,int],bool]={}
-        self.path_cache : dict[int,list[int]]=[{}]
-        self.path_cache_with_range : dict[int,list[int]]=[{}]
+        self.sightline_cache: dict[tuple[int, int, bool], tuple[tuple[float, float], tuple[float, float]]] = {}
+        self.path_cache: dict[int, list[int]] = {}
+        self.path_cache_with_range: dict[tuple[int, int], list[int]] = {}
     #Gloomhaven logic below
     def prepare_map(self,walls: list[list[bool]], contents: list[str]) -> None:
-        self.walls = walls
-        self.contents = contents
+        self.walls = [list(location_walls) for location_walls in walls]
+        self.contents = list(contents)
         self.setup_vertices_list()
         self.setup_neighbors_mapping()
 
-        contents_walls = [[False] *6]* self.map_size
-        self.effective_walls = [[False] *6]* self.map_size
+        contents_walls = [[False] * 6 for _ in range(self.map_size)]
+        self.effective_walls = [[False] * 6 for _ in range(self.map_size)]
         for location in range(self.map_size):
             if self.contents[location] == 'X':
                 contents_walls[location] = [True] * 6
@@ -43,7 +71,7 @@ class hexagonal_grid:
                     if contents_walls[location][edge]:
                         contents_walls[neighbor][neighbor_edge] = True
 
-        self.extra_walls = [[False] *6]* self.map_size
+        self.extra_walls = [[False] * 6 for _ in range(self.map_size)]
         for location in range(self.map_size):
             self.extra_walls[location] = [self.walls[location][_]
                                             and not contents_walls[location][_] for _ in range(6)]
@@ -393,7 +421,7 @@ class hexagonal_grid:
 
         # loop over every window at every occluder mapping intersection
         window_polygons:list[tuple[float, tuple[float, float]]] = []
-        polygon_starts = []
+        polygon_starts: list[tuple[int, int]] = []
         for x in occluder_intersections(occluder_mappings):
             for window in get_visibility_windows_at(x, occluder_mapping_set):
                 # build a polygon around the open area
@@ -487,22 +515,24 @@ class hexagonal_grid:
         
 
     def find_shortest_sightline(self, location_a: int, location_b: int, rule_vertex_los:bool) -> tuple[tuple[float, float], tuple[float, float]]:
+        cache_key = (location_a, location_b, rule_vertex_los)
+        if cache_key in self.sightline_cache:
+            return self.sightline_cache[cache_key]
+
+        reverse_cache_key = (location_b, location_a, rule_vertex_los)
+        if reverse_cache_key in self.sightline_cache:
+            reversed_line = self.sightline_cache[reverse_cache_key]
+            return (reversed_line[1], reversed_line[0])
+
         if not rule_vertex_los:
-            return self.find_best_full_hex_los_sightline(location_a, location_b)
+            shortest_line = self.find_best_full_hex_los_sightline(location_a, location_b)
+            self.sightline_cache[cache_key] = shortest_line
+            self.sightline_cache[reverse_cache_key] = (shortest_line[1], shortest_line[0])
+            return shortest_line
 
         bounds = self.calculate_bounds(location_a, location_b)
-
-        class v:
-            shortest_length = float('inf')
-            shortest_line = ((-1.0, -1.0),(-1.0, -1.0))
-
-        def consider_sightline(location_a:int, vertex_a:int, location_b:int, vertex_b:int):
-            length = calculate_distance(vertex_position_a, vertex_position_b)
-            if length < v.shortest_length:
-                if self.test_line(bounds, vertex_position_a, vertex_position_b):
-                    v.shortest_length = length
-                    v.shortest_line = (self.get_vertex(
-                        location_a, vertex_a), self.get_vertex(location_b, vertex_b))
+        shortest_length = float('inf')
+        shortest_line = ((-1.0, -1.0), (-1.0, -1.0))
 
         for vertex_a in range(6):
             if self.vertex_at_wall(location_a, vertex_a):
@@ -514,14 +544,22 @@ class hexagonal_grid:
                     continue
                 vertex_position_b = self.get_vertex(location_b, vertex_b)
 
-                consider_sightline(location_a, vertex_a, location_b, vertex_b)
+                length = calculate_distance(vertex_position_a, vertex_position_b)
+                if length < shortest_length and self.test_line(bounds, vertex_position_a, vertex_position_b):
+                    shortest_length = length
+                    shortest_line = (
+                        self.get_vertex(location_a, vertex_a),
+                        self.get_vertex(location_b, vertex_b),
+                    )
 
-        return v.shortest_line
+        self.sightline_cache[cache_key] = shortest_line
+        self.sightline_cache[reverse_cache_key] = (shortest_line[1], shortest_line[0])
+        return shortest_line
 
     def find_proximity_distances(self, start: int) -> list[int]:
-        cache_key = (start)
-        if cache_key in self.path_cache[0]:
-            return self.path_cache[0][cache_key]
+        cache_key = start
+        if cache_key in self.path_cache:
+            return self.path_cache[cache_key]
 
         distances = [MAX_VALUE] * self.map_size
 
@@ -544,44 +582,25 @@ class hexagonal_grid:
                     frontier.append(neighbor)
                     distances[neighbor] = neighbor_distance
 
-        self.path_cache[0][cache_key] = distances
+        self.path_cache[cache_key] = distances
         return distances
 
-    def find_proximity_distances_within_range(self, start: int, range:int) -> list[int]:
-        cache_key = (start,range)
-        if cache_key in self.path_cache_with_range[0]:
-          return self.path_cache_with_range[0][cache_key]
+    def find_locations_within_range(self, start: int, distance_range: int) -> list[int]:
+        cache_key = (start, distance_range)
+        if cache_key in self.path_cache_with_range:
+            return self.path_cache_with_range[cache_key]
 
-        distances = [MAX_VALUE] * self.map_size
+        if distance_range < 1:
+            self.path_cache_with_range[cache_key] = []
+            return self.path_cache_with_range[cache_key]
 
-        frontier:collections.deque[int] = collections.deque()
-        frontier.append(start)
-        distances[start] = 0
-        neighbor_distance =0
-        while len(frontier) != 0:
-            current = frontier.popleft()
-            distance = distances[current]
-            for edge, neighbor in enumerate(self.neighbors[current]):
+        distances = self.find_proximity_distances(start)
+        locations = [location for location, distance in enumerate(distances) if 0 < distance <= distance_range]
+        self.path_cache_with_range[cache_key] = locations
+        return self.path_cache_with_range[cache_key]
 
-                if neighbor == -1:
-                    continue
-                if self.does_block_los(neighbor):
-                    continue
-                if self.walls[current][edge]:
-                    continue
-
-                neighbor_distance = distance + 1
-                if neighbor_distance -1 > range :
-                    distances = [distance[0] for distance in enumerate(distances) if 0 < distance[1] <= range]                  
-                    self.path_cache_with_range[0][cache_key] = distances
-                    return distances
-                elif neighbor_distance < distances[neighbor]:
-                    frontier.append(neighbor)
-                    distances[neighbor] = neighbor_distance
-
-        distances = [distance[0] for distance in enumerate(distances) if 0 < distance[1] <= range]
-        self.path_cache_with_range[0][cache_key] = distances
-        return distances
+    def find_proximity_distances_within_range(self, start: int, distance_range: int) -> list[int]:
+        return self.find_locations_within_range(start, distance_range)
 
     def to_axial_coordinate(self, location:int, height:int) -> tuple[int,int]:
         column = location % height
@@ -598,14 +617,14 @@ class hexagonal_grid:
     def from_axial_coordinate(self, coordinate:tuple[int,int], height:int, width:int)->int:
        
         column = coordinate[1]
-        if not (0 <= column < width):
+        if not 0 <= column < width:
             return -1
         row = coordinate[0]
-        if not (0 - column // 2 <= row < height - column // 2):
+        if not 0 - column // 2 <= row < height - column // 2:
             return -1
         return row + column // 2 + column * height
 
-    def solve_sight(self, monster: int,upper_bound:int, RULE_VERTEX_LOS:bool) -> list[tuple[int, int]]:
+    def solve_sight(self, monster: int,upper_bound:int, rule_vertex_los:bool) -> list[tuple[int, int]]:
 
         distances = self.find_proximity_distances(monster)
 
@@ -613,7 +632,7 @@ class hexagonal_grid:
         has_run_begun = False
         run = 0
         for location in range(self.map_size):
-            if distances[location] <= upper_bound and not self.does_block_los(location) and location != monster and self.test_los_between_locations(monster, location, RULE_VERTEX_LOS):
+            if distances[location] <= upper_bound and not self.does_block_los(location) and location != monster and self.test_los_between_locations(monster, location, rule_vertex_los):
                 if not has_run_begun :
                     run = location
                     has_run_begun = True
@@ -625,26 +644,37 @@ class hexagonal_grid:
             reach.append((run, self.map_size))
         return reach
     
-    def get_all_patterns_hitting_hexes(self, hexes:list[int], relative_pattern:list[int])->set[frozenset[int]]:      
-        PRECALC_GRID_HEIGHT = 21
-        PRECALC_GRID_WIDTH = 21
-        PRECALC_GRID_SIZE = PRECALC_GRID_HEIGHT * PRECALC_GRID_WIDTH
-        PRECALC_GRID_CENTER = (PRECALC_GRID_SIZE - 1) // 2
+    def get_all_patterns_hitting_hexes(
+        self,
+        hexes: list[int],
+        relative_pattern: list[tuple[int, int, int]],
+    ) -> list[tuple[int, ...]]:
+        precalc_grid_height = 21
+        precalc_grid_width = 21
+        precalc_grid_size = precalc_grid_height * precalc_grid_width
+        precalc_grid_center = (precalc_grid_size - 1) // 2
 
-        aoe_pattern_set: set[tuple[int]] = set()
+        aoe_pattern_set: set[tuple[int, ...]] = set()
         for aoe_pin in relative_pattern:
             for aoe_rotation in range(12):
-                aoe_hexes = [apply_offset(PRECALC_GRID_CENTER, rotate_offset(pin_offset(aoe_offset, aoe_pin), aoe_rotation), PRECALC_GRID_HEIGHT, PRECALC_GRID_SIZE)
+                aoe_hexes = [apply_offset(precalc_grid_center, rotate_offset(pin_offset(aoe_offset, aoe_pin), aoe_rotation), precalc_grid_height, precalc_grid_size)
                             for aoe_offset in relative_pattern]
                 aoe_pattern_set.add(tuple(aoe_hexes))
 
-        new_var = [[get_offset(PRECALC_GRID_CENTER, location, PRECALC_GRID_HEIGHT)
-                                for location in aoe]
-                            for aoe in aoe_pattern_set]
+        normalized_patterns = [
+            [get_offset(precalc_grid_center, location, precalc_grid_height) for location in aoe]
+            for aoe in aoe_pattern_set
+        ]
                  
-        return [[location_offset for aoe_offset in aoe_pattern_list if (location_offset:=self.apply_aoe_offset(character, aoe_offset))!=-1]
-                                        for aoe_pattern_list in new_var
-                                        for character in hexes]
+        return [
+            tuple(
+                location_offset
+                for aoe_offset in aoe_pattern_list
+                if (location_offset := self.apply_aoe_offset(character, aoe_offset)) != -1
+            )
+            for aoe_pattern_list in normalized_patterns
+            for character in hexes
+        ]
     # def find_distances(self, start: int) -> list[int]:
     #     cache_key = (start)
     #     if cache_key in self.path_cache[3]:

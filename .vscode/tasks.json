@@ -5,6 +5,7 @@
     "tasks": [
         {
             "label": "run_profiling_test",
+            "type": "process",
             "isTestCommand": true,
             "command": "python",
             "echoCommand": true,

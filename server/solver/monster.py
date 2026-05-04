@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
-from solver.utils import  get_offset
-import sys
+
+from solver.utils import get_offset
+
 @dataclass
 class Monster:
     aoe_width = 7
@@ -16,10 +17,9 @@ class Monster:
     teleport : bool = False
     
     def aoe_center(self) -> int:
-        center = (self.aoe_size - 1) // 2
-        if int(center) - center != 0:
-            sys.exit('aoe has no center')
-        return center
+        if self.aoe_size % 2 == 0:
+            raise ValueError('aoe has no center')
+        return (self.aoe_size - 1) // 2
 
     def attack_range(self) -> int:
         return 1 if self.action_range == 0 or self.action_target == 0 else self.action_range
@@ -46,8 +46,10 @@ class Monster:
     def is_aoe(self) -> bool:
         return self.has_attack() and True in self.aoe
     
-    def aoe_pattern(self) -> list[tuple[int, int, int]]:        
-        return [get_offset(self.aoe.index(True), location, self.aoe_height) for location in range(self.aoe_size) if self.aoe[location]]
+    def aoe_pattern(self, aoe_mask: list[bool] | None = None) -> list[tuple[int, int, int]]:
+        active_mask = self.aoe if aoe_mask is None else aoe_mask
+        anchor = active_mask.index(True)
+        return [get_offset(anchor, location, self.aoe_height) for location in range(self.aoe_size) if active_mask[location]]
 
     def is_melee_aoe(self) -> bool:
         return self.is_aoe() and self.action_range == 0

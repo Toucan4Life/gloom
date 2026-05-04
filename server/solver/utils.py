@@ -1,13 +1,44 @@
-from typing import Iterable
-from solver.settings import *
-from functools import cmp_to_key
-from pipe import Pipe, select, filter
-import builtins
+"""Shared solver utility helpers for geometry, pathing, and collection transforms."""
+
+# pylint: disable=line-too-long, missing-function-docstring, trailing-whitespace
+
 import collections
+import heapq
+import math
+from collections.abc import Callable, Hashable, Iterable, Sequence
+from functools import cmp_to_key
+from typing import Any, Protocol, TypeVar, cast, overload
+
+from solver.settings import MAX_VALUE
 
 COS_30 = math.cos(30.0 / 180.0 * math.pi)
 EPSILON = 1e-12
-enumerate_piped = Pipe(builtins.enumerate)
+
+class Comparable(Protocol):
+    """Protocol for values that can be ordered for minima selection."""
+
+    def __lt__(self, other: Any, /) -> bool: ...
+
+    def __eq__(self, other: object, /) -> bool: ...
+
+
+ItemT = TypeVar('ItemT')
+ScoreT = TypeVar('ScoreT', bound=Comparable)
+KeyT = TypeVar('KeyT')
+ValueT = TypeVar('ValueT', bound=Hashable)
+DistinctT = TypeVar('DistinctT', bound=Hashable)
+PathScore = tuple[int, int]
+WeightedGraph = Sequence[Sequence[tuple[int, PathScore]]]
+OccluderMapping = tuple[float, float, float]
+IndexedOccluderMapping = tuple[OccluderMapping, int]
+InternalOccluderMapping = tuple[OccluderMapping, OccluderMapping, int, int]
+InternalOccluderValue = tuple[float, float, int, float, float, int]
+VisibilityWindow = tuple[float, float, float, int]
+LineIntersection = tuple[float, int, float]
+LineWithDirection = tuple[
+    tuple[tuple[float, float], tuple[float, float]],
+    tuple[float, float],
+]
 
 # def debug(expression):
 #     # traceback.print_stack()
@@ -16,51 +47,115 @@ enumerate_piped = Pipe(builtins.enumerate)
 #     r = pprint.pformat(a)
 #     print('%s = %s' % (expression, r))
 
-@Pipe
-def minima(iterable,func):
-    iterable = [x for x in iterable]
-    if len(iterable) == 0 :
-        return list()
-    iterable = list(iterable)
-    current_score:int=func(iterable[0])
-    best_iterable:list[Any]=[iterable[0]]
 
-    for _,candidate in enumerate(iterable[1:]):
+def dedup(iterable: Iterable[DistinctT]) -> list[DistinctT]:
+    return list(dict.fromkeys(iterable))
+
+
+def _minima_impl(iterable: Iterable[ItemT], func: Callable[[ItemT], ScoreT]) -> list[ItemT]:
+    values = list(iterable)
+    if len(values) == 0:
+        return []
+
+    current_score = func(values[0])
+    best_iterable = [values[0]]
+
+    for candidate in values[1:]:
         evaluation = func(candidate)
-        if (current_score<evaluation):
+        if current_score < evaluation:
             continue
-        if(current_score==evaluation):
+        if current_score == evaluation:
             best_iterable.append(candidate)
         else:
-            current_score=evaluation
-            best_iterable=[candidate]
+            current_score = evaluation
+            best_iterable = [candidate]
 
     return best_iterable
 
-@Pipe
-def invert_key_values(keys,values_for_key_func):
-    locations_for_groups :dict[frozenset[int],set[int]] = collections.defaultdict(set)
+@overload
+def minima(func: Callable[[ItemT], ScoreT], /) -> Callable[[Iterable[ItemT]], list[ItemT]]: ...
+
+
+@overload
+def minima(iterable: Iterable[ItemT], func: Callable[[ItemT], ScoreT], /) -> list[ItemT]: ...
+
+
+def minima(
+    iterable_or_func: Iterable[ItemT] | Callable[[ItemT], ScoreT],
+    func: Callable[[ItemT], ScoreT] | None = None,
+    /,
+) -> list[ItemT] | Callable[[Iterable[ItemT]], list[ItemT]]:
+    if func is None:
+        key_func = cast(Callable[[ItemT], ScoreT], iterable_or_func)
+
+        def apply(iterable: Iterable[ItemT]) -> list[ItemT]:
+            return _minima_impl(iterable, key_func)
+
+        return apply
+
+    return _minima_impl(cast(Iterable[ItemT], iterable_or_func), func)
+
+
+def _invert_key_values_impl(
+    keys: Iterable[KeyT],
+    values_for_key_func: Callable[[KeyT], Iterable[ValueT]],
+) -> list[tuple[ValueT, set[KeyT]]]:
+    locations_for_groups: dict[ValueT, set[KeyT]] = collections.defaultdict(set)
 
     for key in keys:
         for value in values_for_key_func(key):
             locations_for_groups[value].add(key)
-            
+
     return list(locations_for_groups.items())
 
-def dijkstra_algorithm(start, graph):
-        frontier: collections.deque[int] = collections.deque()
-        frontier.append(start)
-        scores = list(zip([MAX_VALUE] * len(graph),[MAX_VALUE] * len(graph)))
-        scores[start] = (0,0)
 
-        while len(frontier) != 0:
-            current = frontier.popleft()            
-            for neighbor, score in graph[current]:
-                total_score =(scores[current][0] + score[0], scores[current][1] + score[1])
-                if total_score < scores[neighbor]:
-                    frontier.append(neighbor)
-                    scores[neighbor] = total_score
-        return scores
+@overload
+def invert_key_values(
+    values_for_key_func: Callable[[KeyT], Iterable[ValueT]],
+    /,
+) -> Callable[[Iterable[KeyT]], list[tuple[ValueT, set[KeyT]]]]: ...
+
+
+@overload
+def invert_key_values(
+    keys: Iterable[KeyT],
+    values_for_key_func: Callable[[KeyT], Iterable[ValueT]],
+    /,
+) -> list[tuple[ValueT, set[KeyT]]]: ...
+
+
+def invert_key_values(
+    keys_or_func: Iterable[KeyT] | Callable[[KeyT], Iterable[ValueT]],
+    values_for_key_func: Callable[[KeyT], Iterable[ValueT]] | None = None,
+    /,
+) -> list[tuple[ValueT, set[KeyT]]] | Callable[[Iterable[KeyT]], list[tuple[ValueT, set[KeyT]]]]:
+    if values_for_key_func is None:
+        mapper = cast(Callable[[KeyT], Iterable[ValueT]], keys_or_func)
+
+        def apply(keys: Iterable[KeyT]) -> list[tuple[ValueT, set[KeyT]]]:
+            return _invert_key_values_impl(keys, mapper)
+
+        return apply
+
+    return _invert_key_values_impl(cast(Iterable[KeyT], keys_or_func), values_for_key_func)
+
+
+def dijkstra_algorithm(start: int, graph: WeightedGraph) -> list[PathScore]:
+    frontier: list[tuple[int, int, int]] = [(0, 0, start)]
+    scores: list[PathScore] = [(MAX_VALUE, MAX_VALUE) for _ in range(len(graph))]
+    scores[start] = (0, 0)
+
+    while len(frontier) != 0:
+        score_a, score_b, current = heapq.heappop(frontier)
+        if (score_a, score_b) != scores[current]:
+            continue
+
+        for neighbor, score in graph[current]:
+            total_score = (score_a + score[0], score_b + score[1])
+            if total_score < scores[neighbor]:
+                scores[neighbor] = total_score
+                heapq.heappush(frontier, (total_score[0], total_score[1], neighbor))
+    return scores
 
 def get_offset(center: int, location: int, grid_height: int) -> tuple[int, int, int]:
     location_row = location % grid_height
@@ -108,17 +203,17 @@ def apply_offset(center: int, offset: tuple[int, int, int], grid_height: int, gr
 def rotate_offset(offset: tuple[int, int, int], rotation: int) -> tuple[int, int, int]:
     # rotations 6 through 11 are mirrored
     if rotation < 6:
-        offsetRot = (offset[0], offset[1], offset[2], 0, 0, 0)
+        offset_rot = (offset[0], offset[1], offset[2], 0, 0, 0)
     else:
         rotation -= 6
-        offsetRot = (offset[0], 0, 0, 0, offset[2], offset[1])
+        offset_rot = (offset[0], 0, 0, 0, offset[2], offset[1])
 
-    offsetRot = offsetRot[rotation:] + offsetRot[:rotation]
+    offset_rot = offset_rot[rotation:] + offset_rot[:rotation]
 
     return (
-        offsetRot[0] - offsetRot[3],
-        offsetRot[1] - offsetRot[4],
-        offsetRot[2] - offsetRot[5],
+        offset_rot[0] - offset_rot[3],
+        offset_rot[1] - offset_rot[4],
+        offset_rot[2] - offset_rot[5],
     )
 
 
@@ -272,26 +367,26 @@ def within_bound(location: tuple[float, float], line: tuple[tuple[float, float],
     return cross_product(bound_dir, location_dir) < -EPSILON
 
 
-def occluder_less_than(xxx_todo_changeme: tuple[float, float], xxx_todo_changeme1: tuple[float, float]) -> bool:
-    (value_a, slope_a) = xxx_todo_changeme
-    (value_b, slope_b) = xxx_todo_changeme1
+def occluder_less_than(value_slope_a: tuple[float, float], value_slope_b: tuple[float, float]) -> bool:
+    (value_a, slope_a) = value_slope_a
+    (value_b, slope_b) = value_slope_b
     if abs(value_a - value_b) < EPSILON:
         return slope_a < slope_b
     else:
         return value_a < value_b
 
 
-def occluder_greater_than(xxx_todo_changeme2: tuple[float, float], xxx_todo_changeme3: tuple[float, float]) -> bool:
-    (value_a, slope_a) = xxx_todo_changeme2
-    (value_b, slope_b) = xxx_todo_changeme3
+def occluder_greater_than(value_slope_a: tuple[float, float], value_slope_b: tuple[float, float]) -> bool:
+    (value_a, slope_a) = value_slope_a
+    (value_b, slope_b) = value_slope_b
     if abs(value_a - value_b) < EPSILON:
         return slope_a > slope_b
     else:
         return value_a > value_b
 
 
-def get_occluder_value_at(xxx_todo_changeme4: tuple[float, float, float], at: float) -> tuple[float, float]:
-    (value_at_zero, value_at_one, slope) = xxx_todo_changeme4
+def get_occluder_value_at(occluder: OccluderMapping, at: float) -> tuple[float, float]:
+    (value_at_zero, value_at_one, slope) = occluder
     return lerp(value_at_zero, value_at_one, at), slope
 
 
@@ -327,32 +422,23 @@ def find_intersection_at(t: float, intersections: list[tuple[float, int, float]]
     return -1
 
 
-def get_visibility_windows_at(
-        x: float,
-        occluder_mapping_set: tuple[
-            list[tuple[float, float, float]],
-            list[tuple[tuple[float, float, float], int]],
-            list[tuple[tuple[float, float, float], int]],
-            list[tuple[tuple[float, float, float], tuple[float, float, float], int, int]]]) -> list[tuple[float, float, float, int]]:
-
-    occluder_mappings_below = occluder_mapping_set[1]
-    occluder_mappings_above = occluder_mapping_set[2]
-    occluder_mappings_internal = occluder_mapping_set[3]
-    # is there a visibility window at this point
-    # use slope to determine whether a visibility window is opening or closing
-
+def resolve_visibility_window_bounds(
+    x: float,
+    occluder_mappings_below: list[IndexedOccluderMapping],
+    occluder_mappings_above: list[IndexedOccluderMapping],
+) -> tuple[float, float, float, float, int]:
     window_bottom = 0.0
     window_top = 1.0
     window_bottom_slope = 0.0
     window_top_slope = 0.0
     window_top_mapping_index = 1
 
-    # determine the visibility window by finding the tightest occluders from above and below
     for occluder, _ in occluder_mappings_below:
         value, slope = get_occluder_value_at(occluder, x)
         if occluder_greater_than((value, slope), (window_bottom, window_bottom_slope)):
             window_bottom = value
             window_bottom_slope = slope
+
     for occluder, mapping_index in occluder_mappings_above:
         value, slope = get_occluder_value_at(occluder, x)
         if occluder_less_than((value, slope), (window_top, window_top_slope)):
@@ -360,17 +446,16 @@ def get_visibility_windows_at(
             window_top_slope = slope
             window_top_mapping_index = mapping_index
 
-    if occluder_greater_than((window_bottom, window_bottom_slope + EPSILON), (window_top, window_top_slope)):
-        # no visibility window exists
-        return []
+    return window_bottom, window_bottom_slope, window_top, window_top_slope, window_top_mapping_index
 
-    if len(occluder_mappings_internal) == 0:
-        # a visibility window exists and there are no internal occluders to cover it
-        return [(x, window_bottom, window_top, window_top_mapping_index)]
 
-    # build a sorted list of internal occluders in the window
-    internal_values : list[tuple[float, float, int,float,float,int]]
-    internal_values=[]
+def build_internal_occluder_values(
+    x: float,
+    window_bottom: tuple[float, float],
+    window_top: tuple[float, float],
+    occluder_mappings_internal: list[InternalOccluderMapping],
+) -> list[InternalOccluderValue]:
+    internal_values: list[InternalOccluderValue] = []
     for internal_occluder in occluder_mappings_internal:
         value_a, slope_a = get_occluder_value_at(internal_occluder[0], x)
         value_b, slope_b = get_occluder_value_at(internal_occluder[1], x)
@@ -379,25 +464,33 @@ def get_visibility_windows_at(
             (value_a, slope_a, mapping_idx_a), (value_b, slope_b, mapping_idx_b) = (
                 value_b, slope_b, mapping_idx_b), (value_a, slope_a, mapping_idx_a)
 
-        if occluder_greater_than((value_a, slope_a), (window_top, window_top_slope)):
+        if occluder_greater_than((value_a, slope_a), window_top):
             continue
-        if occluder_less_than((value_b, slope_b), (window_bottom, window_bottom_slope)):
+        if occluder_less_than((value_b, slope_b), window_bottom):
             continue
+
         internal_values.append((value_a, slope_a, mapping_idx_a, value_b, slope_b, mapping_idx_b))
-        
+
     internal_values.sort(key=cmp_to_key(lambda occluder_a, occluder_b:
                                         -1 if occluder_less_than(
                                             (occluder_a[0], occluder_a[1]), (occluder_b[0], occluder_b[1])) else 1
                                         ))
+    return internal_values
 
-    # loop over the internal occluders from lowest starting point to highest
-    windows : list[tuple[float, float,float, int]]
-    windows=[]
+
+def windows_around_internal_occluders(
+    x: float,
+    internal_values: list[InternalOccluderValue],
+    window_bottom: float,
+    window_bottom_slope: float,
+    window_top: float,
+    window_top_slope: float,
+    window_top_mapping_index: int,
+) -> list[VisibilityWindow]:
+    windows: list[VisibilityWindow] = []
     for internal_value in internal_values:
         if occluder_greater_than((internal_value[0], internal_value[1] - EPSILON), (window_bottom, window_bottom_slope)):
-            # there is a visibility gap below the lowest internal occluder; record then find further windows
-            windows.append(
-                (x, window_bottom, internal_value[0], internal_value[2]))
+            windows.append((x, window_bottom, internal_value[0], internal_value[2]))
             if occluder_greater_than((internal_value[3], internal_value[4] + EPSILON), (window_top, window_top_slope)):
                 break
             window_bottom = internal_value[3]
@@ -405,28 +498,60 @@ def get_visibility_windows_at(
             continue
 
         if occluder_greater_than((internal_value[3], internal_value[4] + EPSILON), (window_top, window_top_slope)):
-            # the internal occluder fully covers the visibilty window; there is no visibility at this intersection
             break
 
         if occluder_greater_than((internal_value[3], internal_value[4]), (window_bottom, window_bottom_slope)):
-            # this internal occluder partially covers the visibilty window; reduce the window
             window_bottom = internal_value[3]
             window_bottom_slope = internal_value[4]
             continue
 
-        
-        # this internal occluder is fully below the visibility window and has no impact
-        continue
-
     else:
-        # the internal occluders did not cover the visibility window
-        windows.append((x, window_bottom, window_top,
-                       window_top_mapping_index))
+        windows.append((x, window_bottom, window_top, window_top_mapping_index))
 
     return windows
 
 
-def get_line_intersections(line_index: int, occluder_mappings: list[tuple[float, float, float]]) -> list[tuple[float, int, float]]:
+def get_visibility_windows_at(
+        x: float,
+        occluder_mapping_set: tuple[
+            list[OccluderMapping],
+            list[IndexedOccluderMapping],
+            list[IndexedOccluderMapping],
+            list[InternalOccluderMapping]]) -> list[VisibilityWindow]:
+
+    occluder_mappings_below = occluder_mapping_set[1]
+    occluder_mappings_above = occluder_mapping_set[2]
+    occluder_mappings_internal = occluder_mapping_set[3]
+    window_bottom, window_bottom_slope, window_top, window_top_slope, window_top_mapping_index = resolve_visibility_window_bounds(
+        x,
+        occluder_mappings_below,
+        occluder_mappings_above,
+    )
+
+    if occluder_greater_than((window_bottom, window_bottom_slope + EPSILON), (window_top, window_top_slope)):
+        return []
+
+    if len(occluder_mappings_internal) == 0:
+        return [(x, window_bottom, window_top, window_top_mapping_index)]
+
+    internal_values = build_internal_occluder_values(
+        x,
+        (window_bottom, window_bottom_slope),
+        (window_top, window_top_slope),
+        occluder_mappings_internal,
+    )
+    return windows_around_internal_occluders(
+        x,
+        internal_values,
+        window_bottom,
+        window_bottom_slope,
+        window_top,
+        window_top_slope,
+        window_top_mapping_index,
+    )
+
+
+def get_line_intersections(line_index: int, occluder_mappings: list[OccluderMapping]) -> list[LineIntersection]:
     left_wall_index = len(occluder_mappings)
     if line_index < left_wall_index:
         occluder_a = occluder_mappings[line_index]
@@ -457,10 +582,8 @@ def get_line_intersections(line_index: int, occluder_mappings: list[tuple[float,
 def find_intersection_exit(
     occluder_index: int,
     traversing_backwards: bool,
-    potential_exits: list[tuple[float, int, float]],
-    lines: list[tuple[
-        tuple[tuple[float, float], tuple[float, float]],
-        tuple[float, float]]]) -> tuple[tuple[float, int, float], bool]:
+    potential_exits: list[LineIntersection],
+    lines: list[LineWithDirection]) -> tuple[LineIntersection, bool]:
 
     best_cross = 0.0
     best_exit = (0.0, 0, 0.0)
@@ -470,8 +593,8 @@ def find_intersection_exit(
     if traversing_backwards:
         current_line_direction = scale_vector(-1.0, current_line_direction)
 
-    for exit in potential_exits:
-        exit_line_direction = lines[exit[1]][1]
+    for exit_candidate in potential_exits:
+        exit_line_direction = lines[exit_candidate[1]][1]
 
         cross = cross_product(exit_line_direction, current_line_direction)
         dot = dot_product(exit_line_direction, current_line_direction)
@@ -483,10 +606,61 @@ def find_intersection_exit(
             cross = 2.0 - cross
         if cross > best_cross:
             best_cross = cross
-            best_exit = exit
+            best_exit = exit_candidate
             best_exit_is_backwards = backwards
 
     return best_exit, best_exit_is_backwards
+
+
+def polygon_subsection_properties(
+    x_l: float,
+    x_r: float,
+    prev_top: tuple[float, float],
+    next_top: tuple[float, float],
+    prev_bot: tuple[float, float],
+    next_bot: tuple[float, float],
+) -> tuple[float, tuple[float, float]]:
+    top_y_l = lerp(prev_top[1], next_top[1], (x_l - prev_top[0]) / (next_top[0] - prev_top[0]))
+    top_y_r = lerp(prev_top[1], next_top[1], (x_r - prev_top[0]) / (next_top[0] - prev_top[0]))
+    bot_y_l = lerp(prev_bot[1], next_bot[1], (x_l - prev_bot[0]) / (next_bot[0] - prev_bot[0]))
+    bot_y_r = lerp(prev_bot[1], next_bot[1], (x_r - prev_bot[0]) / (next_bot[0] - prev_bot[0]))
+
+    delta_x = x_r - x_l
+
+    top_y_max = max(top_y_l, top_y_r)
+    top_y_min = min(top_y_l, top_y_r)
+    bot_y_max = max(bot_y_l, bot_y_r)
+    bot_y_min = min(bot_y_l, bot_y_r)
+
+    area_square = delta_x * (top_y_max - bot_y_min)
+    area_top_triangle = 0.5 * delta_x * (top_y_max - top_y_min)
+    area_bot_triangle = 0.5 * delta_x * (bot_y_max - bot_y_min)
+    subsection_area = area_square - area_top_triangle - area_bot_triangle
+
+    center_of_mass_square = (
+        0.5 * (x_r + x_l),
+        0.5 * (top_y_max + bot_y_min)
+    )
+
+    center_of_mass_top_triangle = (
+        (x_l + delta_x / 3.0 if top_y_l < top_y_r else x_r - delta_x / 3.0),
+        (top_y_min + 2.0 * top_y_max) / 3.0
+    )
+
+    center_of_mass_bot_triangle = (
+        (x_l + delta_x / 3.0 if bot_y_l > bot_y_r else x_r - delta_x / 3.0),
+        (bot_y_max + 2.0 * bot_y_min) / 3.0
+    )
+
+    subsection_center_of_mass = add_vector(
+        scale_vector(area_square, center_of_mass_square),
+        scale_vector(-area_top_triangle, center_of_mass_top_triangle),
+    )
+    subsection_center_of_mass = add_vector(
+        subsection_center_of_mass,
+        scale_vector(-area_bot_triangle, center_of_mass_bot_triangle),
+    )
+    return subsection_area, subsection_center_of_mass
 
 
 def calculate_polygon_properties(polygon: list[tuple[float, float]]) -> tuple[float, tuple[float, float]]:
@@ -511,53 +685,14 @@ def calculate_polygon_properties(polygon: list[tuple[float, float]]) -> tuple[fl
         if next_top_x != prev_top_x and next_bot_x != prev_bot_x:
             x_l = x
             x_r = next_top_x if next_top_x < next_bot_x else next_bot_x
-            top_y_l = lerp(prev_top_y, next_top_y, 
-                (x_l - prev_top_x)/ (next_top_x - prev_top_x))
-            top_y_r = lerp(prev_top_y, next_top_y, 
-                (x_r - prev_top_x)/ (next_top_x - prev_top_x))
-            bot_y_l = lerp(prev_bot_y, next_bot_y, 
-                (x_l - prev_bot_x)/ (next_bot_x - prev_bot_x))
-            bot_y_r = lerp(prev_bot_y, next_bot_y, 
-                (x_r - prev_bot_x)/ (next_bot_x - prev_bot_x))
-
-            delta_x = x_r - x_l
-
-            top_y_max = max(top_y_l, top_y_r)
-            top_y_min = min(top_y_l, top_y_r)
-            bot_y_max = max(bot_y_l, bot_y_r)
-            bot_y_min = min(bot_y_l, bot_y_r)
-
-            area_square = delta_x * (top_y_max - bot_y_min)
-            area_top_triangle = 0.5 * delta_x * (top_y_max - top_y_min)
-            area_bot_triangle = 0.5 * delta_x * (bot_y_max - bot_y_min)
-            subsection_area = area_square - area_top_triangle - area_bot_triangle
-
-            center_of_mass_square = (
-                0.5 * (x_r + x_l),
-                0.5 * (top_y_max + bot_y_min)
+            subsection_area, subsection_center_of_mass = polygon_subsection_properties(
+                x_l,
+                x_r,
+                (prev_top_x, prev_top_y),
+                (next_top_x, next_top_y),
+                (prev_bot_x, prev_bot_y),
+                (next_bot_x, next_bot_y),
             )
-
-            center_of_mass_top_triangle = (
-                (x_l + delta_x/ 3.0 if top_y_l < top_y_r else x_r - delta_x/ 3.0),
-                (top_y_min + 2.0 * top_y_max)/ 3.0
-            )
-
-            center_of_mass_bot_triangle = (
-                (x_l + delta_x/ 3.0 if bot_y_l > bot_y_r else x_r - delta_x/ 3.0),
-                (bot_y_max + 2.0 * bot_y_min)/ 3.0
-            )
-
-            center_of_mass_square = scale_vector(
-                area_square, center_of_mass_square)
-            center_of_mass_top_triangle = scale_vector(
-                -area_top_triangle, center_of_mass_top_triangle)
-            center_of_mass_bot_triangle = scale_vector(
-                -area_bot_triangle, center_of_mass_bot_triangle)
-
-            subsection_center_of_mass = add_vector(
-                center_of_mass_square, center_of_mass_top_triangle)
-            subsection_center_of_mass = add_vector(
-                subsection_center_of_mass, center_of_mass_bot_triangle)
 
             area += subsection_area
             center_of_mass = add_vector(
@@ -583,13 +718,30 @@ def calculate_polygon_properties(polygon: list[tuple[float, float]]) -> tuple[fl
     return area, center_of_mass
 
 
+def polygon_is_closed(polygon: list[tuple[float, float]], vertex: tuple[float, float]) -> bool:
+    if len(polygon) < 3:
+        return False
+    return intersection_close(polygon[0][0], vertex[0]) and intersection_close(polygon[0][1], vertex[1])
+
+
+def next_distinct_intersection(
+    intersections: list[LineIntersection],
+    intersection_index: int,
+    traversing_backwards: bool,
+    previous_t: float,
+) -> tuple[int, float]:
+    while True:
+        intersection_index += -1 if traversing_backwards else 1
+        next_t = intersections[intersection_index][0]
+        if not intersection_close(previous_t, next_t):
+            return intersection_index, next_t
+
+
 def map_window_polygon(
-    window: tuple[float, float, float, int],
-    previous_starts: list[tuple[float, float]],
-    occluder_mappings: list[tuple[float, float, float]],
-    lines: list[tuple[
-        tuple[tuple[float, float], tuple[float, float]],
-        tuple[float, float]]])-> None|list[tuple[float,float]]:
+    window: VisibilityWindow,
+    previous_starts: list[tuple[int, int]],
+    occluder_mappings: list[OccluderMapping],
+    lines: list[LineWithDirection]) -> list[tuple[float, float]] | None:
         
     # build a polygon around the window
     polygon:list[tuple[float,float]]
@@ -613,20 +765,12 @@ def map_window_polygon(
 
         # add this vertex to the polygon
         vertex = lerp_along_line(lines[line_index][0], t)
-        if len(polygon) >= 3:
-            if intersection_close(polygon[0][0], vertex[0]):
-                if intersection_close(polygon[0][1], vertex[1]):
-                    # the polygon is closed
-                    return polygon
+        if polygon_is_closed(polygon, vertex):
+            return polygon
         polygon.append(vertex)
 
         # step to the next intersection along the current line
-        previous_t = t
-        while True:
-            intersection_index += -1 if traversing_backwards else 1
-            t = intersections[intersection_index][0]
-            if not intersection_close(previous_t, t):
-                break
+        intersection_index, t = next_distinct_intersection(intersections, intersection_index, traversing_backwards, t)
 
         # find the intersecting line with the tightest inward angle
         potential_exits = [

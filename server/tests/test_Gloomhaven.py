@@ -8,30 +8,31 @@ def init_test():
     initiatives:list[int] = [0] * 16 * 7
     walls:list[list[bool]] = [[False] * 6 for _ in range(16*7)]
     return figures,contents,initiatives,walls
+
 def map_solution(info: list[tuple[int,int,list[int],tuple[int] | tuple[()],list[int],set[tuple[tuple[float, float], tuple[float, float]]]]])->list[tuple[int, list[int], list[int], set[int], set[tuple[tuple[float, float], tuple[float, float]]], set[int], set[int]]]:
-        debug_lines:set[int] = set()
-        if info[0][1] ==-1:
-            return list({((info[0][0],)):(info[0][0],[],[],set(),set(),set(),set())}.values())
-        focusdict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)
-        destdict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)        
-        aoedict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)       
-        for iinf in info:
-            for act in iinf[2]:
-                destdict[(act,)+tuple(sorted(iinf[3]))].update({iinf[0]})
-                focusdict[(act,)+tuple(sorted(iinf[3]))].update({iinf[1]})
-                aoedict[(act,)+tuple(sorted(iinf[3]))].update(iinf[4])
-   
-        solution = list({((act,)+tuple(sorted(iinf[3]))):
-            (act,
-            sorted(list(iinf[3])),
-            aoedict[(act,)+tuple(sorted(iinf[3]))],
-            destdict[(act,)+tuple(sorted(iinf[3]))],
-            iinf[5],
-            debug_lines,
-            focusdict[(act,)+tuple(sorted(iinf[3]))])
-            for iinf in info for act in iinf[2]}.values())
-            
-        return solution
+    debug_lines:set[int] = set()
+    if info[0][1] ==-1:
+        return list({((info[0][0],)):(info[0][0],[],[],set(),set(),set(),set())}.values())
+    focusdict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)
+    destdict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)
+    aoedict:dict[tuple[int]|tuple[int,int],set[int]] = collections.defaultdict(set)
+    for iinf in info:
+        for act in iinf[2]:
+            destdict[(act,)+tuple(sorted(iinf[3]))].update({iinf[0]})
+            focusdict[(act,)+tuple(sorted(iinf[3]))].update({iinf[1]})
+            aoedict[(act,)+tuple(sorted(iinf[3]))].update(iinf[4])
+
+    solution = list({((act,)+tuple(sorted(iinf[3]))):
+        (act,
+        sorted(list(iinf[3])),
+        aoedict[(act,)+tuple(sorted(iinf[3]))],
+        destdict[(act,)+tuple(sorted(iinf[3]))],
+        iinf[5],
+        debug_lines,
+        focusdict[(act,)+tuple(sorted(iinf[3]))])
+        for iinf in info for act in iinf[2]}.values())
+
+    return solution
 
 
 
@@ -63,6 +64,50 @@ def assert_answers(monster:Monster,figures:list[str],contents:list[str],initiati
         assert sanswers[i][5]==stest[i][5]
         assert sanswers[i][6]==stest[i][6]
   
+
+def test_repeated_melee_aoe_solve_keeps_monster_state_and_result():
+    m=Monster(action_move=2)
+    m.aoe[25] = True
+    m.aoe[31] = True
+    m.aoe[32] = True
+    figures,contents,initiatives,walls = init_test()
+
+    figures[16] = 'C'
+    figures[22] = 'C'
+    figures[18] = 'A'
+
+    gmap = GloomhavenMap(16, 7, m, figures, contents, initiatives, walls, Rule(1))
+    scenario = Solver(Rule(1), gmap)
+
+    first = map_solution(scenario.calculate_monster_move())
+    second = map_solution(scenario.calculate_monster_move())
+
+    assert m.aoe[m.aoe_center()] is False
+    assert first == second
+
+
+def test_prepare_map_does_not_mutate_input_walls():
+    m=Monster()
+    figures,contents,initiatives,walls = init_test()
+    walls[25][1] = True
+    original_walls = [row.copy() for row in walls]
+
+    GloomhavenMap(16, 7, m, figures, contents, initiatives, walls, Rule(1))
+
+    assert walls == original_walls
+
+
+def test_find_locations_within_range_excludes_origin():
+    m=Monster()
+    figures,contents,initiatives,walls = init_test()
+    gmap = GloomhavenMap(16, 7, m, figures, contents, initiatives, walls, Rule(1))
+
+    direct_neighbors = {neighbor for neighbor in gmap.neighbors[37] if neighbor != -1}
+
+    assert set(gmap.find_locations_within_range(37, 1)) == direct_neighbors
+    assert 37 not in gmap.find_locations_within_range(37, 1)
+    assert gmap.find_proximity_distances_within_range(37, 1) == gmap.find_locations_within_range(37, 1)
+ 
 
 
 # Move towards the character and offer all valid options for the players to choose among
