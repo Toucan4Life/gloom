@@ -4,7 +4,7 @@ import collections
 import json
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import List, TypeVar
+from typing import Any, List, TypeAlias, TypeVar, cast
 
 from dacite import Config, from_dict
 from dacite.exceptions import DaciteError
@@ -35,7 +35,9 @@ client_local_storage_version = str(client_local_storage_version_major) + '.' + s
 
 ScenarioDataT = TypeVar('ScenarioDataT')
 SightLine = tuple[tuple[float, float], tuple[float, float]]
-MappedAction = tuple[int, list[int], set[frozenset[int]], set[int], set[SightLine], set[int], set[int]]
+MappedAction: TypeAlias = tuple[int, list[int], set[frozenset[int]], set[int], set[SightLine], set[int], set[int], list[int]]
+ExplainPayload: TypeAlias = dict[str, Any]
+ActionPayload: TypeAlias = dict[str, Any]
 
 
 class InvalidScenarioError(ValueError):
@@ -113,15 +115,18 @@ def map_solution(info: Sequence[MonsterMove]) -> list[MappedAction]:
         empty_aoe_patterns: set[frozenset[int]] = set()
         empty_ints: set[int] = set()
         empty_sightlines: set[SightLine] = set()
-        return [(info[0][0], [], empty_aoe_patterns, empty_ints, empty_sightlines, set(), set())]
+        return [(info[0][0], [], empty_aoe_patterns, empty_ints, empty_sightlines, set(), set(), [0])]
     focusdict: dict[tuple[int, ...], set[int]] = collections.defaultdict(set)
     destdict: dict[tuple[int, ...], set[int]] = collections.defaultdict(set)
     aoedict: dict[tuple[int, ...], set[frozenset[int]]] = collections.defaultdict(set)
-    for iinf in info:
+    raw_indexdict: dict[tuple[int, ...], list[int]] = collections.defaultdict(list)
+    for raw_index, iinf in enumerate(info):
         for act in iinf[2]:
-            destdict[(act,)+tuple(sorted(iinf[3]))].update({iinf[0]})
-            focusdict[(act,)+tuple(sorted(iinf[3]))].update({iinf[1]})
-            aoedict[(act,)+tuple(sorted(iinf[3]))].update(iinf[4])
+            key = (act,) + tuple(sorted(iinf[3]))
+            destdict[key].update({iinf[0]})
+            focusdict[key].update({iinf[1]})
+            aoedict[key].update(iinf[4])
+            raw_indexdict[key].append(raw_index)
 
     solution = list({((act,)+tuple(sorted(iinf[3]))):
                      (act,
@@ -130,10 +135,102 @@ def map_solution(info: Sequence[MonsterMove]) -> list[MappedAction]:
                       destdict[(act,)+tuple(sorted(iinf[3]))],
                       iinf[5],
                       debug_lines,
-                      focusdict[(act,)+tuple(sorted(iinf[3]))])
+                      focusdict[(act,)+tuple(sorted(iinf[3]))],
+                      raw_indexdict[(act,)+tuple(sorted(iinf[3]))])
                      for iinf in info for act in iinf[2]}.values())
 
     return solution
+
+
+def build_display_move_stage(move: int, move_options: list[int]) -> ExplainPayload:
+    unique_moves = sorted(set(move_options))
+    candidates: list[ExplainPayload] = [
+        {
+            'key': f'end-hex:{location}',
+            'label': f'End on hex {location}',
+            'location': location,
+            'selected': location == move,
+        }
+        for location in unique_moves
+    ]
+    if len(unique_moves) == 1:
+        summary = 'Only one legal end hex remains for this displayed action.'
+        before_count = 1
+        after_count = 1
+    else:
+        summary = f'This displayed action is one of {len(unique_moves)} tied end hexes that remain legal after every rule.'
+        before_count = len(unique_moves)
+        after_count = 1
+    return {
+        'id': f'displayed-move-{move}',
+        'title': 'Displayed movement option',
+        'description': 'The remaining end hexes are still tied after every rule.',
+        'summary': summary,
+        'before_count': before_count,
+        'after_count': after_count,
+        'candidates': candidates,
+    }
+
+
+def build_action_explain(
+    choice_explain: ExplainPayload | None,
+    raw_indices: list[int],
+    move: int,
+) -> ExplainPayload | None:
+    if choice_explain is None:
+        return None
+
+    raw_paths = choice_explain.get('actions')
+    if not isinstance(raw_paths, list):
+        return None
+
+    typed_raw_paths = cast(list[ExplainPayload], raw_paths)
+    paths: list[ExplainPayload] = []
+    for raw_index in raw_indices:
+        if raw_index >= len(typed_raw_paths):
+            continue
+        raw_path = typed_raw_paths[raw_index]
+
+        move_options_value = raw_path.get('move_options', [move])
+        if not isinstance(move_options_value, list):
+            move_options = [move]
+        else:
+            typed_move_options = cast(list[Any], move_options_value)
+            move_options = [location for location in typed_move_options if isinstance(location, int)]
+            if not move_options:
+                move_options = [move]
+        stages_value = raw_path.get('stages', [])
+        stages = list(cast(list[ExplainPayload], stages_value)) if isinstance(stages_value, list) else []
+        stages.append(build_display_move_stage(move, move_options))
+        paths.append(
+            {
+                'label': raw_path.get('label', f'Path {raw_index + 1}'),
+                'focus': raw_path.get('focus'),
+                'attack_location': raw_path.get('attack_location'),
+                'targets': raw_path.get('targets', []),
+                'move_options': move_options,
+                'selected_move': move,
+                'stages': stages,
+            }
+        )
+
+    if not paths:
+        return None
+
+    note: str
+    if len(paths) > 1:
+        note = f'{len(paths)} equivalent internal paths still lead to this displayed action.'
+    elif len(paths[0]['move_options']) > 1:
+        note = f'This path still has {len(paths[0]["move_options"])} tied end hexes.'
+    else:
+        note = 'This displayed action follows a single internal reasoning path.'
+
+    return {
+        'path_count': len(paths),
+        'current_move': move,
+        'note': note,
+        'paths': paths,
+    }
 
 
 @app.route('/solve', methods=['PUT'])
@@ -149,21 +246,25 @@ def solve():
         s.logging = True
         s.debug_visuals = True
 
-    raw_actions = map_solution(s.calculate_monster_move())
+    monster_moves = s.calculate_monster_move()
+    choice_explain = s.get_choice_explain()
+    raw_actions = map_solution(monster_moves)
 
-    actions: list[dict[str, int | list[int] | list[SightLine]]] = []
+    actions: list[ActionPayload] = []
     for raw_action in raw_actions:
         aoe_patterns = list(raw_action[2])
-        actions.append(
-            {
-                'move': raw_action[0],
-                'attacks': list(raw_action[1]),
-                'aoe': list(aoe_patterns[0]) if aoe_patterns else [],
-                'destinations': list(raw_action[6]),
-                'focuses': list(raw_action[3]),
-                'sightlines': list(raw_action[4]),
-            }
-        )
+        action: ActionPayload = {
+            'move': raw_action[0],
+            'attacks': list(raw_action[1]),
+            'aoe': list(aoe_patterns[0]) if aoe_patterns else [],
+            'destinations': list(raw_action[6]),
+            'focuses': list(raw_action[3]),
+            'sightlines': list(raw_action[4]),
+        }
+        action_explain = build_action_explain(choice_explain, raw_action[7], raw_action[0])
+        if action_explain is not None:
+            action['explain'] = action_explain
+        actions.append(action)
 
     if IsDebugEnv:
         for _, raw_action in enumerate(raw_actions):
@@ -173,6 +274,10 @@ def solve():
         'scenario_id': scenario_id,
         'actions': actions,
     }
+    if choice_explain is not None:
+        solution['choice_explain'] = {
+            'shared_stages': choice_explain.get('shared_stages', []),
+        }
     moves = list((raw_action[0] for raw_action in raw_actions))
     if solve_reach:
         solution['reach'] = s.solve_reaches(moves)
@@ -244,6 +349,7 @@ def unpack_scenario(data: bytes) -> tuple['Solver', bool, bool, int, int]:
                          contents, initiatives, walls, rule_obj)
     solver = Solver(rule_obj, gmap)
     solver.debug_toggle = scenario.debug_toggle == '0'
+    solver.explain_choice = scenario.explain_choice
 
     return solver, scenario.solve_view > 0, scenario.solve_view > 0, scenario.scenario_id, scenario.active_figure
 
@@ -321,6 +427,7 @@ class ScenarioData:
     scenario_id: int
     game_rules: str = "0"
     debug_toggle: str = "0"
+    explain_choice: bool = False
 
 
 @dataclass(frozen=True)

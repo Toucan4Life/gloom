@@ -396,3 +396,183 @@ div.fade {
   overflow: hidden;
   text-indent: 100%;
 }
+
+/*
+ * explanation panel
+ */
+
+.explain-panel {
+  background: rgba( 22, 26, 30, 0.92 );
+  border-color: rgba( 255, 255, 255, 0.08 ) !important;
+  box-shadow: 0 0.45rem 1.2rem rgba( 0, 0, 0, 0.18 );
+}
+
+.explain-panel .text-muted {
+  color: rgba( 231, 236, 240, 0.72 ) !important;
+}
+
+.explain-mode-group .btn {
+  min-width: 5.75rem;
+}
+
+.explain-section-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba( 255, 255, 255, 0.65 );
+}
+
+.explain-stage {
+  background: rgba( 255, 255, 255, 0.03 );
+  border: 1px solid rgba( 255, 255, 255, 0.06 );
+  border-radius: 0.45rem;
+  padding: 0.8rem 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.explain-count {
+  background: rgba( 255, 255, 255, 0.08 ) !important;
+  color: rgba( 255, 255, 255, 0.92 );
+  min-width: 3.5rem;
+}
+
+.explain-stage-limit {
+  color: rgba( 231, 236, 240, 0.72 );
+  margin-bottom: 0.55rem;
+}
+
+.explain-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.explain-chip {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  display: inline-flex;
+  font-weight: 600;
+  padding: 0.3rem 0.65rem;
+  white-space: normal;
+  text-align: left;
+}
+
+.explain-chip-kept {
+  background: rgba( 210, 168, 92, 0.16 );
+  border-color: rgba( 210, 168, 92, 0.34 );
+  color: rgba( 251, 244, 228, 0.98 );
+}
+
+.explain-chip-removed {
+  background: rgba( 255, 255, 255, 0.06 );
+  border-color: rgba( 255, 255, 255, 0.08 );
+  color: rgba( 231, 236, 240, 0.82 );
+}
+
+.explain-chip-score {
+  opacity: 0.8;
+  font-weight: 400;
+}
+
+.explain-action-grid {
+  display: grid;
+  grid-template-columns: repeat( auto-fit, minmax( 13rem, 1fr ) );
+  gap: 0.65rem;
+}
+
+.explain-action-card {
+  background: rgba( 255, 255, 255, 0.025 );
+  border: 1px solid rgba( 255, 255, 255, 0.08 );
+  border-radius: 0.45rem;
+  color: rgba( 247, 250, 252, 0.94 );
+  padding: 0.8rem;
+}
+
+.explain-action-card:hover,
+.explain-action-card:focus {
+  background: rgba( 255, 255, 255, 0.05 );
+  color: rgba( 255, 255, 255, 0.98 );
+}
+
+.explain-action-card.active {
+  background: rgba( 210, 168, 92, 0.09 );
+  border-color: rgba( 210, 168, 92, 0.38 );
+  box-shadow: inset 0 0 0 1px rgba( 210, 168, 92, 0.18 );
+}
+
+.explain-callout {
+  background: rgba( 255, 255, 255, 0.04 );
+  border-color: rgba( 255, 255, 255, 0.08 );
+  color: rgba( 255, 255, 255, 0.9 );
+}
+
+.explain-table {
+  color: rgba( 243, 247, 250, 0.94 );
+}
+
+.explain-table thead th {
+  border-top: 0;
+  border-bottom: 1px solid rgba( 255, 255, 255, 0.1 );
+  color: rgba( 231, 236, 240, 0.78 );
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.explain-table tbody tr {
+  background: transparent;
+}
+
+.explain-table th,
+.explain-table td {
+  border-color: rgba( 255, 255, 255, 0.07 );
+  color: rgba( 243, 247, 250, 0.94 );
+  vertical-align: middle;
+}
+
+.explain-status-pill {
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 0.28rem 0.55rem;
+}
+
+.explain-status-kept {
+  background: rgba( 210, 168, 92, 0.16 );
+  color: rgba( 251, 244, 228, 0.98 );
+}
+
+.explain-status-removed {
+  background: rgba( 255, 255, 255, 0.08 );
+  color: rgba( 231, 236, 240, 0.82 );
+}
+
+.grid-axis-label {
+  fill: rgba( 229, 234, 238, 0.72 );
+  font-weight: 700;
+}
+
+.grid-axis-title {
+  fill: rgba( 229, 234, 238, 0.52 );
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.explain-raw {
+  background: rgba( 0, 0, 0, 0.35 );
+  border: 1px solid rgba( 255, 255, 255, 0.08 );
+  border-radius: 0.45rem;
+  color: rgba( 255, 255, 255, 0.92 );
+  font-size: 0.8rem;
+  line-height: 1.35;
+  margin: 0;
+  max-height: 32rem;
+  overflow: auto;
+  padding: 0.9rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

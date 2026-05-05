@@ -12,8 +12,13 @@ import SightPoints from './SightPoints';
 import DebugLines from './DebugLines';
 import WallGrid from './WallGrid';
 
-const VIEW_BOX_SANDARD = -( C.GRID_MARGIN + C.GRID_DELTA ) + ' ' + -C.GRID_MARGIN + ' ' + ( C.GRID_EXTENT ) + ' ' + ( C.GRID_EXTENT );
-const VIEW_BOX_ROTATED = -C.GRID_MARGIN + ' ' + -( C.GRID_MARGIN + C.GRID_DELTA ) + ' ' + ( C.GRID_EXTENT ) + ' ' + ( C.GRID_EXTENT );
+const AXIS_VIEWBOX_PADDING = 3.4 * C.SCALE;
+const VIEW_BOX_SANDARD = -( C.GRID_MARGIN + C.GRID_DELTA + AXIS_VIEWBOX_PADDING ) + ' ' + -( C.GRID_MARGIN + AXIS_VIEWBOX_PADDING ) + ' ' + ( C.GRID_EXTENT + 2 * AXIS_VIEWBOX_PADDING ) + ' ' + ( C.GRID_EXTENT + 2 * AXIS_VIEWBOX_PADDING );
+const VIEW_BOX_ROTATED = -( C.GRID_MARGIN + AXIS_VIEWBOX_PADDING ) + ' ' + -( C.GRID_MARGIN + C.GRID_DELTA + AXIS_VIEWBOX_PADDING ) + ' ' + ( C.GRID_EXTENT + 2 * AXIS_VIEWBOX_PADDING ) + ' ' + ( C.GRID_EXTENT + 2 * AXIS_VIEWBOX_PADDING );
+
+const AXIS_FONT_SIZE = 0.52 * C.SCALE;
+const AXIS_ROW_OFFSET = 1.85 * C.SCALE;
+const AXIS_COLUMN_OFFSET = 1.45 * C.SCALE;
 
 const GridDefs = React.memo( function( props ) {
   const x_fade_margin = C.GRID_MARGIN + C.GRID_DELTA;
@@ -44,6 +49,69 @@ const GridDefs = React.memo( function( props ) {
         <rect x={0} y={0} width={C.GRID_SCALED_WIDTH} height={C.GRID_SCALED_HEIGHT} fill='white'/>
       </mask>
     </defs>
+  );
+} );
+
+const GridAxes = React.memo( function() {
+  const rowLabels = [];
+  const columnLabels = [];
+
+  for ( let row = 0; row < C.GRID_HEIGHT; row++ ) {
+    const y = C.GRID_SCALED_HEIGHT - C.SCALE * C.SQRT_3_OVER_2 * ( 2 * row + 1 );
+    rowLabels.push(
+      <text
+        key={'row:' + row}
+        className='grid-axis-label'
+        x={-AXIS_ROW_OFFSET}
+        y={y + 4}
+        fontSize={AXIS_FONT_SIZE}
+        textAnchor='end'
+      >
+        {row + 1}
+      </text>
+    );
+  }
+
+  for ( let column = 0; column < C.GRID_WIDTH; column++ ) {
+    const x = C.SCALE * ( 1 + 1.5 * column );
+    columnLabels.push(
+      <text
+        key={'column:' + column}
+        className='grid-axis-label'
+        x={x}
+        y={C.GRID_SCALED_HEIGHT + AXIS_COLUMN_OFFSET}
+        fontSize={AXIS_FONT_SIZE}
+        textAnchor='middle'
+      >
+        {column + 1}
+      </text>
+    );
+  }
+
+  return (
+    <g className='grid-axes' pointerEvents='none'>
+      <text
+        className='grid-axis-title'
+        x={C.GRID_SCALED_WIDTH / 2}
+        y={C.GRID_SCALED_HEIGHT + AXIS_COLUMN_OFFSET + 0.95 * C.SCALE}
+        fontSize={AXIS_FONT_SIZE}
+        textAnchor='middle'
+      >
+        Column
+      </text>
+      <text
+        className='grid-axis-title'
+        x={-AXIS_ROW_OFFSET - 0.9 * C.SCALE}
+        y={C.GRID_SCALED_HEIGHT / 2}
+        fontSize={AXIS_FONT_SIZE}
+        textAnchor='middle'
+        transform={'rotate(-90 ' + ( -AXIS_ROW_OFFSET - 0.9 * C.SCALE ) + ' ' + ( C.GRID_SCALED_HEIGHT / 2 ) + ')'}
+      >
+        Row
+      </text>
+      {rowLabels}
+      {columnLabels}
+    </g>
   );
 } );
 
@@ -87,6 +155,7 @@ const Grid = React.memo( function( props ) {
           onHexMouseDown={props.onHexMouseDown}
           onHexMouseUp={props.onHexMouseUp}
         />
+        <GridAxes/>
         <BorderGrid/>
         <WallGrid
           walls={props.walls}

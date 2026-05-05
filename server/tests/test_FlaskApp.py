@@ -81,6 +81,24 @@ def test_solve_multiple_destination(app_client: FlaskClient):
 
     assert json.dumps(p) == '[{"aoe": [], "attacks": [], "destinations": [289, 315], "focuses": [314], "move": 267, "sightlines": []}, {"aoe": [], "attacks": [], "destinations": [288, 289], "focuses": [314], "move": 215, "sightlines": []}, {"aoe": [], "attacks": [], "destinations": [288, 289], "focuses": [314], "move": 240, "sightlines": []}]'
     assert r == 8
+    assert 'choice_explain' not in payload
+    assert all('explain' not in action for action in payload['actions'])
+
+
+def test_solve_with_explain_choice_returns_trace(app_client: FlaskClient):
+    response = app_client.put(
+        "/solve", data=b'{"scenario_id":8,"solve_view":0,"active_figure":217,"move":2,"range":0,"target":1,"flying":0,"teleport":0,"muddled":0,"game_rules":0,"explain_choice":true,"aoe":[],"width":29,"height":25,"map":{"characters":[314],"monsters":[217],"walls":[265,266,345],"obstacles":[],"traps":[],"hazardous":[],"difficult":[],"icy":[],"initiatives":[1],"thin_walls":[]}}')
+
+    payload = json.loads(response.data)
+    assert response.status_code == 200
+    assert payload['choice_explain']['shared_stages'][0]['id'] == 'focus-trap-cost'
+    assert payload['choice_explain']['shared_stages'][-1]['id'] == 'focus-survivors'
+
+    first_action = payload['actions'][0]
+    assert first_action['move'] == 267
+    assert first_action['explain']['path_count'] == 2
+    assert first_action['explain']['paths'][0]['stages'][-1]['id'] == 'displayed-move-267'
+    assert first_action['explain']['paths'][0]['move_options'] == [267]
 
 
 def test_views_invalid_payload_returns_400(app_client: FlaskClient):

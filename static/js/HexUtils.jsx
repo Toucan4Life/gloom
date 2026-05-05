@@ -4,6 +4,22 @@ const NUM_GRID_POINTS = 6 * C.GRID_SIZE;
 
 export default class HexUtils {
 
+  static getGridCoordinate( location ) {
+    return {
+      column: Math.floor( location / C.GRID_HEIGHT ) + 1,
+      row: location % C.GRID_HEIGHT + 1,
+    };
+  }
+
+  static getGridCoordinateLabel( location ) {
+    if ( typeof location !== 'number' || location < 0 || location >= C.GRID_SIZE ) {
+      return 'unknown hex';
+    }
+
+    const coordinate = this.getGridCoordinate( location );
+    return 'C' + coordinate.column + 'R' + coordinate.row;
+  }
+
   static getHexPoints( x, y ) {
     return [
       C.SCALE * ( x - 1.0 ), C.SCALE * y,

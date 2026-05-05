@@ -9,6 +9,7 @@ import AOEHexGrid from './AOEHexGrid';
 import BitReader from './BitReader';
 import BitWriter from './BitWriter';
 import BrushPicker from './BrushPicker';
+import ExplainPanel from './ExplainPanel';
 import Grid from './Grid';
 import Message from './Message';
 import PropertyEditor from './PropertyEditor';
@@ -216,6 +217,8 @@ export default class MapEditor extends React.PureComponent {
       show_movement: !START_IN_LOS_MODE,
       show_reach: false,
       show_sight: START_IN_LOS_MODE,
+      show_explain: false,
+      explain_view: 'score',
 
       // scenario state
       grid: Array( C.GRID_SIZE ).fill( 0 ),
@@ -246,6 +249,7 @@ export default class MapEditor extends React.PureComponent {
       solution_actions_sight: null,
       solution_start_reach: null,
       solution_start_sight: null,
+      solution_choice_explain: null,
       action_displayed: DISPLAY_ALL_ACTIONS,
       display_moves: Array( C.GRID_SIZE ).fill( false ),
       display_attacks: Array( C.GRID_SIZE ).fill( false ),
@@ -425,6 +429,14 @@ export default class MapEditor extends React.PureComponent {
         }
         else if ( ( this.state.show_reach && !this.state.solution_actions_reach ) || ( this.state.show_sight && !this.state.solution_actions_sight ) ) {
           return ACTION_REQUEST_SOLUTION_VIEWS;
+        }
+        else if ( this.state.show_explain && !this.state.solution_choice_explain ) {
+          if ( !this.state.scenario_too_complex ) {
+            return ACTION_REQUEST_SOLUTION;
+          }
+          else {
+            return ACTION_SCENARIO_TOO_COMPLEX;
+          }
         }
         else {
           return ACTION_NONE_REQUIRED;
@@ -1266,6 +1278,26 @@ export default class MapEditor extends React.PureComponent {
     } );
   };
 
+  handleDisplayExplainChanged = () => {
+    this.setState( {
+      show_explain: !this.state.show_explain,
+    } );
+  };
+
+  handleExplainViewChanged = ( explain_view ) => {
+    if ( explain_view === this.state.explain_view ) {
+      return;
+    }
+
+    this.setState( {
+      explain_view: explain_view,
+    } );
+  };
+
+  handleExplainActionSelected = ( action_displayed ) => {
+    this.setActionDisplayed( action_displayed );
+  };
+
   // handleDebugToggle = () => {
   //   this.setScenario( {
   //     'debug_toggle': !this.state.debug_toggle,
@@ -1361,6 +1393,7 @@ export default class MapEditor extends React.PureComponent {
         solution_actions_sight: solution.sight ? solution.sight.slice() : null,
         solution_start_reach: null,
         solution_start_sight: null,
+        solution_choice_explain: solution.choice_explain ? Object.assign( {}, solution.choice_explain ) : null,
       };
     }
     else {
@@ -1368,6 +1401,7 @@ export default class MapEditor extends React.PureComponent {
         solution_actions: solution.actions.slice(),
         solution_actions_reach: solution.reach ? solution.reach.slice() : null,
         solution_actions_sight: solution.sight ? solution.sight.slice() : null,
+        solution_choice_explain: solution.choice_explain ? Object.assign( {}, solution.choice_explain ) : null,
       }
     }
 
@@ -1412,6 +1446,7 @@ export default class MapEditor extends React.PureComponent {
         solution_actions_sight: null,
         solution_start_reach: views.reach ? views.reach[0].slice() : null,
         solution_start_sight: views.sight ? views.sight[0].slice() : null,
+        solution_choice_explain: null,
       };
     }
     else {
@@ -1613,6 +1648,7 @@ export default class MapEditor extends React.PureComponent {
       teleport: this.state.teleport,
       muddled: this.state.muddled,
       game_rules: this.state.game_rules,
+      explain_choice: this.state.show_explain,
       // debug_toggle: this.state.debug_toggle,
       aoe: [],
 
@@ -2271,6 +2307,20 @@ export default class MapEditor extends React.PureComponent {
                     Show a sightline for the active {active_faction_string}'s attack.
                   </div>
                 </UncontrolledTooltip>
+                <button
+                  type='button'
+                  className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_explain ? ' active' : '' )}
+                  id='show-explain-button'
+                  onClick={this.handleDisplayExplainChanged}
+                  disabled={!this.state.show_movement}
+                >
+                  Explain Choice
+                </button>
+                <UncontrolledTooltip placement='left' fade={false} delay={C.TOOLTIP_DELAY} target='show-explain-button'>
+                  <div className='text-left'>
+                    Show a step-by-step trace of how the movement options were chosen, with multiple presentation modes.
+                  </div>
+                </UncontrolledTooltip>
                 {/*
                 <button
                   type='button'
@@ -2282,6 +2332,23 @@ export default class MapEditor extends React.PureComponent {
                 </button>
                 */}
               </div>
+
+              {this.state.show_explain ? (
+                <div className='w-75 mt-3'>
+                  <ExplainPanel
+                    displaySolution={display_solution}
+                    showMovement={this.state.show_movement}
+                    showingAllActions={this.state.action_displayed === DISPLAY_ALL_ACTIONS}
+                    actionDisplayed={this.state.action_displayed}
+                    solutionActions={this.state.solution_actions}
+                    sharedExplain={this.state.solution_choice_explain}
+                    initiatives={this.state.initiatives}
+                    explainView={this.state.explain_view}
+                    onViewChange={this.handleExplainViewChanged}
+                    onSelectAction={this.handleExplainActionSelected}
+                  />
+                </div>
+              ) : null}
 
               <div className='w-75 mt-4 btn-group-vertical'>
                 <UncontrolledDropdown className='btn-group'>
