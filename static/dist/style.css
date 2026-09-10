@@ -250,6 +250,34 @@ div.message-container {
   pointer-events: none;
 }
 
+/*
+ * explanation panel
+ */
+
+div.explanation-panel {
+  background-color: #303030;
+  border: 1px solid #444;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+div.explanation-panel h6 {
+  color: #bbb;
+}
+
+div.explanation-phase-label {
+  color: #d9a441;
+  letter-spacing: 0.05em;
+}
+
+div.explanation-step-title {
+  color: #eee;
+}
+
+div.explanation-step-detail {
+  color: #999;
+}
+
 div.message {
   position: absolute;
   top: 550px;
@@ -307,6 +335,12 @@ text {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+
+text.hex-label {
+  fill: #aaaaaa;
+  fill-opacity: 0.85;
+  font-family: Arial;
 }
 
 /*

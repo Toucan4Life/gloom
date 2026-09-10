@@ -1,4 +1,5 @@
 import textwrap
+from typing import TypedDict
 from solver.rule import Rule
 from solver.gloomhaven_map import GloomhavenMap
 from solver.settings import MAX_VALUE
@@ -9,6 +10,23 @@ TargetSelection = tuple[frozenset[int], int, int, list[int]]
 MonsterMove = tuple[int, int, list[int], list[int], list[frozenset[int]], set[SightLine]]
 PreindexedTargetGroup = tuple[frozenset[int], frozenset[int]]
 
+
+class ExplanationStep(TypedDict):
+    """A single, human-readable step of the monster AI's reasoning process.
+
+    `focus` ties the step to the character (by location) the step was made
+    while deciding for, or is None for steps that apply globally (e.g. while
+    determining which character to focus on in the first place). `locations`
+    lists the hexes relevant to the step (candidates remaining, chosen hex,
+    etc.) so the UI can highlight/reference them.
+    """
+    phase: str
+    title: str
+    detail: str
+    focus: int | None
+    locations: list[int]
+
+
 class Solver:
     logging: bool
     debug_visuals: bool
@@ -17,6 +35,7 @@ class Solver:
     debug_toggle: bool
     message: str
     rule:Rule
+    explanation: list[ExplanationStep]
     def __init__(self, rule:Rule, gmap: GloomhavenMap ):
         self.map = gmap
         self.logging = False
@@ -26,13 +45,34 @@ class Solver:
         self.message = ''
         self.debug_toggle = False
         self.rule=rule
+        self.explanation = []
         #proximity is ignored when determining monster focus
         self.RULE_PROXIMITY_FOCUS = rule == Rule.Jotl
         self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE = rule != Rule.Frost
         self.RULE_MAXIMIZE_FUTURE_MULTIATTACK = rule != Rule.Frost
         #rank secondary targets' priority using focus rules
         self.RULE_RANK_SECONDARY_TARGETS = rule != Rule.Frost
+
+    def _explain(
+        self,
+        phase: str,
+        title: str,
+        detail: str,
+        locations: list[int] | set[int] | frozenset[int] = (),
+        focus: int | None = None,
+    ) -> None:
+        """Record a step of the AI's decision-making process for the UI."""
+        self.explanation.append(
+            {
+                'phase': phase,
+                'title': title,
+                'detail': detail,
+                'focus': focus,
+                'locations': sorted(set(locations)),
+            }
+        )
     def calculate_monster_move(self) -> list[MonsterMove]:
+        self.explanation = []
 
         if self.logging:
             self.map.print()
@@ -72,7 +112,18 @@ class Solver:
         if self.logging:
             self.print_solution(solution)
 
-        return solution if solution else [(self.map.get_active_monster_location(), -1, [], [], [], set())]
+        if not solution:
+            self._explain(
+                'result',
+                'Monster does not move',
+                'No character can be attacked by the monster this turn (it may be stunned, '
+                'have no valid movement, or every character is out of reach and out of sight), '
+                'so the monster stays in place and takes no action.',
+                [self.map.get_active_monster_location()],
+            )
+            return [(self.map.get_active_monster_location(), -1, [], [], [], set())]
+
+        return solution
 
     def solve(
         self,
@@ -82,17 +133,79 @@ class Solver:
         proximity_distances: list[int],
     ) -> list[list[TargetSelection]]:
         focus_candidates = list(self.map.get_all_location_attackable_char())
-        focus_candidates = minima(focus_candidates, lambda char_loc: trap_counts[char_loc[1]])
-        focus_candidates = minima(focus_candidates, lambda char_loc: travel_distances[char_loc[1]])
-        focus_candidates = minima(
-            focus_candidates,
-            lambda char_loc: 0 if self.RULE_PROXIMITY_FOCUS else proximity_distances[char_loc[0]],
+        self._explain(
+            'focus',
+            'Find focus \u2013 list attackable characters',
+            f'{len({c for c, _ in focus_candidates})} character(s) can be attacked by the monster from at least '
+            f'one hex: {sorted({c for c, _ in focus_candidates})}.',
+            {c for c, _ in focus_candidates},
         )
+        focus_candidates = minima(focus_candidates, lambda char_loc: trap_counts[char_loc[1]])
+        self._explain(
+            'focus',
+            'Find focus \u2013 fewest traps hit',
+            'Of those characters, keep only the ones that can be attacked while triggering the '
+            f'fewest traps: {sorted({c for c, _ in focus_candidates})}.',
+            {c for c, _ in focus_candidates},
+        )
+        focus_candidates = minima(focus_candidates, lambda char_loc: travel_distances[char_loc[1]])
+        self._explain(
+            'focus',
+            'Find focus \u2013 fewest hexes travelled',
+            'Of those, keep only the ones that can be attacked after travelling the fewest hexes: '
+            f'{sorted({c for c, _ in focus_candidates})}.',
+            {c for c, _ in focus_candidates},
+        )
+        if self.RULE_PROXIMITY_FOCUS:
+            self._explain(
+                'focus',
+                'Find focus \u2013 closest to the attacker (skipped)',
+                'This ruleset ignores proximity when picking a focus, so this tie-breaker is not applied.',
+                {c for c, _ in focus_candidates},
+            )
+        else:
+            focus_candidates = minima(focus_candidates, lambda char_loc: proximity_distances[char_loc[0]])
+            self._explain(
+                'focus',
+                'Find focus \u2013 closest to the attacker',
+                'Of those, keep only the character(s) physically closest to the attacking monster: '
+                f'{sorted({c for c, _ in focus_candidates})}.',
+                {c for c, _ in focus_candidates},
+            )
         focus_candidates = minima(
             focus_candidates,
             lambda char_loc: self.map.get_character_initiative(char_loc[0]),
         )
+        self._explain(
+            'focus',
+            'Find focus \u2013 lowest initiative',
+            'Of those, keep only the character(s) with the lowest initiative: '
+            f'{sorted({c for c, _ in focus_candidates})}.',
+            {c for c, _ in focus_candidates},
+        )
         focuses = dedup([char_loc[0] for char_loc in focus_candidates])
+        if not focuses:
+            self._explain(
+                'focus',
+                'No focus found',
+                'No character can be attacked by the monster from any reachable hex, so it has no focus.',
+                [],
+            )
+        elif len(focuses) > 1:
+            self._explain(
+                'focus',
+                'Find focus \u2013 tie',
+                f'{len(focuses)} characters are tied on every criterion ({sorted(focuses)}), so every one of '
+                'them is considered a valid focus (in the physical game, the player would choose).',
+                focuses,
+            )
+        else:
+            self._explain(
+                'focus',
+                'Focus chosen',
+                f'The monster\u2019s focus is the character at hex {focuses[0]}.',
+                focuses,
+            )
 
         attack_locations_by_focus = {
             focus: self.candidate_attack_locations_for_focus(focus, travel_distances, trap_counts)
@@ -133,15 +246,58 @@ class Solver:
             for char_loc in self.map.get_all_location_attackable_char()
             if char_loc[0] == focus
         ]
+        self._explain(
+            'attack_location',
+            'Optimize location to attack focus \u2013 list candidate hexes',
+            f'There are {len(attack_locations)} hex(es) from which the monster could attack the '
+            f'focus at hex {focus}: {sorted(attack_locations)}.',
+            attack_locations,
+            focus,
+        )
         attack_locations = minima(attack_locations, lambda loc: trap_counts[loc])
+        self._explain(
+            'attack_location',
+            'Optimize location to attack focus \u2013 fewest traps hit',
+            f'Of those, keep only the hex(es) reachable while triggering the fewest traps: '
+            f'{sorted(attack_locations)}.',
+            attack_locations,
+            focus,
+        )
         attack_locations = minima(
             attack_locations,
             lambda loc: -int(self.map.can_monster_reach(travel_distances, loc)),
         )
-        return minima(
+        self._explain(
+            'attack_location',
+            'Optimize location to attack focus \u2013 reachable this turn',
+            f'Of those, prefer hex(es) the monster can actually reach this turn (falling back to hexes it '
+            f'cannot yet reach only if none can be reached): {sorted(attack_locations)}.',
+            attack_locations,
+            focus,
+        )
+        result = minima(
             attack_locations,
             lambda loc: int(self.map.are_location_at_disadvantage(focus, loc)) if self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE else 0,
         )
+        if self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE:
+            self._explain(
+                'attack_location',
+                'Optimize location to attack focus \u2013 avoid disadvantage',
+                f'Of those, prefer hex(es) that do not put the monster at disadvantage, if possible: '
+                f'{sorted(result)}.',
+                result,
+                focus,
+            )
+        else:
+            self._explain(
+                'attack_location',
+                'Optimize location to attack focus \u2013 avoid disadvantage (skipped)',
+                'This ruleset does not prioritize avoiding disadvantage when choosing where to attack from, '
+                'so this tie-breaker is not applied.',
+                result,
+                focus,
+            )
+        return result
 
     def build_grouped_target_index(
         self,
@@ -185,14 +341,47 @@ class Solver:
                     grouped_targets.append((target_group, matching_locations))
 
         grouped_targets = minima(grouped_targets, lambda tar_locs: -len(tar_locs[0]))
+        self._explain(
+            'group',
+            'Find best group \u2013 maximize characters hit',
+            'Of all the character combinations attackable from a valid hex, keep only the group(s) that hit '
+            f'the most characters at once: {sorted(tuple(sorted(g)) for g, _ in grouped_targets)}.',
+            {member for g, _ in grouped_targets for member in g},
+            focus,
+        )
         grouped_targets = minima(
             grouped_targets,
             lambda tar_locs: min(travel_distances[loc] for loc in tar_locs[1]),
+        )
+        self._explain(
+            'group',
+            'Find best group \u2013 least distance travelled',
+            'Of those, keep only the group(s) reachable with the least travel: '
+            f'{sorted(tuple(sorted(g)) for g, _ in grouped_targets)}.',
+            {member for g, _ in grouped_targets for member in g},
+            focus,
         )
         if self.RULE_RANK_SECONDARY_TARGETS:
             grouped_targets = minima(
                 grouped_targets,
                 lambda tar_locs: self.target_count_for_each_focus_rank(focus_ranks, tar_locs[0]),
+            )
+            self._explain(
+                'group',
+                'Find best group \u2013 highest ranked secondary targets',
+                'Of those, keep only the group(s) that include the highest-priority secondary target(s) '
+                f'(ranked the same way the focus was chosen): {sorted(tuple(sorted(g)) for g, _ in grouped_targets)}.',
+                {member for g, _ in grouped_targets for member in g},
+                focus,
+            )
+        else:
+            self._explain(
+                'group',
+                'Find best group \u2013 rank secondary targets (skipped)',
+                'This ruleset does not rank secondary targets by focus priority, so this tie-breaker is not '
+                'applied.',
+                {member for g, _ in grouped_targets for member in g},
+                focus,
             )
 
         targets_with_attack_locations = [
@@ -200,13 +389,22 @@ class Solver:
             for target_group, locations in grouped_targets
             for location in locations
         ]
-        return minima(
+        result = minima(
             targets_with_attack_locations,
             lambda tar_loc: sum(
                 self.map.are_location_at_disadvantage(target, tar_loc[1])
                 for target in tar_loc[0]
             ),
         )
+        self._explain(
+            'group',
+            'Optimize location to attack best group \u2013 minimize disadvantage',
+            'Of all the hexes from which the best group can be attacked, keep only the one(s) that minimize '
+            f'the number of targets at disadvantage: {sorted({loc for _, loc in result})}.',
+            {loc for _, loc in result},
+            focus,
+        )
+        return result
     
     def solve_for_focus(
         self,
@@ -226,6 +424,15 @@ class Solver:
             and not self.map.can_monster_reach(travel_distances, attack_locations_for_focus[0])
         ):
             targets_with_attack_locations = [(frozenset({focus}), loc) for loc in attack_locations_for_focus]
+            self._explain(
+                'group',
+                'Single target attack',
+                'The monster cannot reach an attack hex this turn, and this ruleset does not optimize '
+                'movement for a future multi-target attack, so only a single-target attack against the '
+                f'focus at hex {focus} is considered.',
+                attack_locations_for_focus,
+                focus,
+            )
         else:
             targets_with_attack_locations = self.grouped_targets_with_locations(
                 focus,
@@ -238,6 +445,14 @@ class Solver:
         targets_with_attack_locations = minima(
             targets_with_attack_locations,
             lambda tar_loc: travel_distances[tar_loc[1]],
+        )
+        self._explain(
+            'group',
+            'Choose the closest attack hex',
+            'Of all the remaining candidate hexes, keep only the one(s) requiring the fewest hexes '
+            f'travelled: {sorted({loc for _, loc in targets_with_attack_locations})}.',
+            {loc for _, loc in targets_with_attack_locations},
+            focus,
         )
 
         return [
@@ -252,6 +467,12 @@ class Solver:
 
     def reachable_locations_this_turn(self, travel_distances: list[int], trap_counts: list[int], destination: int)->list[int]:
         if self.map.can_monster_reach(travel_distances, destination) :
+            self._explain(
+                'movement',
+                'Monster reaches its destination',
+                f'The monster can reach hex {destination} this turn, so it moves there directly.',
+                [destination],
+            )
             return [destination]
         
         distance_to_destination, traps_to_destination = self.map.find_active_monster_traversal_cost(destination)
@@ -266,7 +487,17 @@ class Solver:
             lambda location: traps_to_destination[location] + trap_counts[location],
         )
         reachable_locations = minima(reachable_locations, lambda location: distance_to_destination[location])
-        return minima(reachable_locations, lambda location: travel_distances[location])
+        result = minima(reachable_locations, lambda location: travel_distances[location])
+        self._explain(
+            'movement',
+            'Get closer',
+            f'The monster cannot reach hex {destination} this turn, so instead it moves to the reachable '
+            'hex that: minimizes the number of traps triggered on the path to the ideal destination, then '
+            'minimizes the remaining distance to that destination, then minimizes the distance travelled '
+            f'this turn: {sorted(result)}.',
+            result,
+        )
+        return result
 
     def find_secondary_focus(self, proximity_distances: list[int]):
         secondary_scores = [self.calculate_secondary_focus_score(proximity_distances, character) for character in self.map.get_characters()]

@@ -172,6 +172,7 @@ def solve():
     solution: dict[str, object] = {
         'scenario_id': scenario_id,
         'actions': actions,
+        'explanation': s.explanation,
     }
     moves = list((raw_action[0] for raw_action in raw_actions))
     if solve_reach:

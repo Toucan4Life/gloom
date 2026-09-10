@@ -10,6 +10,7 @@ import BitReader from './BitReader';
 import BitWriter from './BitWriter';
 import BrushPicker from './BrushPicker';
 import Grid from './Grid';
+import ExplanationPanel from './ExplanationPanel';
 import Message from './Message';
 import PropertyEditor from './PropertyEditor';
 
@@ -216,6 +217,8 @@ export default class MapEditor extends React.PureComponent {
       show_movement: !START_IN_LOS_MODE,
       show_reach: false,
       show_sight: START_IN_LOS_MODE,
+      show_explanation: false,
+      show_hex_labels: false,
 
       // scenario state
       grid: Array( C.GRID_SIZE ).fill( 0 ),
@@ -246,6 +249,7 @@ export default class MapEditor extends React.PureComponent {
       solution_actions_sight: null,
       solution_start_reach: null,
       solution_start_sight: null,
+      solution_explanation: null,
       action_displayed: DISPLAY_ALL_ACTIONS,
       display_moves: Array( C.GRID_SIZE ).fill( false ),
       display_attacks: Array( C.GRID_SIZE ).fill( false ),
@@ -1260,6 +1264,18 @@ export default class MapEditor extends React.PureComponent {
     } );
   };
 
+  handleDisplayExplanationChanged = () => {
+    this.setState( {
+      'show_explanation': !this.state.show_explanation,
+    } );
+  };
+
+  handleDisplayHexLabelsChanged = () => {
+    this.setState( {
+      'show_hex_labels': !this.state.show_hex_labels,
+    } );
+  };
+
   handleDisplaysightlineLinesChanged = () => {
     this.setState( {
       'show_sightline': !this.state.show_sightline,
@@ -1361,6 +1377,7 @@ export default class MapEditor extends React.PureComponent {
         solution_actions_sight: solution.sight ? solution.sight.slice() : null,
         solution_start_reach: null,
         solution_start_sight: null,
+        solution_explanation: solution.explanation ? solution.explanation.slice() : null,
       };
     }
     else {
@@ -1368,6 +1385,7 @@ export default class MapEditor extends React.PureComponent {
         solution_actions: solution.actions.slice(),
         solution_actions_reach: solution.reach ? solution.reach.slice() : null,
         solution_actions_sight: solution.sight ? solution.sight.slice() : null,
+        solution_explanation: solution.explanation ? solution.explanation.slice() : null,
       }
     }
 
@@ -2100,6 +2118,7 @@ export default class MapEditor extends React.PureComponent {
                   initiatives={this.state.initiatives}
                   displaySolution={display_solution}
                   displayMoveSolution={display_move_solution}
+                  showHexLabels={this.state.show_hex_labels}
                   moves={this.state.display_moves}
                   destinations={this.state.show_destination ? this.state.display_destinations : null}
                   sightlineLines={this.state.show_sightline ? this.state.display_sightline_lines : null}
@@ -2124,6 +2143,10 @@ export default class MapEditor extends React.PureComponent {
                   onDragStart={this.handleDragStart}
                 />
               </div>
+
+              {this.state.show_explanation && display_move_solution &&
+                <ExplanationPanel steps={this.state.solution_explanation}/>
+              }
 
               <div className='mt-2 d-flex'>
                 <button
@@ -2269,6 +2292,35 @@ export default class MapEditor extends React.PureComponent {
                 <UncontrolledTooltip placement='left' fade={false} delay={C.TOOLTIP_DELAY} target='show-unblocked-lines-button'>
                   <div className='text-left'>
                     Show a sightline for the active {active_faction_string}'s attack.
+                  </div>
+                </UncontrolledTooltip>
+                <button
+                  type='button'
+                  className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_explanation ? ' active' : '' )}
+                  id='show-explanation-button'
+                  onClick={this.handleDisplayExplanationChanged}
+                  disabled={!this.state.show_movement}
+                >
+                  Show Explanation
+                </button>
+                <UncontrolledTooltip placement='left' fade={false} delay={C.TOOLTIP_DELAY} target='show-explanation-button'>
+                  <div className='text-left'>
+                    Show the step-by-step reasoning the solver used to reach this solution, based on the
+                    current board.
+                  </div>
+                </UncontrolledTooltip>
+                <button
+                  type='button'
+                  className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_hex_labels ? ' active' : '' )}
+                  id='show-hex-labels-button'
+                  onClick={this.handleDisplayHexLabelsChanged}
+                >
+                  Show Hex Numbers
+                </button>
+                <UncontrolledTooltip placement='left' fade={false} delay={C.TOOLTIP_DELAY} target='show-hex-labels-button'>
+                  <div className='text-left'>
+                    Label every hex with its number, so a hex mentioned by number (e.g. in the explanation
+                    or when sharing a scenario) can be found on the board.
                   </div>
                 </UncontrolledTooltip>
                 {/*

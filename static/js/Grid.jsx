@@ -6,6 +6,7 @@ import BorderGrid from './BorderGrid';
 import DragFigure from './DragFigure';
 import FigureGrid from './FigureGrid';
 import HexGrid from './HexGrid';
+import HexLabelGrid from './HexLabelGrid';
 import OverlayHexGrid from './OverlayHexGrid';
 import SightLines from './SightLines';
 import SightPoints from './SightPoints';
@@ -107,6 +108,10 @@ const Grid = React.memo( function( props ) {
           show={props.displaySolution}
           grid={props.sight}
           content={OVERLAY_BRUSH.SIGHT}
+        />
+        <HexLabelGrid
+          show={props.showHexLabels}
+          rotate={props.rotate}
         />
         <FigureGrid
           figures={props.figures}
