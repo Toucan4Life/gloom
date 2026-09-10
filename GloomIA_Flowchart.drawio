@@ -1,137 +1,142 @@
-<mxfile host="app.diagrams.net" modified="2023-07-01T08:32:50.808Z" agent="Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/114.0" etag="-A_1yhKvUYDb7YQ8lDNJ" version="21.5.2" type="device">
-  <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
-    <mxGraphModel dx="1434" dy="795" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
-      <root>
-        <mxCell id="WIyWlLk6GJQsqaUBKTNV-0" />
-        <mxCell id="WIyWlLk6GJQsqaUBKTNV-1" parent="WIyWlLk6GJQsqaUBKTNV-0" />
-        <mxCell id="6H1x6LzymzNOAmOgsFud-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="WIyWlLk6GJQsqaUBKTNV-3" target="WIyWlLk6GJQsqaUBKTNV-6" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="WIyWlLk6GJQsqaUBKTNV-3" value="Start" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;fillColor=#fa6800;fontColor=#000000;strokeColor=#C73500;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="147.14" y="280" width="110" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="WIyWlLk6GJQsqaUBKTNV-4" value="No" style="rounded=0;html=1;jettySize=auto;orthogonalLoop=1;fontSize=11;endArrow=block;endFill=0;endSize=8;strokeWidth=1;shadow=0;labelBackgroundColor=none;edgeStyle=orthogonalEdgeStyle;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="WIyWlLk6GJQsqaUBKTNV-6" target="HYlRVXP8fHBSpNL6v8k7-2" edge="1">
-          <mxGeometry x="0.0105" y="20" relative="1" as="geometry">
-            <mxPoint as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="WIyWlLk6GJQsqaUBKTNV-5" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;fontSize=11;endArrow=block;endFill=0;endSize=8;strokeWidth=1;shadow=0;labelBackgroundColor=none;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="WIyWlLk6GJQsqaUBKTNV-6" target="WIyWlLk6GJQsqaUBKTNV-7" edge="1">
-          <mxGeometry y="10" relative="1" as="geometry">
-            <mxPoint as="offset" />
-            <mxPoint x="479" y="398" as="targetPoint" />
-            <Array as="points">
-              <mxPoint x="470" y="400" />
-              <mxPoint x="470" y="400" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="WIyWlLk6GJQsqaUBKTNV-6" value="&lt;div&gt;Is the monster stunned or&lt;/div&gt;&lt;div&gt;&lt;div&gt;given infinite movement, isn&#39;t there  any accessible hex &lt;br&gt;&lt;/div&gt;&lt;div&gt;where the monster can attack&lt;/div&gt;&lt;/div&gt;" style="rhombus;whiteSpace=wrap;html=1;shadow=0;fontFamily=Helvetica;fontSize=12;align=center;strokeWidth=1;spacing=6;spacingTop=-4;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="20" y="340" width="352.14" height="120" as="geometry" />
-        </mxCell>
-        <mxCell id="WIyWlLk6GJQsqaUBKTNV-7" value="&lt;font color=&quot;#ff8000&quot;&gt;Monster does not move&lt;/font&gt;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.terminator;whiteSpace=wrap;strokeColor=#ff8000;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="521.97" y="380" width="180.05" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="6H1x6LzymzNOAmOgsFud-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="HYlRVXP8fHBSpNL6v8k7-2" target="HYlRVXP8fHBSpNL6v8k7-4" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="HYlRVXP8fHBSpNL6v8k7-2" value="&lt;div&gt;&lt;b&gt;FIND FOCUS&lt;/b&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Of all characters the monster can attack, choose the one that : &lt;br&gt;&lt;/div&gt;&lt;div align=&quot;left&quot;&gt;&lt;ul&gt;&lt;li&gt;can be attacked with the fewest of trap hit, then&lt;/li&gt;&lt;li&gt;can be attacked with the fewest of hex travelled, then&lt;/li&gt;&lt;li&gt;is closest to the attacker&lt;font size=&quot;1&quot;&gt;&lt;sup style=&quot;font-size: 13px;&quot;&gt;f,g&lt;/sup&gt;&lt;/font&gt;, then&lt;/li&gt;&lt;li&gt;who the lowest initiative&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;&lt;div&gt;In the event of a tie, the player chooses&lt;br&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="13.32" y="480" width="377.63" height="150" as="geometry" />
-        </mxCell>
-        <mxCell id="6H1x6LzymzNOAmOgsFud-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="HYlRVXP8fHBSpNL6v8k7-4" target="HYlRVXP8fHBSpNL6v8k7-6" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="612" y="623" />
-              <mxPoint x="612" y="640" />
-              <mxPoint x="202" y="640" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="HYlRVXP8fHBSpNL6v8k7-4" value="&lt;div&gt;&lt;b&gt;OPTIMIZE LOCATION TO ATTACK FOCUS&lt;/b&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Of all the hexagons where the monster can attack the focus, choose the one that :&lt;/div&gt;&lt;div align=&quot;left&quot;&gt;&lt;ul&gt;&lt;li&gt;can be reached with fewest trap hit, then&lt;/li&gt;&lt;li&gt;can be reached this turn if possible, then&lt;/li&gt;&lt;li&gt;who doesn&#39;t put the monster at disadvantage, if possible&lt;sup&gt;&lt;font style=&quot;font-size: 13px;&quot;&gt;j,g&lt;/font&gt;&lt;/sup&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="426.5" y="480" width="383.5" height="150" as="geometry" />
-        </mxCell>
-        <mxCell id="HYlRVXP8fHBSpNL6v8k7-6" value="&lt;div&gt;Single target attack &lt;br&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 13px;&quot;&gt;or (cannot reach the hex to attack focus)&lt;sup&gt;&lt;font style=&quot;font-size: 13px;&quot;&gt;f&lt;/font&gt;&lt;/sup&gt; ?&lt;/div&gt;" style="rhombus;whiteSpace=wrap;html=1;shadow=0;fontFamily=Helvetica;fontSize=12;align=center;strokeWidth=1;spacing=6;spacingTop=-4;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="32.14" y="660" width="340" height="120" as="geometry" />
-        </mxCell>
-        <mxCell id="6H1x6LzymzNOAmOgsFud-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="HYlRVXP8fHBSpNL6v8k7-8" target="HYlRVXP8fHBSpNL6v8k7-17" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="737" y="710" />
-              <mxPoint x="810" y="710" />
-              <mxPoint x="810" y="1041" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="HYlRVXP8fHBSpNL6v8k7-8" value="&lt;div&gt;From remaining hexagons, take the one that&lt;/div&gt;&lt;div&gt;require the fewest hex travelled&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;div align=&quot;center&quot;&gt;In the event of a tie, the player chooses&lt;br&gt;&lt;/div&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;shadow=0;strokeWidth=1;spacing=6;spacingTop=-4;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="487" y="685" width="250" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="6H1x6LzymzNOAmOgsFud-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="HYlRVXP8fHBSpNL6v8k7-11" target="HYlRVXP8fHBSpNL6v8k7-14" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="HYlRVXP8fHBSpNL6v8k7-11" value="&lt;div&gt;&lt;b&gt;FIND BEST GROUP&lt;/b&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Of all the character combinations that can be attacked from the above&amp;nbsp;&lt;span data-darkreader-inline-bgcolor=&quot;&quot; style=&quot;background-color: initial; --darkreader-inline-bgcolor: initial;&quot;&gt;location and contain focus, choose the one that:&lt;/span&gt;&lt;/div&gt;&lt;div align=&quot;left&quot;&gt;&lt;ul&gt;&lt;li&gt;maximize the number of character hit, then&lt;/li&gt;&lt;li&gt;require the least of distance to attack, then&lt;/li&gt;&lt;li&gt;contain the highest rank of characters&lt;sup&gt;&lt;font style=&quot;font-size: 13px;&quot;&gt;j,g&lt;/font&gt;&lt;/sup&gt; : rank is determined by proximity to attacker&lt;sup&gt;&lt;font style=&quot;font-size: 13px;&quot;&gt;g&lt;/font&gt;&lt;/sup&gt; and initiative&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;shadow=0;strokeWidth=1;spacing=6;spacingTop=-4;rounded=1" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="13.06" y="803" width="377" height="157" as="geometry" />
-        </mxCell>
-        <mxCell id="nwu6KK1hAaGZpG1vDYlY-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="HYlRVXP8fHBSpNL6v8k7-14" target="HYlRVXP8fHBSpNL6v8k7-17" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="HYlRVXP8fHBSpNL6v8k7-14" value="&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;OPTIMIZE LOCATION TO ATTACK BEST GROUP&lt;/b&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;Of all the hexagons where the monster can attack the group, choose&amp;nbsp;&lt;span style=&quot;background-color: initial;&quot;&gt;the one that :&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div align=&quot;left&quot;&gt;&lt;ul&gt;&lt;li&gt;minimize the number of target at disadvantage, then&lt;/li&gt;&lt;li&gt;minimize the number of tile travelled&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;&lt;blockquote&gt;&lt;div align=&quot;left&quot;&gt;&lt;br&gt;&lt;/div&gt;&lt;div align=&quot;center&quot;&gt;In the event of a tie, the player chooses&lt;br&gt;&lt;/div&gt;&lt;/blockquote&gt;" style="whiteSpace=wrap;html=1;shadow=0;strokeWidth=1;spacing=6;spacingTop=-4;rounded=1" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="426.5" y="803" width="371" height="157" as="geometry" />
-        </mxCell>
-        <mxCell id="CAe6eDNZriENMiDo3nfh-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="HYlRVXP8fHBSpNL6v8k7-17" target="HYlRVXP8fHBSpNL6v8k7-24" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="430" y="1041" />
-              <mxPoint x="430" y="1041" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="CAe6eDNZriENMiDo3nfh-2" value="No" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="CAe6eDNZriENMiDo3nfh-1" vertex="1" connectable="0">
-          <mxGeometry x="0.3583" y="2" relative="1" as="geometry">
-            <mxPoint x="20" y="8" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="HYlRVXP8fHBSpNL6v8k7-17" value="&lt;div&gt;Can the monster reach the&lt;/div&gt;&lt;div&gt;&amp;nbsp;destination this turn ?&lt;/div&gt;" style="rhombus;whiteSpace=wrap;html=1;shadow=0;strokeWidth=1;spacing=6;spacingTop=-4;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="439.88" y="985.66" width="338.75" height="111.12" as="geometry" />
-        </mxCell>
-        <mxCell id="HYlRVXP8fHBSpNL6v8k7-21" value="&lt;font color=&quot;#ff8000&quot;&gt;Monster move to this destination&lt;/font&gt;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.terminator;whiteSpace=wrap;strokeColor=#ff8000;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="519.26" y="1116" width="180.05" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="6H1x6LzymzNOAmOgsFud-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="HYlRVXP8fHBSpNL6v8k7-24" target="HYlRVXP8fHBSpNL6v8k7-21" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="HYlRVXP8fHBSpNL6v8k7-24" value="&lt;b&gt;GET CLOSER&lt;/b&gt;&lt;div&gt;Of all the hexagons that the monster can reach and stop at, &lt;br&gt;&lt;/div&gt;&lt;div&gt;choose the one that :&lt;/div&gt;&lt;div align=&quot;left&quot;&gt;&lt;ul&gt;&lt;li&gt;create a path that minimize the number of trap triggered, then&lt;/li&gt;&lt;li&gt;minimize the distance to destination, then&lt;/li&gt;&lt;li&gt;minimize the distance traveleld this turn&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;&lt;div&gt;In the event of a tie, the player chooses&lt;br&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;shadow=0;strokeWidth=1;spacing=6;spacingTop=-4;rounded=1" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="13.06" y="972.44" width="377.63" height="137.56" as="geometry" />
-        </mxCell>
-        <mxCell id="6H1x6LzymzNOAmOgsFud-4" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;fontSize=11;endArrow=block;endFill=0;endSize=8;strokeWidth=1;shadow=0;labelBackgroundColor=none;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="HYlRVXP8fHBSpNL6v8k7-6" target="HYlRVXP8fHBSpNL6v8k7-8" edge="1">
-          <mxGeometry y="10" relative="1" as="geometry">
-            <mxPoint as="offset" />
-            <mxPoint x="519" y="393" as="targetPoint" />
-            <mxPoint x="389" y="393" as="sourcePoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="6H1x6LzymzNOAmOgsFud-7" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;fontSize=11;endArrow=block;endFill=0;endSize=8;strokeWidth=1;shadow=0;labelBackgroundColor=none;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="HYlRVXP8fHBSpNL6v8k7-17" target="HYlRVXP8fHBSpNL6v8k7-21" edge="1">
-          <mxGeometry x="-0.3331" y="23" relative="1" as="geometry">
-            <mxPoint as="offset" />
-            <mxPoint x="552" y="715" as="targetPoint" />
-            <mxPoint x="389" y="715" as="sourcePoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="6H1x6LzymzNOAmOgsFud-17" value="No" style="rounded=0;html=1;jettySize=auto;orthogonalLoop=1;fontSize=11;endArrow=block;endFill=0;endSize=8;strokeWidth=1;shadow=0;labelBackgroundColor=none;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="HYlRVXP8fHBSpNL6v8k7-6" target="HYlRVXP8fHBSpNL6v8k7-11" edge="1">
-          <mxGeometry x="0.0105" y="20" relative="1" as="geometry">
-            <mxPoint as="offset" />
-            <mxPoint x="201.28" y="773" as="sourcePoint" />
-            <mxPoint x="201.28" y="803" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="6H1x6LzymzNOAmOgsFud-19" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;div&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;NAVIGATION&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;&lt;div align=&quot;left&quot;&gt;&lt;ul&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Monster consider character as obstacle for movement,&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Monster consider hazardous terrain as trap&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;When moving towards an hex, the monster always chooses the path with the fewest traps, then the shortest possible route.&lt;/font&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;&lt;div&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;Moving through&lt;/b&gt;&lt;/font&gt;&lt;div&gt;&lt;div align=&quot;left&quot;&gt;&lt;ul&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Jumping and flying allow to move through obstacle&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Teleporting allow to move through obstacle and wall line&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Jumping, flying or teleporting allow to ignore trap&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Movement cost 2 when entering difficult terrain and not jumping,&amp;nbsp; not flying, not teleporting and not sliding&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;When entering icy hex, monster slide; it travel in a straight path at&amp;nbsp; no cost until it leaves an icy hex, an ally or an obstacle&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Flying, jumping and teleporting ignore ice&lt;/font&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;&lt;div&gt;&lt;div align=&quot;center&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;Stopping on&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;&lt;div align=&quot;left&quot;&gt;&lt;ul&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Jumping and teleporting monster trigger trap&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Flying allow to stop on obstacle but not on a character nor a monster&lt;br&gt;&lt;/font&gt;&lt;/li&gt;&lt;li style=&quot;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Jumping and stopping on difficult terrain cost 2&lt;/font&gt;&lt;font size=&quot;1&quot;&gt;&lt;sup style=&quot;font-size: 13px;&quot;&gt;g&lt;/sup&gt;&lt;/font&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;strokeColor=#008000;strokeWidth=3;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="420" y="10" width="400" height="360" as="geometry" />
-        </mxCell>
-        <mxCell id="6H1x6LzymzNOAmOgsFud-20" value="&lt;div&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;ATTACKING&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;&lt;div align=&quot;left&quot;&gt;&lt;ul&gt;&lt;li&gt;&lt;div&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Monster will avoid disadvantage if not muddled&lt;/font&gt;&lt;/div&gt;&lt;/li&gt;&lt;li&gt;&lt;div&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;A monster that moves without attacking will move as if it had a single-target melee attack&lt;/font&gt;&lt;/div&gt;&lt;/li&gt;&lt;li&gt;&lt;div&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;LOS is between the corners of hexagons&lt;/font&gt;&lt;font size=&quot;1&quot;&gt;&lt;sup style=&quot;font-size: 13px;&quot;&gt;g&lt;/sup&gt;&lt;/font&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt; or between any point of the hexagons&lt;/font&gt;&lt;font size=&quot;1&quot;&gt;&lt;sup style=&quot;font-size: 13px;&quot;&gt;j,f&lt;/sup&gt;&lt;/font&gt;&lt;/div&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Additional targets are attacked with a single-target attack&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;A single-target attack can occur between a location and a character if the monster can end its move at that location &amp;amp; the location has LOS with the character &amp;amp; the distance between the character and the location is less than the monster&#39;s range.&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;An aoe pattern can be applied if the monster has the range and&amp;nbsp; &amp;nbsp; LOS to any hex of the pattern that is neither an obstacle nor a wall&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Once the pattern has been applied, the monster can hit any character for which it has LOS&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;LOS is only blocked by wall line&lt;/font&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;strokeColor=#ff0000;strokeWidth=3;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="10" y="10" width="410" height="270" as="geometry" />
-        </mxCell>
-        <mxCell id="6H1x6LzymzNOAmOgsFud-25" value="f, g, j : only in Frosthaven, Gloomhaven or JOTL " style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="13.32" y="1130" width="316.68" height="30" as="geometry" />
-        </mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
+<mxfile host="65bd71144e">
+    <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
+        <mxGraphModel dx="1648" dy="2083" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="WIyWlLk6GJQsqaUBKTNV-0"/>
+                <mxCell id="WIyWlLk6GJQsqaUBKTNV-1" parent="WIyWlLk6GJQsqaUBKTNV-0"/>
+                <mxCell id="6H1x6LzymzNOAmOgsFud-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="WIyWlLk6GJQsqaUBKTNV-3" target="WIyWlLk6GJQsqaUBKTNV-6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="WIyWlLk6GJQsqaUBKTNV-3" value="Start" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;fillColor=#fa6800;fontColor=#000000;strokeColor=#C73500;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="147.14" y="280" width="110" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="WIyWlLk6GJQsqaUBKTNV-4" value="No" style="rounded=0;html=1;jettySize=auto;orthogonalLoop=1;fontSize=11;endArrow=block;endFill=0;endSize=8;strokeWidth=1;shadow=0;labelBackgroundColor=none;edgeStyle=orthogonalEdgeStyle;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="WIyWlLk6GJQsqaUBKTNV-6" target="HYlRVXP8fHBSpNL6v8k7-2" edge="1">
+                    <mxGeometry x="0.0105" y="20" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="WIyWlLk6GJQsqaUBKTNV-5" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;fontSize=11;endArrow=block;endFill=0;endSize=8;strokeWidth=1;shadow=0;labelBackgroundColor=none;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="WIyWlLk6GJQsqaUBKTNV-6" target="WIyWlLk6GJQsqaUBKTNV-7" edge="1">
+                    <mxGeometry y="10" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                        <mxPoint x="479" y="398" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="470" y="400"/>
+                            <mxPoint x="470" y="400"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="WIyWlLk6GJQsqaUBKTNV-6" value="&lt;div&gt;Is the monster stunned or&lt;/div&gt;&lt;div&gt;&lt;div&gt;given infinite movement, isn&#39;t there any accessible hex &lt;br&gt;&lt;/div&gt;&lt;div&gt;where the monster can attack&lt;/div&gt;&lt;/div&gt;" style="rhombus;whiteSpace=wrap;html=1;shadow=0;fontFamily=Helvetica;fontSize=12;align=center;strokeWidth=1;spacing=6;spacingTop=-4;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="20" y="340" width="352.14" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="WIyWlLk6GJQsqaUBKTNV-7" value="&lt;font color=&quot;#ff8000&quot;&gt;Monster does not move&lt;/font&gt;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.terminator;whiteSpace=wrap;strokeColor=#ff8000;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="529.97" y="380" width="180.05" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="6H1x6LzymzNOAmOgsFud-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="HYlRVXP8fHBSpNL6v8k7-2" target="HYlRVXP8fHBSpNL6v8k7-4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="HYlRVXP8fHBSpNL6v8k7-2" value="&lt;div&gt;&lt;b&gt;FIND FOCUS&lt;/b&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Of all characters the monster can attack, choose the one that: &lt;br&gt;&lt;/div&gt;&lt;div align=&quot;left&quot;&gt;&lt;ul&gt;&lt;li&gt;can be attacked with the fewest traps hit, then&lt;/li&gt;&lt;li&gt;can be attacked with the fewest hexes travelled, then&lt;/li&gt;&lt;li&gt;is closest to the attacker&lt;font size=&quot;1&quot;&gt;&lt;sup style=&quot;font-size: 13px;&quot;&gt;f,g&lt;/sup&gt;&lt;/font&gt;, then&lt;/li&gt;&lt;li&gt;has the lowest initiative&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;&lt;div&gt;In the event of a tie, the player chooses&lt;br&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="13.32" y="460" width="377.63" height="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="6H1x6LzymzNOAmOgsFud-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="HYlRVXP8fHBSpNL6v8k7-4" target="HYlRVXP8fHBSpNL6v8k7-6" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="612" y="623"/>
+                            <mxPoint x="612" y="640"/>
+                            <mxPoint x="202" y="640"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="HYlRVXP8fHBSpNL6v8k7-4" value="&lt;div&gt;&lt;b&gt;OPTIMIZE LOCATION TO ATTACK FOCUS&lt;/b&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Of all the hexagons where the monster can attack the focus, choose the one that:&lt;/div&gt;&lt;div align=&quot;left&quot;&gt;&lt;ul&gt;&lt;li&gt;can be reached with the fewest traps hit, then&lt;/li&gt;&lt;li&gt;can be reached this turn if possible, then&lt;/li&gt;&lt;li&gt;does not put the monster at disadvantage, if possible&lt;sup&gt;&lt;font style=&quot;font-size: 13px;&quot;&gt;j,g&lt;/font&gt;&lt;/sup&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="426.5" y="480" width="383.5" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="HYlRVXP8fHBSpNL6v8k7-6" value="&lt;div&gt;Single target attack &lt;br&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 13px;&quot;&gt;or (cannot reach a hex to attack the focus)&lt;sup&gt;&lt;font style=&quot;font-size: 13px;&quot;&gt;f&lt;/font&gt;&lt;/sup&gt; ?&lt;/div&gt;" style="rhombus;whiteSpace=wrap;html=1;shadow=0;fontFamily=Helvetica;fontSize=12;align=center;strokeWidth=1;spacing=6;spacingTop=-4;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="32.14" y="660" width="340" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="6H1x6LzymzNOAmOgsFud-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="HYlRVXP8fHBSpNL6v8k7-8" target="HYlRVXP8fHBSpNL6v8k7-17" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="737" y="710"/>
+                            <mxPoint x="810" y="710"/>
+                            <mxPoint x="810" y="1041"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="HYlRVXP8fHBSpNL6v8k7-8" value="&lt;div&gt;From remaining hexagons, take the one that&lt;/div&gt;&lt;div&gt;requires the fewest hexes travelled&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;div align=&quot;center&quot;&gt;In the event of a tie, the player chooses&lt;br&gt;&lt;/div&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;shadow=0;strokeWidth=1;spacing=6;spacingTop=-4;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="487" y="670" width="250" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="6H1x6LzymzNOAmOgsFud-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="HYlRVXP8fHBSpNL6v8k7-11" target="HYlRVXP8fHBSpNL6v8k7-14" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="HYlRVXP8fHBSpNL6v8k7-11" value="&lt;div&gt;&lt;b&gt;FIND BEST GROUP&lt;/b&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Of all the character combinations that can be attacked from the above&amp;nbsp;&lt;span data-darkreader-inline-bgcolor=&quot;&quot; style=&quot;background-color: initial; --darkreader-inline-bgcolor: initial;&quot;&gt;location and contain the focus, choose the one that:&lt;/span&gt;&lt;/div&gt;&lt;div align=&quot;left&quot;&gt;&lt;ul&gt;&lt;li&gt;maximize the number of characters hit, then&lt;/li&gt;&lt;li&gt;require the least distance to attack, then&lt;/li&gt;&lt;li&gt;contain the highest rank of characters&lt;sup&gt;&lt;font style=&quot;font-size: 13px;&quot;&gt;j,g&lt;/font&gt;&lt;/sup&gt;: rank is determined by proximity to attacker&lt;sup&gt;&lt;font style=&quot;font-size: 13px;&quot;&gt;g&lt;/font&gt;&lt;/sup&gt; and initiative&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;shadow=0;strokeWidth=1;spacing=6;spacingTop=-4;rounded=1" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="13.06" y="780" width="377" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="nwu6KK1hAaGZpG1vDYlY-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="HYlRVXP8fHBSpNL6v8k7-14" target="HYlRVXP8fHBSpNL6v8k7-17" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="HYlRVXP8fHBSpNL6v8k7-14" value="&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;OPTIMIZE LOCATION TO ATTACK BEST GROUP&lt;/b&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;Of all the hexagons where the monster can attack the group, choose&amp;nbsp;&lt;span style=&quot;background-color: initial;&quot;&gt;the one that:&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div align=&quot;left&quot;&gt;&lt;ul&gt;&lt;li&gt;minimize the number of targets at disadvantage, then&lt;/li&gt;&lt;li&gt;minimize the number of tiles travelled&lt;/li&gt;&lt;/ul&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;/span&gt;In the event of a tie, the player chooses&lt;br&gt;&lt;/div&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;shadow=0;strokeWidth=1;spacing=6;spacingTop=-4;rounded=1" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="432.75" y="776.5" width="371" height="157" as="geometry"/>
+                </mxCell>
+                <mxCell id="CAe6eDNZriENMiDo3nfh-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="HYlRVXP8fHBSpNL6v8k7-17" target="HYlRVXP8fHBSpNL6v8k7-24" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="430" y="1041"/>
+                            <mxPoint x="430" y="1041"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="CAe6eDNZriENMiDo3nfh-2" value="No" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="CAe6eDNZriENMiDo3nfh-1" vertex="1" connectable="0">
+                    <mxGeometry x="0.3583" y="2" relative="1" as="geometry">
+                        <mxPoint x="20" y="8" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="HYlRVXP8fHBSpNL6v8k7-17" value="&lt;div&gt;Can the monster reach the&lt;/div&gt;&lt;div&gt;&amp;nbsp;destination this turn ?&lt;/div&gt;" style="rhombus;whiteSpace=wrap;html=1;shadow=0;strokeWidth=1;spacing=6;spacingTop=-4;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="439.88" y="985.66" width="338.75" height="111.12" as="geometry"/>
+                </mxCell>
+                <mxCell id="HYlRVXP8fHBSpNL6v8k7-21" value="&lt;font color=&quot;#ff8000&quot;&gt;Monster move to this destination&lt;/font&gt;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.terminator;whiteSpace=wrap;strokeColor=#ff8000;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="519.26" y="1116" width="180.05" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="6H1x6LzymzNOAmOgsFud-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="HYlRVXP8fHBSpNL6v8k7-24" target="HYlRVXP8fHBSpNL6v8k7-21" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="202" y="1120"/>
+                            <mxPoint x="519" y="1120"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="HYlRVXP8fHBSpNL6v8k7-24" value="&lt;b&gt;GET CLOSER&lt;/b&gt;&lt;div&gt;Of all the hexagons that the monster can reach and stop at, &lt;br&gt;&lt;/div&gt;&lt;div&gt;choose the one that:&lt;/div&gt;&lt;div align=&quot;left&quot;&gt;&lt;ul&gt;&lt;li&gt;creates a path that minimizes the number of traps triggered, then&lt;/li&gt;&lt;li&gt;minimizes the distance to the destination, then&lt;/li&gt;&lt;li&gt;minimizes the distance travelled this turn&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;&lt;div&gt;In the event of a tie, the player chooses&lt;br&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;shadow=0;strokeWidth=1;spacing=6;spacingTop=-4;rounded=1" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="13.06" y="940" width="377.63" height="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="6H1x6LzymzNOAmOgsFud-4" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;fontSize=11;endArrow=block;endFill=0;endSize=8;strokeWidth=1;shadow=0;labelBackgroundColor=none;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="HYlRVXP8fHBSpNL6v8k7-6" target="HYlRVXP8fHBSpNL6v8k7-8" edge="1">
+                    <mxGeometry y="10" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                        <mxPoint x="519" y="393" as="targetPoint"/>
+                        <mxPoint x="389" y="393" as="sourcePoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="6H1x6LzymzNOAmOgsFud-7" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;jettySize=auto;orthogonalLoop=1;fontSize=11;endArrow=block;endFill=0;endSize=8;strokeWidth=1;shadow=0;labelBackgroundColor=none;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="HYlRVXP8fHBSpNL6v8k7-17" target="HYlRVXP8fHBSpNL6v8k7-21" edge="1">
+                    <mxGeometry x="-0.3331" y="23" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                        <mxPoint x="552" y="715" as="targetPoint"/>
+                        <mxPoint x="389" y="715" as="sourcePoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="6H1x6LzymzNOAmOgsFud-17" value="No" style="rounded=0;html=1;jettySize=auto;orthogonalLoop=1;fontSize=11;endArrow=block;endFill=0;endSize=8;strokeWidth=1;shadow=0;labelBackgroundColor=none;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="HYlRVXP8fHBSpNL6v8k7-6" target="HYlRVXP8fHBSpNL6v8k7-11" edge="1">
+                    <mxGeometry x="0.0105" y="20" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                        <mxPoint x="201.28" y="773" as="sourcePoint"/>
+                        <mxPoint x="201.28" y="803" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="6H1x6LzymzNOAmOgsFud-19" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;div&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;NAVIGATION&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;&lt;div align=&quot;left&quot;&gt;&lt;ul&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Monster considers enemy characters as obstacles for movement; allied monsters can be moved through but not stopped on,&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Monster considers hazardous terrain as a trap&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;When moving towards a hex, the monster always chooses the path with the fewest traps, then the shortest possible route.&lt;/font&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;&lt;div&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;Moving through&lt;/b&gt;&lt;/font&gt;&lt;div&gt;&lt;div align=&quot;left&quot;&gt;&lt;ul&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Jumping and flying allow the monster to move through obstacles&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Teleporting allows the monster to move through obstacles&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Jumping, flying or teleporting allow the monster to ignore traps&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Movement costs 2 when entering difficult terrain if not jumping, not flying, not teleporting and not sliding&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;When entering an icy hex, the monster slides; it travels in a straight path at no cost until it leaves the icy hex, or reaches an ally, an obstacle or a wall line&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Flying, jumping and teleporting ignore ice&lt;/font&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;&lt;div&gt;&lt;div align=&quot;center&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;Stopping on&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;&lt;div align=&quot;left&quot;&gt;&lt;ul&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;A jumping or teleporting monster triggers traps&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Flying allows the monster to stop on an obstacle, but not on a character or another monster&lt;br&gt;&lt;/font&gt;&lt;/li&gt;&lt;li style=&quot;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Jumping and stopping on difficult terrain costs 2&lt;/font&gt;&lt;font size=&quot;1&quot;&gt;&lt;sup style=&quot;font-size: 13px;&quot;&gt;g&lt;/sup&gt;&lt;/font&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;strokeColor=#008000;strokeWidth=3;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="420" y="-70" width="400" height="440" as="geometry"/>
+                </mxCell>
+                <mxCell id="6H1x6LzymzNOAmOgsFud-20" value="&lt;div&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;ATTACKING&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;&lt;div align=&quot;left&quot;&gt;&lt;ul&gt;&lt;li&gt;&lt;div&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Monster will avoid disadvantage on ranged attacks if not muddled (melee-only monsters are never at disadvantage)&lt;/font&gt;&lt;/div&gt;&lt;/li&gt;&lt;li&gt;&lt;div&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;A monster that moves without attacking will move as if it had a single-target melee attack&lt;/font&gt;&lt;/div&gt;&lt;/li&gt;&lt;li&gt;&lt;div&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;LOS is between the corners of hexagons&lt;/font&gt;&lt;font size=&quot;1&quot;&gt;&lt;sup style=&quot;font-size: 13px;&quot;&gt;g&lt;/sup&gt;&lt;/font&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt; or between any point of the hexagons&lt;/font&gt;&lt;font size=&quot;1&quot;&gt;&lt;sup style=&quot;font-size: 13px;&quot;&gt;j,f&lt;/sup&gt;&lt;/font&gt;&lt;/div&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Additional targets are attacked with a single-target attack&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;A single-target attack can occur between a location and a character if the monster can end its move at that location &amp;amp; the location has LOS with the character &amp;amp; the distance between the character and the location is at most the monster&#39;s range.&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;An aoe pattern can be applied if the monster has, within range, a hex of the pattern that is neither an obstacle nor a wall&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Once the pattern has been applied, the monster can hit any character for which it has LOS&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;LOS is only blocked by wall line&lt;/font&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;strokeColor=#ff0000;strokeWidth=3;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="10" y="-70" width="410" height="350" as="geometry"/>
+                </mxCell>
+                <mxCell id="6H1x6LzymzNOAmOgsFud-25" value="f, g, j: only in Frosthaven, Gloomhaven, or JOTL respectively" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+                    <mxGeometry x="13.32" y="1130" width="316.68" height="30" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
 </mxfile>
