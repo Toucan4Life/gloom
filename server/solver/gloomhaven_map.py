@@ -177,6 +177,7 @@ class GloomhavenMap(hexagonal_grid):
                         for aoe_hex in aoe_pattern
                         if self.can_target(aoe_hex)
                         for location in self.find_locations_within_range(aoe_hex, self.monster.attack_range())
+                        if self.test_los_between_locations(aoe_hex, location, self.RULE_VERTEX_LOS)
                     ],
                 )
             )

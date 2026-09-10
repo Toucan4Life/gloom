@@ -3031,7 +3031,7 @@ def test_Scenario133():
 
     assert_answers(m, figures,contents,initiatives,walls,({(37, 38, 45)}, {(37, 38, 45): []}, {(37, 38, 45): {37}}, {(37, 38, 45): {45}}, {(37, 38, 45): {((9.166666666666833, 5.77350269189597), (9.166666666666833, 6.35085296108617)), ((9.297619047618953, 5.546686514714784), (9.297619047618953, 5.546686514714784))}}, {(37, 38, 45): set()}))
 
-# Have clarification. Must measure range around thin wall. This answer is wrong. Waiting for clarification. See https://boardgamegeek.com/thread/2020826/question-about-measuring-range-aoe-attacks and https://boardgamegeek.com/thread/2020622/ranged-aoe-and-wall-hexe
+# Resolved: Isaac Childres confirmed range for AoE placement is measured by pathing around walls, like any other range measurement (a wall extends the effective range, it is not ignored). The solver already measures range this way (see find_proximity_distances), so the character is out of range and the monster cannot attack without moving. See https://boardgamegeek.com/thread/2020826/question-about-measuring-range-aoe-attacks and https://boardgamegeek.com/thread/2020622/ranged-aoe-and-wall-hexes
 def test_Scenario134():
     m=Monster(action_move=0, action_range=2)
     m.aoe[25] = True
@@ -3058,7 +3058,7 @@ def test_Scenario134():
 
     assert_answers(m, figures,contents,initiatives,walls,({(36,)}, {(36,): []}, {(36,): {44, 37}}, {(36,): {47}}, {(36,): set()}, {(36,): set()}))
 
-# Have clarification. Cannot use wall as target point for aoe. This answer is wrong. Waiting for clarification. See https://boardgamegeek.com/thread/2020826/question-about-measuring-range-aoe-attacks and https://boardgamegeek.com/thread/2020622/ranged-aoe-and-wall-hexe
+# Resolved: Isaac Childres confirmed a wall hex can never be the pattern hex that satisfies an AoE's range requirement (though the pattern may still overlap a wall hex elsewhere). The solver already excludes wall/obstacle hexes from satisfying range (see can_target), so the monster cannot attack without moving. See https://boardgamegeek.com/thread/2020826/question-about-measuring-range-aoe-attacks and https://boardgamegeek.com/thread/2020622/ranged-aoe-and-wall-hexes
 def test_Scenario135():
     m=Monster(action_move=0,action_range=2)
     m.aoe[25] = True
@@ -3085,7 +3085,7 @@ def test_Scenario135():
 
     assert_answers(m, figures,contents,initiatives,walls,({(36,)}, {(36,): []}, {(36,): {44, 37}}, {(36,): {47}}, {(36,): set()}, {(36,): set()}))
 
-# Have clarification. Cannot use wall as target point for aoe. This answer is wrong. Waiting for clarification. See https://boardgamegeek.com/thread/2020826/question-about-measuring-range-aoe-attacks and https://boardgamegeek.com/thread/2020622/ranged-aoe-and-wall-hexe
+# Resolved: Isaac Childres confirmed a wall hex can never be the pattern hex that satisfies an AoE's range requirement (though the pattern may still overlap a wall hex elsewhere). The solver already excludes wall/obstacle hexes from satisfying range (see can_target), so the monster cannot attack without moving. See https://boardgamegeek.com/thread/2020826/question-about-measuring-range-aoe-attacks and https://boardgamegeek.com/thread/2020622/ranged-aoe-and-wall-hexes
 def test_Scenario136():
     m=Monster(action_move=0,action_range=2)
     m.aoe[25] = True
@@ -3969,3 +3969,40 @@ def test_Scenario182():
     # if s.FROST_RULES:
     #   s.correct_answer = { ( 23, ), ( 16, ) }
     assert_answers(m, figures,contents,initiatives,walls,({( 23, ),( 16, ) },{( 23, ) : [],( 16, ) : []},{( 23,) :{17},( 16,) :{9,17}},{( 23, ) :{11},( 16, ) :{11}},{( 23,) :set(),( 16,) :set()},{( 23, ) :{15},( 16, ) :{15}}))
+
+# Regression test: the pattern hex used to satisfy an AoE attack's range requirement must also have line of sight from the monster. Per the official FAQ, "Line-of-sight is necessary for all attacks (including every hex of an area attack)". Hex 58 is within range of the monster by pathing around the walls, but the monster has no LOS to it, so this AoE placement is illegal from the monster's starting hex and it must move to attack C legally.
+def test_Scenario183():
+    m=Monster(action_move=2, action_range=3)
+    m.aoe[24] = True
+    m.aoe[25] = True
+    figures,contents,initiatives,walls = init_test()
+
+
+    figures[59] = 'C'
+
+    contents[28] = 'X'
+    contents[29] = 'X'
+    contents[56] = 'X'
+    contents[57] = 'X'
+    contents[71] = 'X'
+    contents[72] = 'X'
+    contents[73] = 'X'
+    contents[74] = 'X'
+    contents[75] = 'X'
+    contents[76] = 'X'
+    contents[15] = 'X'
+    contents[16] = 'X'
+    contents[17] = 'X'
+    contents[18] = 'X'
+    contents[19] = 'X'
+    contents[20] = 'X'
+    contents[51] = 'O'
+
+    walls[49][1] = True
+    walls[35][1] = True
+    walls[63][1] = True
+    walls[21][1] = True
+
+    figures[49] = 'A'
+
+    assert_answers(m, figures,contents,initiatives,walls,({(42, 59), (43, 59)}, {(42, 59): [58, 59], (43, 59): [66, 59]}, {(42, 59): {42}, (43, 59): {43}}, {(42, 59): {59}, (43, 59): {59}}, {(42, 59): {((10.069343065693293, 1.7320508075688772), (12.392361111110826, 5.382588447132942))}, (43, 59): {((10.58602150537667, 3.3151079972817996), (12.388440860214777, 5.389378520863318))}}, {(42, 59): set(), (43, 59): set()}))
