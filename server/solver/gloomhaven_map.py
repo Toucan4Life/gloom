@@ -1,6 +1,6 @@
 """Gloomhaven-specific traversal, targeting, and display helpers."""
 
-# pylint: disable=line-too-long, trailing-whitespace, missing-function-docstring, missing-class-docstring, invalid-name, consider-using-dict-items, superfluous-parens
+# pylint: disable=line-too-long, missing-function-docstring, missing-class-docstring, invalid-name, consider-using-dict-items
 
 import collections
 from collections.abc import Iterable
@@ -25,9 +25,9 @@ EMPTY_ATTACK_PATTERN_GROUP = cast(AttackPatternGroup, frozenset())
 class GloomhavenMap(hexagonal_grid):
     """Map rules and helpers for Gloomhaven-family monster solving."""
 
-    figures: list[str] 
-    contents: list[str] 
-    initiatives: list[int] 
+    figures: list[str]
+    contents: list[str]
+    initiatives: list[int]
     walls: list[list[bool]]
     rule: Rule
     Has_Icy_Terrain:bool
@@ -53,7 +53,7 @@ class GloomhavenMap(hexagonal_grid):
         if self.monster.flying:
             return self.contents[location] in [' ', 'T', 'O', 'H', 'D', 'I'] and self.figures[location] in [' ', 'A']
         return self.contents[location] in [' ', 'T', 'H', 'D', 'I'] and self.figures[location] in [' ', 'A']
-    
+
     def can_target(self, location: int) -> bool:
         return self.contents[location] not in ['X','O']
 
@@ -62,19 +62,19 @@ class GloomhavenMap(hexagonal_grid):
             return self.contents[location] in [ ' ', 'X', 'T', 'H', 'D', 'O', 'I' ]
         if self.monster.flying or self.monster.jumping:
             return self.contents[location] in [' ', 'T', 'H', 'D', 'O', 'I']
-        return self.contents[location] in [' ', 'T', 'H', 'D', 'I'] and self.figures[location] != 'C'    
+        return self.contents[location] in [' ', 'T', 'H', 'D', 'I'] and self.figures[location] != 'C'
 
     def is_damaging_location(self, location: int) -> bool:
         if self.monster.flying:
             return False
         return self.contents[location] in ['T', 'H']
-    
+
     def is_icy(self, location: int) -> bool:
         return self.contents[location] == 'I'
 
     def is_difficult_terrain(self, location: int) -> int:
         return int(self.contents[location] == 'D')
-    
+
     def get_active_monster(self) -> Monster:
         return self.monster
 
@@ -86,23 +86,23 @@ class GloomhavenMap(hexagonal_grid):
 
     def get_character_initiative(self, character:int) -> int:
         return self.initiatives[character]
-    
+
     def get_traversal_graph(self, isReversed:bool) -> list[list[tuple[int, tuple[int, int]]]]:
         if isReversed:
             best_parents:list[list[tuple[int,tuple[int,int]]]] = [[] for _ in range(self.map_size)]
             for current in range(self.map_size):
-                for neighbor, score in self.find_neighbors_and_movement_cost(current):                
-                    best_parents[neighbor].append((current,score)) 
-            return best_parents 
-        
+                for neighbor, score in self.find_neighbors_and_movement_cost(current):
+                    best_parents[neighbor].append((current,score))
+            return best_parents
+
         return [self.find_neighbors_and_movement_cost(current) for current in range(self.map_size)]
-    
+
     def find_active_monster_traversal_cost(self,destination :int =-1) -> tuple[list[int], list[int]]:
         if destination in self._traversal_cost_cache:
             return self._traversal_cost_cache[destination]
 
-        start = self.get_active_monster_location() if destination ==-1 else destination          
-        scores = dijkstra_algorithm(start, self.get_traversal_graph(destination!=-1))              
+        start = self.get_active_monster_location() if destination ==-1 else destination
+        scores = dijkstra_algorithm(start, self.get_traversal_graph(destination!=-1))
         cached_costs = (
             [x[1] + (1 if self.is_difficult_terrain(i) and self.monster.jumping and self.Does_difficult_Terrain_Affect_Last_Hex_On_Jump  else 0) for i,x in enumerate(scores)],
             [x[0] + (1 if self.is_damaging_location(i) and (self.monster.jumping or self.monster.teleport) else 0) for i,x in enumerate(scores)],
@@ -137,7 +137,7 @@ class GloomhavenMap(hexagonal_grid):
             neighbor, slide = self.slide_destination(neighbor, edge)
             neighbor_cost.append((neighbor, self.movement_cost_for_neighbor(neighbor, slide)))
         return neighbor_cost
- 
+
     def get_aoe_pattern_list_with_fixed_pattern(self, characters:list[int], monster:Monster) -> dict[int, set[AttackPattern]]:
         aoe_with_center = list(monster.aoe)
         center_index = monster.aoe_center()
@@ -148,7 +148,7 @@ class GloomhavenMap(hexagonal_grid):
             center_location = aoe_pattern[index_of_center]
             aoe_in_reachdict[center_location].add(frozenset(set(aoe_pattern) - {center_location}))
         return aoe_in_reachdict
-    
+
     def get_main_attack_char(self) -> AttackPatternMap:
         if self._main_attack_char_cache is not None:
             return self._main_attack_char_cache
@@ -169,17 +169,15 @@ class GloomhavenMap(hexagonal_grid):
             aoe_in_reachdict = self.get_aoe_pattern_list_with_fixed_pattern(characters, self.monster)
         elif self.monster.is_aoe():
             aoe_patterns = [frozenset(pattern) for pattern in self.get_all_patterns_hitting_hexes(characters, self.monster.aoe_pattern())]
-            aoe_in_reachdict = dict(
-                invert_key_values(
-                    aoe_patterns,
-                    lambda aoe_pattern: [
-                        location
-                        for aoe_hex in aoe_pattern
-                        if self.can_target(aoe_hex)
-                        for location in self.find_locations_within_range(aoe_hex, self.monster.attack_range())
-                        if self.test_los_between_locations(aoe_hex, location, self.RULE_VERTEX_LOS)
-                    ],
-                )
+            aoe_in_reachdict = invert_key_values(
+                aoe_patterns,
+                lambda aoe_pattern: [
+                    location
+                    for aoe_hex in aoe_pattern
+                    if self.can_target(aoe_hex)
+                    for location in self.find_locations_within_range(aoe_hex, self.monster.attack_range())
+                    if self.test_los_between_locations(aoe_hex, location, self.RULE_VERTEX_LOS)
+                ],
             )
 
         self._main_attack_char_cache = {
@@ -207,7 +205,7 @@ class GloomhavenMap(hexagonal_grid):
             visible_characters: frozenset(patterns)
             for visible_characters, patterns in aoe_in_reachdict.items()
         }
-    
+
     def get_secondary_attack_char(self) -> SecondaryAttackMap:
         if self._secondary_attack_char_cache is not None:
             return self._secondary_attack_char_cache
@@ -217,17 +215,15 @@ class GloomhavenMap(hexagonal_grid):
 
         secondary_attacks: SecondaryAttackMap = collections.defaultdict(set)
         secondary_attacks.update(
-            dict(
-                invert_key_values(
-                    characters,
-                    lambda character: [
-                        location
-                        for location in self.find_locations_within_range(character, self.monster.attack_range())
-                        if travel_distances[location] != MAX_VALUE
-                        and self.can_end_move_on(location)
-                        and self.test_los_between_locations(character, location, self.RULE_VERTEX_LOS)
-                    ],
-                )
+            invert_key_values(
+                characters,
+                lambda character: [
+                    location
+                    for location in self.find_locations_within_range(character, self.monster.attack_range())
+                    if travel_distances[location] != MAX_VALUE
+                    and self.can_end_move_on(location)
+                    and self.test_los_between_locations(character, location, self.RULE_VERTEX_LOS)
+                ],
             )
         )
         self._secondary_attack_char_cache = secondary_attacks
@@ -235,7 +231,7 @@ class GloomhavenMap(hexagonal_grid):
 
     def get_all_location_attackable_char(self)->set[tuple[int, int]]:
         return {(c,loc) for loc, charset in self.get_main_attack_char().items() for char in charset.keys() for c in char}
-    
+
     def get_all_attackable_char_combination_for_a_location(self, loc:int) -> dict[frozenset[int], set[AttackCombination]]:
         if loc in self._attackable_char_combination_cache:
             return self._attackable_char_combination_cache[loc]
@@ -250,18 +246,16 @@ class GloomhavenMap(hexagonal_grid):
             (chars, pattern, frozenset(secondary_attack))
             for chars, pattern in self.get_main_attack_char()[loc].items()
         ]
-        attackable_combinations = dict(
-            invert_key_values(
-                attack_patterns,
-                lambda attack_pattern: [
-                    frozenset(set(combination).union(attack_pattern[0]))
-                    for combination in combinations(secondary_attack, min(self.monster.extra_target(), len(secondary_attack)))
-                ],
-            )
+        attackable_combinations = invert_key_values(
+            attack_patterns,
+            lambda attack_pattern: [
+                frozenset(set(combination).union(attack_pattern[0]))
+                for combination in combinations(secondary_attack, min(self.monster.extra_target(), len(secondary_attack)))
+            ],
         )
         self._attackable_char_combination_cache[loc] = attackable_combinations
         return attackable_combinations
-    
+
     def are_location_at_disadvantage(self, locationA:int, locationB:int)-> bool:
         return self.monster.is_susceptible_to_disavantage() and self.is_adjacent(locationB, locationA)
 
@@ -270,10 +264,10 @@ class GloomhavenMap(hexagonal_grid):
 
     def does_monster_attack(self):
         return self.monster.has_attack()
-    
+
     def find_shortest_sightline(self, location_a: int, location_b: int, rule_vertex_los: bool | None = None) -> tuple[tuple[float, float], tuple[float, float]]:
         return super().find_shortest_sightline(location_a, location_b, self.RULE_VERTEX_LOS if rule_vertex_los is None else rule_vertex_los)
-    
+
     def solve_sight(self, monster: int,upper_bound:int, rule_vertex_los: bool | None = None) -> list[tuple[int, int]]:
         return super().solve_sight(monster, upper_bound, self.RULE_VERTEX_LOS if rule_vertex_los is None else rule_vertex_los)
 
@@ -282,7 +276,7 @@ class GloomhavenMap(hexagonal_grid):
 
     def print_initiative_map(self):
         print_map(self.map_width, self.map_height, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_initiative( _ ) for _ in self.initiatives ] )
-    
+
     def print_custom_map(self, top_label: list[int] | None = None, bottom_label: list[int] | None = None):
         print_map(self.map_width,
                 self.map_height,
@@ -299,10 +293,10 @@ class GloomhavenMap(hexagonal_grid):
 
     def print_los_map(self, visible_locations:list[bool]):
         print_map(self.map_width, self.map_height, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_los(_) for _ in visible_locations])
-    
+
     def print_solution_map(self, debug_tag:list[str]):
         print_map(self.map_width, self.map_height, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_initiative( _ ) for _ in self.initiatives ], debug_tag )
-    
+
     def print_aoe_map(self):
         false_contents = ['   '] * self.monster.aoe_size
         if self.monster.is_melee_aoe():
@@ -331,7 +325,7 @@ class GloomhavenMap(hexagonal_grid):
             else:
                 out += f',NON AOE TARGETS {self.monster.max_potential_non_aoe_targets()}'
         if self.monster.teleport:
-            out += ', TELEPORT'               
+            out += ', TELEPORT'
         if self.monster.flying:
             out += ', FLYING'
         if self.monster.jumping:

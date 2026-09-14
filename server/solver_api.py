@@ -9,16 +9,29 @@ packages at runtime.
 """
 import collections
 import dataclasses
+import enum
 import json
 import typing
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import List, TypeVar
+from typing import Any, List, TypeVar, cast
 
 from solver.monster import Monster
 from solver.solver import GloomhavenMap, MonsterMove, Rule, Solver
 
 IsDebugEnv = False
+
+
+def set_debug_env(is_debug: bool) -> None:
+    """Toggle debug logging/visuals for solve_scenario/solve_views.
+
+    Exposed as an explicit function (rather than letting callers poke the
+    module attribute directly) because this module doubles as the entry
+    point invoked from Pyodide in the browser build, where there is no
+    Flask app to hold this setting instead.
+    """
+    global IsDebugEnv  # pylint: disable=global-statement
+    IsDebugEnv = is_debug
 
 ScenarioDataT = TypeVar('ScenarioDataT')
 SightLine = tuple[tuple[float, float], tuple[float, float]]
@@ -29,17 +42,26 @@ class InvalidScenarioError(ValueError):
     pass
 
 
-def _cast_value(value: object, field_type: type) -> object:
+def _cast_value(value: object, field_type: object) -> object:
     origin = typing.get_origin(field_type)
     if origin is list:
-        (item_type,) = typing.get_args(field_type)
         if not isinstance(value, list):
             raise InvalidScenarioError('expected a list')
-        return [_cast_value(item, item_type) for item in value]
-    if dataclasses.is_dataclass(field_type):
+        value_list = cast(list[object], value)
+        item_types = typing.get_args(field_type)
+        item_type = item_types[0] if item_types else object
+        return [_cast_value(item, item_type) for item in value_list]
+    if isinstance(field_type, type) and dataclasses.is_dataclass(field_type):
         return _build_dataclass(field_type, value)
-    if field_type in (int, str):
-        return field_type(value)
+    if isinstance(field_type, type) and issubclass(field_type, enum.Enum):
+        try:
+            return field_type(int(cast(Any, value)))
+        except (TypeError, ValueError) as exc:
+            raise InvalidScenarioError(f'invalid {field_type.__name__} value: {value!r}') from exc
+    if field_type is int:
+        return int(cast(Any, value))
+    if field_type is str:
+        return str(value)
     return value
 
 
@@ -47,15 +69,21 @@ def _build_dataclass(schema: type[ScenarioDataT], data: object) -> ScenarioDataT
     if not isinstance(data, dict):
         raise InvalidScenarioError('invalid scenario payload')
 
-    field_defs = {f.name: f for f in dataclasses.fields(schema)}
-    unknown_fields = set(data) - set(field_defs)
+    raw_payload = cast(dict[object, object], data)
+    if not all(isinstance(name, str) for name in raw_payload):
+        raise InvalidScenarioError('invalid scenario payload')
+
+    payload = cast(dict[str, object], raw_payload)
+    field_defs = {field.name: field for field in dataclasses.fields(cast(Any, schema))}
+    field_types = typing.get_type_hints(schema)
+    unknown_fields = set(payload) - set(field_defs)
     if unknown_fields:
         raise InvalidScenarioError(f'unexpected fields: {sorted(unknown_fields)}')
 
     kwargs: dict[str, object] = {}
     for name, field in field_defs.items():
-        if name in data:
-            kwargs[name] = _cast_value(data[name], field.type)
+        if name in payload:
+            kwargs[name] = _cast_value(payload[name], field_types.get(name, object))
         elif field.default is dataclasses.MISSING:
             raise InvalidScenarioError(f'missing field: {name}')
 
@@ -101,23 +129,20 @@ def map_solution(info: Sequence[MonsterMove]) -> list[MappedAction]:
     focusdict: dict[tuple[int, ...], set[int]] = collections.defaultdict(set)
     destdict: dict[tuple[int, ...], set[int]] = collections.defaultdict(set)
     aoedict: dict[tuple[int, ...], set[frozenset[int]]] = collections.defaultdict(set)
+    actions: dict[tuple[int, ...], MappedAction] = {}
     for iinf in info:
+        sorted_targets = sorted(iinf[3])
+        key_suffix = tuple(sorted_targets)
         for act in iinf[2]:
-            destdict[(act,)+tuple(sorted(iinf[3]))].update({iinf[0]})
-            focusdict[(act,)+tuple(sorted(iinf[3]))].update({iinf[1]})
-            aoedict[(act,)+tuple(sorted(iinf[3]))].update(iinf[4])
+            key = (act,) + key_suffix
+            destdict[key].add(iinf[0])
+            focusdict[key].add(iinf[1])
+            aoedict[key].update(iinf[4])
+            # aoedict/destdict/focusdict values are shared set objects, so later
+            # updates for this key are still visible through the stored tuple.
+            actions[key] = (act, sorted_targets, aoedict[key], destdict[key], iinf[5], debug_lines, focusdict[key])
 
-    solution = list({((act,)+tuple(sorted(iinf[3]))):
-                     (act,
-                      sorted(list(iinf[3])),
-                      aoedict[(act,)+tuple(sorted(iinf[3]))],
-                      destdict[(act,)+tuple(sorted(iinf[3]))],
-                      iinf[5],
-                      debug_lines,
-                      focusdict[(act,)+tuple(sorted(iinf[3]))])
-                     for iinf in info for act in iinf[2]}.values())
-
-    return solution
+    return list(actions.values())
 
 
 @dataclass(frozen=True)
@@ -149,7 +174,7 @@ class ScenarioData:
     map: MapData
     active_figure: int
     scenario_id: int
-    game_rules: str = "0"
+    game_rules: Rule = Rule.Frost
     debug_toggle: str = "0"
 
 
@@ -169,7 +194,7 @@ class ViewScenarioData:
     map: ViewMapData
     viewpoints: List[int]
     scenario_id: int
-    game_rules: str = "0"
+    game_rules: Rule = Rule.Frost
 
 
 def unpack_scenario(data: bytes) -> tuple['Solver', bool, bool, int, int]:
@@ -196,17 +221,12 @@ def unpack_scenario(data: bytes) -> tuple['Solver', bool, bool, int, int]:
     content_map = {'walls': 'X', 'obstacles': 'O', 'traps': 'T','hazardous': 'H', 'difficult': 'D', 'icy': 'I'}
     figure_map = {'characters': 'C', 'monsters': 'M'}
 
-    for attr, char in content_map.items():
-        positions = getattr(scenario.map, attr)
-        validate_positions(total_cells, positions, attr)
-        for pos in positions:
-            contents[pos] = char
-
-    for attr, char in figure_map.items():
-        positions = getattr(scenario.map, attr)
-        validate_positions(total_cells, positions, attr)
-        for pos in positions:
-            figures[pos] = char
+    for grid, mapping in ((contents, content_map), (figures, figure_map)):
+        for attr, char in mapping.items():
+            positions = getattr(scenario.map, attr)
+            validate_positions(total_cells, positions, attr)
+            for pos in positions:
+                grid[pos] = char
 
     if figures[scenario.active_figure] not in {'C', 'M'}:
         raise InvalidScenarioError('active_figure must refer to a character or monster')
@@ -227,10 +247,9 @@ def unpack_scenario(data: bytes) -> tuple['Solver', bool, bool, int, int]:
         initiatives[victim_pos] = int(initiative)
 
     # Create solver and return
-    rule_obj = Rule(int(scenario.game_rules))
     gmap = GloomhavenMap(scenario.width, scenario.height, monster, figures,
-                         contents, initiatives, walls, rule_obj)
-    solver = Solver(rule_obj, gmap)
+                         contents, initiatives, walls, scenario.game_rules)
+    solver = Solver(scenario.game_rules, gmap)
     solver.debug_toggle = scenario.debug_toggle == '0'
 
     return solver, scenario.solve_view > 0, scenario.solve_view > 0, scenario.scenario_id, scenario.active_figure
@@ -245,9 +264,8 @@ def unpack_scenario_forviews(data: bytes) -> tuple['Solver', bool, bool, int, li
     monster = Monster(action_range=scenario.range, action_target=scenario.target)
     contents = ['X' if i in scenario.map.walls else ' ' for i in range(total_cells)]
     walls = map_thin_walls(total_cells, scenario.map.thin_walls)
-    rule = Rule(int(scenario.game_rules))
-    gmap = GloomhavenMap(scenario.width, scenario.height, monster, [], contents, [], walls, rule)
-    s = Solver(rule, gmap)
+    gmap = GloomhavenMap(scenario.width, scenario.height, monster, [], contents, [], walls, scenario.game_rules)
+    s = Solver(scenario.game_rules, gmap)
     return (s, scenario.solve_view > 0, scenario.solve_view > 0, scenario.scenario_id, scenario.viewpoints)
 
 
@@ -268,12 +286,12 @@ def solve_scenario(data: bytes) -> dict[str, object]:
 
     actions: list[dict[str, int | list[int] | list[SightLine]]] = []
     for raw_action in raw_actions:
-        aoe_patterns = list(raw_action[2])
+        aoe_pattern = next(iter(raw_action[2]), cast(frozenset[int], frozenset()))
         actions.append(
             {
                 'move': raw_action[0],
                 'attacks': list(raw_action[1]),
-                'aoe': list(aoe_patterns[0]) if aoe_patterns else [],
+                'aoe': list(aoe_pattern),
                 'destinations': list(raw_action[6]),
                 'focuses': list(raw_action[3]),
                 'sightlines': list(raw_action[4]),
@@ -289,7 +307,7 @@ def solve_scenario(data: bytes) -> dict[str, object]:
         'actions': actions,
         'explanation': s.explanation,
     }
-    moves = list((raw_action[0] for raw_action in raw_actions))
+    moves = [raw_action[0] for raw_action in raw_actions]
     if solve_reach:
         solution['reach'] = s.solve_reaches(moves)
     if solve_sight:

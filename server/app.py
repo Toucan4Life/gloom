@@ -2,6 +2,7 @@ import time
 import os
 
 from flask import Flask, jsonify, request, render_template
+from werkzeug.exceptions import HTTPException
 
 from solver_api import InvalidScenarioError, solve_scenario, solve_views
 import solver_api
@@ -13,22 +14,37 @@ app.jinja_env.lstrip_blocks = True
 
 # Configuration
 IsDebugEnv = os.environ.get('FLASK_DEBUG') == "1"
-solver_api.IsDebugEnv = IsDebugEnv
+solver_api.set_debug_env(IsDebugEnv)
 
 title = 'Gloomhaven Monster Mover'
 version_major = 3
 version_minor = 0
 version_build = 0
-version = str(version_major) + '.' + \
-    str(version_minor) + '.' + str(version_build)
+version = f'{version_major}.{version_minor}.{version_build}'
 client_local_storage_version_major = 2
 client_local_storage_version_minor = 0
 client_local_storage_version_build = 0
-client_local_storage_version = str(client_local_storage_version_major) + '.' + str(
-    client_local_storage_version_minor) + '.' + str(client_local_storage_version_build)
+client_local_storage_version = (
+    f'{client_local_storage_version_major}.'
+    f'{client_local_storage_version_minor}.'
+    f'{client_local_storage_version_build}'
+)
 
 # Routes
 
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(exc: Exception):
+    """Ensure API clients always get a JSON error body, even for unexpected bugs.
+
+    HTTP exceptions (404, 405, ...) are left to Flask's normal handling.
+    """
+    if isinstance(exc, HTTPException):
+        return exc
+    if IsDebugEnv:
+        raise exc
+    app.logger.exception('Unhandled exception while processing request')
+    return jsonify({'error': 'internal server error'}), 500
 
 
 @app.route('/isAlive')

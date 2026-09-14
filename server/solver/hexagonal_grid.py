@@ -1,6 +1,6 @@
 """Hex-grid geometry, LOS, range, and AOE helpers for the solver."""
 
-# pylint: disable=invalid-name, line-too-long, missing-function-docstring, trailing-whitespace
+# pylint: disable=invalid-name, line-too-long, missing-function-docstring
 
 import collections
 from collections.abc import Iterable
@@ -81,7 +81,7 @@ class hexagonal_grid:
 
     def get_vertex(self, location: int, vertex: int) -> tuple[float, float]:
         return self.vertices[location * 6 + vertex]
-                                        
+
     def setup_vertices_list(self) -> None:
         def calculate_vertex(location:int, vertex:int)->tuple[float,float]:
             hex_row = location % self.map_height
@@ -339,7 +339,7 @@ class hexagonal_grid:
 
         return occluder_mappings, occluder_mappings_below, occluder_mappings_above, occluder_mappings_internal
 
-    
+
 
     def test_full_hex_los_between_locations(self, location_a: int, location_b: int) -> bool:
         # handle simple case of neighboring locations
@@ -506,13 +506,13 @@ class hexagonal_grid:
         return result
 
     def test_vertex_los_between_locations(self, location_a: int, location_b: int) -> bool:
-        bounds = self.calculate_bounds(location_a, location_b)        
+        bounds = self.calculate_bounds(location_a, location_b)
 
         return any((self.test_line(bounds, self.get_vertex(location_a, vertex_a), self.get_vertex(location_b, vertex_b))
                     for vertex_a in range(6) for vertex_b in range(6)
                     if not self.vertex_at_wall(location_b, vertex_b)
                     and not self.vertex_at_wall(location_a, vertex_a)))
-        
+
 
     def find_shortest_sightline(self, location_a: int, location_b: int, rule_vertex_los:bool) -> tuple[tuple[float, float], tuple[float, float]]:
         cache_key = (location_a, location_b, rule_vertex_los)
@@ -606,16 +606,16 @@ class hexagonal_grid:
         column = location % height
         row = location // height
         return (column - row // 2, row)
-        
+
     def crow_flies_distances(self, start:int, end:int)->int:
         axial_start = self.to_axial_coordinate(start,self.map_height)
         axial_end = self.to_axial_coordinate(end,self.map_height)
-        return int((abs(axial_start[0] - axial_end[0]) 
+        return int((abs(axial_start[0] - axial_end[0])
           + abs(axial_start[0] + axial_start[1] - axial_end[0] - axial_end[1])
           + abs(axial_start[1] - axial_end[1])) / 2)
 
     def from_axial_coordinate(self, coordinate:tuple[int,int], height:int, width:int)->int:
-       
+
         column = coordinate[1]
         if not 0 <= column < width:
             return -1
@@ -643,7 +643,7 @@ class hexagonal_grid:
         if has_run_begun :
             reach.append((run, self.map_size))
         return reach
-    
+
     def get_all_patterns_hitting_hexes(
         self,
         hexes: list[int],
@@ -665,7 +665,7 @@ class hexagonal_grid:
             [get_offset(precalc_grid_center, location, precalc_grid_height) for location in aoe]
             for aoe in aoe_pattern_set
         ]
-                 
+
         return [
             tuple(
                 location_offset

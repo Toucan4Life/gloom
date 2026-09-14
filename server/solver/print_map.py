@@ -70,7 +70,7 @@ def north_edge_glyph(walls:list[list[bool]], location:int, edge:int):
 def south_edge_glyph(walls:list[list[bool]], location:int, edge:int):
     return '\\' if walls[location][edge] else '\''
 
-def print_map(grid_width:int, grid_height:int, walls:list[list[bool]], top_label:list[str], bottom_label:list[str], extra_label:list[str]=[]):
+def print_map(grid_width:int, grid_height:int, walls:list[list[bool]], top_label:list[str], bottom_label:list[str], extra_label:list[str] | None=None):
     import colorama  # local import: only needed for debug/console printing
     colorama.init()
     grid_size = grid_width * grid_height
@@ -91,7 +91,7 @@ def print_map(grid_width:int, grid_height:int, walls:list[list[bool]], top_label
     for j in range(0, grid_width // 2):
         location = 2 * grid_height + 2 * j * grid_height - 1
         out += f'     {north_edge_glyph(walls, location, 2)} {extra_label[location]} {south_edge_glyph(walls, location, 0)}'
-        
+
     print(out)
 
     out = '  '
@@ -145,7 +145,7 @@ def print_map(grid_width:int, grid_height:int, walls:list[list[bool]], top_label
         for j in range(0, grid_width // 2):
             label_location = 2 * grid_height - i + j * 2 * grid_height - 2
             base_edge_location = grid_height - i + j * 2 * grid_height - 1
-            out += f'{top_edge_glyph(walls, base_edge_location, 4)}{north_edge_glyph(walls, base_edge_location, 5)} {top_label[label_location]} {south_edge_glyph(walls, label_location, 0)}' 
+            out += f'{top_edge_glyph(walls, base_edge_location, 4)}{north_edge_glyph(walls, base_edge_location, 5)} {top_label[label_location]} {south_edge_glyph(walls, label_location, 0)}'
 
         if grid_width % 2:
             base_edge_location = grid_height - i + (grid_width - 1) * grid_height - 1

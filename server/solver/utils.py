@@ -1,6 +1,6 @@
 """Shared solver utility helpers for geometry, pathing, and collection transforms."""
 
-# pylint: disable=line-too-long, missing-function-docstring, trailing-whitespace
+# pylint: disable=line-too-long, missing-function-docstring
 
 import collections
 import heapq
@@ -99,21 +99,21 @@ def minima(
 def _invert_key_values_impl(
     keys: Iterable[KeyT],
     values_for_key_func: Callable[[KeyT], Iterable[ValueT]],
-) -> list[tuple[ValueT, set[KeyT]]]:
+) -> dict[ValueT, set[KeyT]]:
     locations_for_groups: dict[ValueT, set[KeyT]] = collections.defaultdict(set)
 
     for key in keys:
         for value in values_for_key_func(key):
             locations_for_groups[value].add(key)
 
-    return list(locations_for_groups.items())
+    return dict(locations_for_groups)
 
 
 @overload
 def invert_key_values(
     values_for_key_func: Callable[[KeyT], Iterable[ValueT]],
     /,
-) -> Callable[[Iterable[KeyT]], list[tuple[ValueT, set[KeyT]]]]: ...
+) -> Callable[[Iterable[KeyT]], dict[ValueT, set[KeyT]]]: ...
 
 
 @overload
@@ -121,18 +121,18 @@ def invert_key_values(
     keys: Iterable[KeyT],
     values_for_key_func: Callable[[KeyT], Iterable[ValueT]],
     /,
-) -> list[tuple[ValueT, set[KeyT]]]: ...
+) -> dict[ValueT, set[KeyT]]: ...
 
 
 def invert_key_values(
     keys_or_func: Iterable[KeyT] | Callable[[KeyT], Iterable[ValueT]],
     values_for_key_func: Callable[[KeyT], Iterable[ValueT]] | None = None,
     /,
-) -> list[tuple[ValueT, set[KeyT]]] | Callable[[Iterable[KeyT]], list[tuple[ValueT, set[KeyT]]]]:
+) -> dict[ValueT, set[KeyT]] | Callable[[Iterable[KeyT]], dict[ValueT, set[KeyT]]]:
     if values_for_key_func is None:
         mapper = cast(Callable[[KeyT], Iterable[ValueT]], keys_or_func)
 
-        def apply(keys: Iterable[KeyT]) -> list[tuple[ValueT, set[KeyT]]]:
+        def apply(keys: Iterable[KeyT]) -> dict[ValueT, set[KeyT]]:
             return _invert_key_values_impl(keys, mapper)
 
         return apply
@@ -742,10 +742,10 @@ def map_window_polygon(
     previous_starts: list[tuple[int, int]],
     occluder_mappings: list[OccluderMapping],
     lines: list[LineWithDirection]) -> list[tuple[float, float]] | None:
-        
+
     # build a polygon around the window
     polygon:list[tuple[float,float]]
-    polygon = []    
+    polygon = []
     # start at the top of the window and traverse the line counterclockwise
     # to the first vertex
     line_index = window[3]

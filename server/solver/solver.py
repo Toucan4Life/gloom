@@ -1,5 +1,6 @@
 import textwrap
-from typing import TypedDict
+from collections.abc import KeysView
+from typing import TypedDict, cast
 from solver.rule import Rule
 from solver.gloomhaven_map import GloomhavenMap
 from solver.settings import MAX_VALUE
@@ -58,7 +59,7 @@ class Solver:
         phase: str,
         title: str,
         detail: str,
-        locations: list[int] | set[int] | frozenset[int] = (),
+        locations: list[int] | set[int] | frozenset[int] = cast(frozenset[int], frozenset()),
         focus: int | None = None,
     ) -> None:
         """Record a step of the AI's decision-making process for the UI."""
@@ -82,12 +83,12 @@ class Solver:
             self.map.print_summary(self.debug_toggle)
             if self.message:
                 print(textwrap.fill(self.message, 82))
-        
+
         proximity_distances = self.map.find_proximity_distances(self.map.get_active_monster_location())
 
         travel_distances, trap_counts = self.map.find_active_monster_traversal_cost()
 
-        focus_ranks = self.find_secondary_focus(proximity_distances)        
+        focus_ranks = self.find_secondary_focus(proximity_distances)
 
         solution: list[MonsterMove] = []
 
@@ -108,7 +109,7 @@ class Solver:
                     )
                 else:
                     solution.append((tar_loc[2], tar_loc[1], tar_loc[3], [], [], set()))
-        
+
         if self.logging:
             self.print_solution(solution)
 
@@ -231,9 +232,8 @@ class Solver:
             targets_of_rank[focus_ranks[target]] -= 1
         return tuple(targets_of_rank)
 
-    def get_attackable_groups(self, location: int) -> list[frozenset[int]]:
-        attackable_combinations = self.map.get_all_attackable_char_combination_for_a_location(location)
-        return list(attackable_combinations.keys())
+    def get_attackable_groups(self, location: int) -> KeysView[frozenset[int]]:
+        return self.map.get_all_attackable_char_combination_for_a_location(location).keys()
 
     def candidate_attack_locations_for_focus(
         self,
@@ -330,8 +330,10 @@ class Solver:
         indexed_target_groups: list[PreindexedTargetGroup] | None = None,
     ) -> list[tuple[frozenset[int], int]]:
         if indexed_target_groups is None:
-            grouped_targets = invert_key_values(attack_locations_for_focus, self.get_attackable_groups)
-            grouped_targets = [tar_locs for tar_locs in grouped_targets if focus in tar_locs[0]]
+            grouped_targets: list[tuple[frozenset[int], set[int]]] = [
+                tar_locs for tar_locs in invert_key_values(attack_locations_for_focus, self.get_attackable_groups).items()
+                if focus in tar_locs[0]
+            ]
         else:
             attack_locations = set(attack_locations_for_focus)
             grouped_targets = []
@@ -405,7 +407,7 @@ class Solver:
             focus,
         )
         return result
-    
+
     def solve_for_focus(
         self,
         focus: int,
@@ -417,7 +419,7 @@ class Solver:
     ) -> list[TargetSelection]:
         if not attack_locations_for_focus:
             return []
-        
+
         targets_with_attack_locations: list[tuple[frozenset[int], int]]
         if (
             not self.RULE_MAXIMIZE_FUTURE_MULTIATTACK
@@ -441,7 +443,7 @@ class Solver:
                 focus_ranks,
                 indexed_target_groups,
             )
-        
+
         targets_with_attack_locations = minima(
             targets_with_attack_locations,
             lambda tar_loc: travel_distances[tar_loc[1]],
@@ -474,7 +476,7 @@ class Solver:
                 [destination],
             )
             return [destination]
-        
+
         distance_to_destination, traps_to_destination = self.map.find_active_monster_traversal_cost(destination)
 
         reachable_locations = [
@@ -524,7 +526,7 @@ class Solver:
                 self.map.print_los_map(visible_locations)
 
         return sights
-                
+
     def print_solution(self, solution: list[MonsterMove]):
         active_monster = self.map.get_active_monster_location()
         map_debug_tags = [' '] * self.map.map_size
@@ -533,7 +535,7 @@ class Solver:
         if not self.show_each_action_separately:
             for action in solution:
                 self.print_single_solution_summary(active_monster, action[1], list(action[3]))
-                for possible_move in action[2]:                
+                for possible_move in action[2]:
                     self.map.figures[possible_move] = 'A'
                 map_debug_tags[action[1]] = 'd'
                 for target in action[3]:
@@ -542,14 +544,14 @@ class Solver:
         else:
             for action in solution:
                 action_debug_tags = list(map_debug_tags)
-                self.print_single_solution_summary(active_monster, action[1], list(action[3]))                
-                for possible_move in action[2]:                
+                self.print_single_solution_summary(active_monster, action[1], list(action[3]))
+                for possible_move in action[2]:
                     self.map.figures[possible_move] = 'A'
                 action_debug_tags[action[1]] = 'd'
                 for target in action[3]:
                     action_debug_tags[target] = 'a'
                 self.map.print_solution_map( action_debug_tags )
-                for possible_move in action[2]:                
+                for possible_move in action[2]:
                     self.map.figures[possible_move] = ' '
 
     def print_single_solution_summary(self, active_monster:int, move:int, target:list[int]):

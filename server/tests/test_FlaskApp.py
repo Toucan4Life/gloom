@@ -97,3 +97,31 @@ def test_solve_invalid_payload_returns_400(app_client: FlaskClient):
     payload = json.loads(response.data)
     assert response.status_code == 400
     assert payload["error"] == 'invalid scenario payload'
+
+
+def test_solve_invalid_game_rules_returns_400(app_client: FlaskClient):
+    response = app_client.put(
+        "/solve", data=b'{"scenario_id":3,"solve_view":2,"active_figure":42,"move":0,"range":5,"target":2,"flying":1,"teleport":0,"muddled":0,"game_rules":"99","aoe":[23,24,32],"width":29,"height":25,"map":{"characters":[145,169],"monsters":[42],"walls":[115],"obstacles":[96],"traps":[117],"hazardous":[40,216],"difficult":[168],"icy":[],"initiatives":[4,3],"thin_walls":[[43,1],[44,2],[68,0],[69,0],[69,2],[70,2],[94,0],[95,2]]}}')
+
+    payload = json.loads(response.data)
+    assert response.status_code == 400
+    assert payload["error"] == 'invalid scenario payload'
+
+
+def test_unknown_route_returns_normal_404(app_client: FlaskClient):
+    response = app_client.get("/this-route-does-not-exist")
+
+    assert response.status_code == 404
+
+
+def test_unexpected_error_returns_json_500(app_client: FlaskClient, monkeypatch: pytest.MonkeyPatch):
+    def boom(_data: bytes) -> dict[str, object]:
+        raise RuntimeError('boom')
+
+    monkeypatch.setattr("app.solve_scenario", boom)
+
+    response = app_client.put("/solve", data=b'{"scenario_id":18,"solve_view":2}')
+
+    payload = json.loads(response.data)
+    assert response.status_code == 500
+    assert payload["error"] == 'internal server error'
