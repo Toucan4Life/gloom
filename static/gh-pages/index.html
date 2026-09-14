@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang='en'>
+
+  <head>
+    <title>__APP_TITLE__ - v__APP_VERSION__</title>
+
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'>
+
+    <!-- Decodes URLs re-encoded by 404.html back into a real path, before the app reads location.pathname. -->
+    <script>
+      ( function( l ) {
+        if ( l.search[1] === '/' ) {
+          var decoded = l.search.slice( 1 ).split( '&' ).map( function( s ) {
+            return s.replace( /~and~/g, '&' );
+          } ).join( '?' );
+          window.history.replaceState( null, null,
+            l.pathname.slice( 0, -1 ) + decoded + l.hash
+          );
+        }
+      }( window.location ) );
+    </script>
+
+    <script>
+      var BASE_PATH = '/__REPO_NAME__/';
+      URL_FOR = {
+        root: BASE_PATH,
+        los: BASE_PATH + 'los',
+        // No backend on GitHub Pages: the solver runs client-side via Pyodide (see PySolver.js).
+        solve: '',
+        views: '',
+      };
+      PY_SOURCE_BASE = BASE_PATH + 'py/';
+      DEVELOPMENT = false;
+      APP_NAME = '__APP_TITLE__';
+      APP_VERSION = '__APP_VERSION__';
+      DATA_VERSION = '__DATA_VERSION__';
+      DATA_VERSION_MAJOR = ( __DATA_VERSION_MAJOR__ );
+      DATA_VERSION_MINOR = ( __DATA_VERSION_MINOR__ );
+      DATA_VERSION_BUILD = ( __DATA_VERSION_BUILD__ );
+      START_IN_LOS_MODE = ( location.pathname.indexOf( BASE_PATH + 'los' ) === 0 ) ? 'True' : '';
+    </script>
+
+    <script async src='https://www.googletagmanager.com/gtag/js?id=UA-119941535-1'></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){ dataLayer.push( arguments ); }
+      gtag( 'js', new Date() );
+      gtag( 'config', 'UA-119941535-1' );
+    </script>
+
+    <link rel='stylesheet' href='darkly.bootstrap.min.css'>
+    <link rel='stylesheet' href='style.css'>
+  </head>
+
+  <body>
+    <div id='root'></div>
+    <script src='bundle.js' type='text/javascript'></script>
+  </body>
+
+</html>

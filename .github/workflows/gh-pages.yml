@@ -1,0 +1,94 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: static/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: static
+        run: npm ci
+
+      - name: Build static site (also bundles the Python solver for Pyodide)
+        working-directory: static
+        run: npm run build
+
+      - name: Extract app version info from server/app.py
+        id: appinfo
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import re
+          src = open('server/app.py').read()
+
+          def get(name):
+              return re.search(rf"{name} = (.+)", src).group(1).strip()
+
+          title = get('title').strip("'\"")
+          major, minor, build = get('version_major'), get('version_minor'), get('version_build')
+          dmajor, dminor, dbuild = (
+              get('client_local_storage_version_major'),
+              get('client_local_storage_version_minor'),
+              get('client_local_storage_version_build'),
+          )
+          print(f"title={title}")
+          print(f"version={major}.{minor}.{build}")
+          print(f"data_version={dmajor}.{dminor}.{dbuild}")
+          print(f"data_version_major={dmajor}")
+          print(f"data_version_minor={dminor}")
+          print(f"data_version_build={dbuild}")
+          PY
+
+      - name: Generate index.html and 404.html for GitHub Pages
+        run: |
+          REPO_NAME="${{ github.event.repository.name }}"
+          for template in static/gh-pages/index.html static/gh-pages/404.html; do
+            dest="static/dist/$(basename "$template")"
+            sed \
+              -e "s|__REPO_NAME__|${REPO_NAME}|g" \
+              -e "s|__APP_TITLE__|${{ steps.appinfo.outputs.title }}|g" \
+              -e "s|__APP_VERSION__|${{ steps.appinfo.outputs.version }}|g" \
+              -e "s|__DATA_VERSION_MAJOR__|${{ steps.appinfo.outputs.data_version_major }}|g" \
+              -e "s|__DATA_VERSION_MINOR__|${{ steps.appinfo.outputs.data_version_minor }}|g" \
+              -e "s|__DATA_VERSION_BUILD__|${{ steps.appinfo.outputs.data_version_build }}|g" \
+              -e "s|__DATA_VERSION__|${{ steps.appinfo.outputs.data_version }}|g" \
+              "$template" > "$dest"
+          done
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: static/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

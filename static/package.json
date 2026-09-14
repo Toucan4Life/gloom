@@ -1,25 +1,28 @@
 {
   "name": "gloom",
-  "version": "2.12.1",
+  "version": "3.0.0",
   "description": "A Gloomhaven monster mover web app and server.",
   "main": "index.js",
   "scripts": {
-    "build": "webpack --progress --mode production --config webpack.config.js",
-    "dev-build": "webpack --progress --mode development --config webpack.config.js",
-    "watch": "webpack watch --progress --mode development --config webpack.config.js"
+    "copy-python": "node scripts/copy-python.js",
+    "build": "npm run copy-python && webpack --progress --mode production --config webpack.config.js",
+    "dev-build": "npm run copy-python && webpack --progress --mode development --config webpack.config.js",
+    "watch": "npm run copy-python && webpack watch --progress --mode development --config webpack.config.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AluminumAngel/gloom.git"
+    "url": "git+https://github.com/Toucan4Life/gloom.git"
   },
-  "author": "Daniel Nelson",
+  "author": "Toucan4Life",
+  "contributors": [
+    "Daniel Nelson (original author, https://github.com/AluminumAngel/gloom)"
+  ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/AluminumAngel/gloom/issues"
+    "url": "https://github.com/Toucan4Life/gloom/issues"
   },
-  "homepage": "https://github.com/AluminumAngel/gloom#readme",
+  "homepage": "https://github.com/Toucan4Life/gloom#readme",
   "devDependencies": {
-    "axios": "^0.25.0",
     "babel-core": "^6.26.3",
     "babel-loader": "^7.1.4",
     "babel-plugin-transform-class-properties": "^6.24.1",

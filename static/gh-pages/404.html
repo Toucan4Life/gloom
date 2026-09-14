@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang='en'>
+
+  <head>
+    <title>__APP_TITLE__</title>
+
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'>
+
+    <!--
+      GitHub Pages has no server, so there is no way to route arbitrary paths
+      (like a shared scenario URL) to index.html. This 404 page is the
+      standard "SPA on GitHub Pages" trick: it re-encodes the requested path
+      into a query string and redirects to index.html, which decodes it back
+      into the real path before the app reads location.pathname. See
+      https://github.com/rafgraham/spa-github-pages for details.
+    -->
+    <script>
+      ( function( l ) {
+        var segmentsToKeep = 1; // keep the "/__REPO_NAME__" project-page prefix
+        l.replace(
+          l.protocol + '//' + l.hostname + ( l.port ? ':' + l.port : '' ) +
+          l.pathname.split( '/' ).slice( 0, 1 + segmentsToKeep ).join( '/' ) + '/?/' +
+          l.pathname.slice( 1 ).split( '/' ).slice( segmentsToKeep ).join( '/' ).replace( /&/g, '~and~' ) +
+          ( l.search ? '&' + l.search.slice( 1 ).replace( /&/g, '~and~' ) : '' ) +
+          l.hash
+        );
+      }( window.location ) );
+    </script>
+  </head>
+
+  <body>
+  </body>
+
+</html>

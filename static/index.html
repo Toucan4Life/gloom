@@ -15,6 +15,7 @@
         solve: '{{ url_for( "solve" ) }}',
         views: '{{ url_for( "views" ) }}',
       };
+      PY_SOURCE_BASE = '{{ url_for( "static", filename="py/" ) }}';
       DEVELOPMENT = ( {{ debug_server and "true" or "false" }} );
       APP_NAME = '{{ title }}';
       APP_VERSION = '{{ version }}';

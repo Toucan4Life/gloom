@@ -1,7 +1,7 @@
 import React from 'react';
 import { UncontrolledTooltip } from 'reactstrap';
 import { UncontrolledDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
-import axios from 'axios';
+import { solveScenario, solveViews } from './PySolver';
 import * as C from './defines';
 import * as BRUSH from './brushes';
 import HexUtils from './HexUtils';
@@ -268,7 +268,7 @@ export default class MapEditor extends React.PureComponent {
       starting_scenario = location.pathname.slice( 1 + URL_FOR.los.length );
     }
     else {
-      starting_scenario = location.pathname.slice( 1 );
+      starting_scenario = location.pathname.slice( URL_FOR.root.length );
     }
     if ( starting_scenario !== '' ) {
       this.loadStateFromURL( starting_scenario, this.state );
@@ -1267,12 +1267,7 @@ export default class MapEditor extends React.PureComponent {
   handleDisplayExplanationChanged = () => {
     this.setState( {
       'show_explanation': !this.state.show_explanation,
-    } );
-  };
-
-  handleDisplayHexLabelsChanged = () => {
-    this.setState( {
-      'show_hex_labels': !this.state.show_hex_labels,
+      'show_hex_labels': !this.state.show_explanation,
     } );
   };
 
@@ -1731,12 +1726,12 @@ export default class MapEditor extends React.PureComponent {
     this.setState( {
       solution_pending: true,
     } );
-    axios.put( URL_FOR.solve, scenario )
-      .then( ( response ) => {
+    solveScenario( scenario )
+      .then( ( data ) => {
         this.setState( {
           solution_pending: false,
         } );
-        this.unpackSolution( response.data );
+        this.unpackSolution( data );
       } )
       .catch( () => {
         this.setState( {
@@ -1764,12 +1759,12 @@ export default class MapEditor extends React.PureComponent {
     this.setState( {
       views_pending: true,
     } );
-    axios.put( URL_FOR.views, views_request )
-      .then( ( response ) => {
+    solveViews( views_request )
+      .then( ( data ) => {
         this.setState( {
           views_pending: false,
         } );
-        this.unpackViewsForActions( response.data );
+        this.unpackViewsForActions( data );
       } )
       .catch( () => {
         this.setState( {
@@ -1794,12 +1789,12 @@ export default class MapEditor extends React.PureComponent {
     this.setState( {
       views_pending: true,
     } );
-    axios.put( URL_FOR.views, views_request )
-      .then( ( response ) => {
+    solveViews( views_request )
+      .then( ( data ) => {
         this.setState( {
           views_pending: false,
         } );
-        this.unpackViewsForStart( response.data );
+        this.unpackViewsForStart( data );
       } )
       .catch( () => {
         this.setState( {
@@ -2306,21 +2301,8 @@ export default class MapEditor extends React.PureComponent {
                 <UncontrolledTooltip placement='left' fade={false} delay={C.TOOLTIP_DELAY} target='show-explanation-button'>
                   <div className='text-left'>
                     Show the step-by-step reasoning the solver used to reach this solution, based on the
-                    current board.
-                  </div>
-                </UncontrolledTooltip>
-                <button
-                  type='button'
-                  className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_hex_labels ? ' active' : '' )}
-                  id='show-hex-labels-button'
-                  onClick={this.handleDisplayHexLabelsChanged}
-                >
-                  Show Hex Numbers
-                </button>
-                <UncontrolledTooltip placement='left' fade={false} delay={C.TOOLTIP_DELAY} target='show-hex-labels-button'>
-                  <div className='text-left'>
-                    Label every hex with its number, so a hex mentioned by number (e.g. in the explanation
-                    or when sharing a scenario) can be found on the board.
+                    current board. Every hex is also labeled with its number, so a hex mentioned in the
+                    explanation (or when sharing a scenario) can be found on the board.
                   </div>
                 </UncontrolledTooltip>
                 {/*
@@ -2400,9 +2382,13 @@ export default class MapEditor extends React.PureComponent {
               <div className='mt-2 mb-4 text-secondary small'>
                 <p/>
                 <p className='footer'/>
-                &copy; 2023 <a href='mailto:daniel.richard.nelson@gmail.com'>daniel.richard.nelson@gmail.com</a>
+                &copy; 2023-2026 <a href='https://github.com/Toucan4Life'>Toucan4Life</a>
                 <p className='footer'/>
-                <a href='https://github.com/AluminumAngel/gloom'>github.com/AluminumAngel/gloom</a>
+                <a href='https://github.com/Toucan4Life/gloom'>github.com/Toucan4Life/gloom</a>
+                <p className='footer'/>
+                Based on the original work by{' '}
+                <a href='mailto:daniel.richard.nelson@gmail.com'>Daniel Nelson</a>
+                {' '}(<a href='https://github.com/AluminumAngel/gloom'>github.com/AluminumAngel/gloom</a>)
                 <p className='footer'/>
                 <a href='https://boardgamegeek.com/user/AluminumAngel'>boardgamegeek.com/user/AluminumAngel</a>
                 <p className='footer'/>
