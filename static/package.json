@@ -2,12 +2,13 @@
   "name": "gloom",
   "version": "3.0.0",
   "description": "A Gloomhaven monster mover web app and server.",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
     "copy-python": "node scripts/copy-python.js",
-    "build": "npm run copy-python && webpack --progress --mode production --config webpack.config.js",
-    "dev-build": "npm run copy-python && webpack --progress --mode development --config webpack.config.js",
-    "watch": "npm run copy-python && webpack watch --progress --mode development --config webpack.config.js"
+    "build": "npm run copy-python && tsc -b && vite build",
+    "dev-build": "npm run copy-python && vite build --mode development",
+    "watch": "npm run copy-python && vite build --watch --mode development",
+    "typecheck": "tsc -b --noEmit"
   },
   "repository": {
     "type": "git",
@@ -22,28 +23,18 @@
     "url": "https://github.com/Toucan4Life/gloom/issues"
   },
   "homepage": "https://github.com/Toucan4Life/gloom#readme",
-  "devDependencies": {
-    "@babel/core": "^7.26.0",
-    "@babel/plugin-transform-class-properties": "^7.25.9",
-    "@babel/preset-env": "^7.26.0",
-    "@babel/preset-react": "^7.26.3",
-    "babel-loader": "^9.2.1",
-    "react": "^16.6.0",
-    "react-dom": "^16.6.0",
-    "reactstrap": "^8.0.0",
-    "webpack": "^5.67.0",
-    "webpack-cli": "^4.9.2"
-  },
-  "babel": {
-    "presets": [
-      "@babel/preset-env",
-      "@babel/preset-react"
-    ],
-    "plugins": [
-      "@babel/plugin-transform-class-properties"
-    ]
-  },
   "dependencies": {
-    "npm": "^6.14.15"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^22.20.3",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^6.1.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0"
   }
 }

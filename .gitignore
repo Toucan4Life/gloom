@@ -4,3 +4,4 @@ __pycache__/
 prof
 static/node_modules/
 static/dist/
+static/*.tsbuildinfo

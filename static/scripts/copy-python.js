@@ -2,8 +2,11 @@
 // into static/dist/py/ so it can be fetched by the browser and imported into
 // Pyodide (WebAssembly Python) at runtime. This lets the site solve scenarios
 // entirely client-side, with no backend required (needed for GitHub Pages).
-const fs = require( 'fs' );
-const path = require( 'path' );
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname( fileURLToPath( import.meta.url ) );
 
 const SERVER_DIR = path.join( __dirname, '..', '..', 'server' );
 const DEST_DIR = path.join( __dirname, '..', 'dist', 'py' );
