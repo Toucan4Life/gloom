@@ -14,14 +14,24 @@
             "type": "debugpy",
             "request": "launch",
             "module": "flask",
+            "cwd": "${workspaceFolder}",
             "env": {
                 "FLASK_APP": "server/app.py",
-                "FLASK_DEBUG": "True"
+                "FLASK_DEBUG": "1"
             },
             "args": [
                 "run",
-                "--no-debugger"
+                "--no-debugger",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "5000"
             ],
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "Running on (https?://\\S+)",
+                "uriFormat": "%s"
+            },
             "jinja": true,
             "justMyCode": true
         }

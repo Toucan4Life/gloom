@@ -436,6 +436,55 @@ export default function App() {
         </div>
       </main>
 
+      <footer className="shrink-0 border-t border-slate-800 bg-slate-950/90 px-3 py-2 text-center text-xs leading-5 text-slate-500">
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5">
+          <span>
+            &copy; 2023-2026{' '}
+            <a
+              href="https://github.com/Toucan4Life"
+              className="text-slate-400 underline decoration-slate-700 underline-offset-2 hover:text-cyan-300"
+            >
+              Toucan4Life
+            </a>
+          </span>
+          <a
+            href="https://github.com/Toucan4Life/gloom"
+            className="text-slate-400 underline decoration-slate-700 underline-offset-2 hover:text-cyan-300"
+          >
+            github.com/Toucan4Life/gloom
+          </a>
+          <span>
+            Based on the original work by{' '}
+            <a
+              href="mailto:daniel.richard.nelson@gmail.com"
+              className="text-slate-400 underline decoration-slate-700 underline-offset-2 hover:text-cyan-300"
+            >
+              Daniel Nelson
+            </a>{' '}
+            (
+            <a
+              href="https://github.com/AluminumAngel/gloom"
+              className="text-slate-400 underline decoration-slate-700 underline-offset-2 hover:text-cyan-300"
+            >
+              github.com/AluminumAngel/gloom
+            </a>
+            )
+          </span>
+          <a
+            href="https://boardgamegeek.com/user/AluminumAngel"
+            className="text-slate-400 underline decoration-slate-700 underline-offset-2 hover:text-cyan-300"
+          >
+            boardgamegeek.com/user/AluminumAngel
+          </a>
+          <a
+            href="https://www.reddit.com/user/AluminumAngel"
+            className="text-slate-400 underline decoration-slate-700 underline-offset-2 hover:text-cyan-300"
+          >
+            u/AluminumAngel
+          </a>
+        </div>
+      </footer>
+
       <Message ref={messageRef} />
     </div>
   );
